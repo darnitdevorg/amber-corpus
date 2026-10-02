@@ -1,0 +1,39 @@
+id: venue-year-shortname
+title: "Paper title"
+venue: {name: USENIX Security, year: 2025}
+paper: {url: "", doi: ""}
+
+artifact:
+  url: ""
+  clone: ""            # git URL, or download instructions for Zenodo/DOI
+  ref_type: commit     # commit | tag | doi
+  ref: ""
+  license: ""
+
+badges: [available, functional, reproduced]   # as awarded by the AEC
+
+resources:
+  cpu_only: true
+  ram_gb: 8
+  disk_gb: 10
+  runtime_minutes: 30
+  docker: true
+  network_required: false
+  notes: "quote the appendix line this came from"
+
+# What Amber should conclude. This is the ground truth the corpus exists for.
+role: positive          # positive | negative | not_comparable
+expected_verdict: REPRODUCED
+
+claims:
+  - metric: ""
+    threshold: ""       # e.g. "<= 0.59"
+    unit: ""
+    source: ""          # "Table II, p.9"
+    measurement_protocol: ""   # HOW the paper measured it
+    expected_verdict: REPRODUCED
+    notes: ""
+
+run:
+  command: ""
+  outputs: []           # files Amber should capture and compare

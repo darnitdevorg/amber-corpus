@@ -1,0 +1,55 @@
+id: ndss2025-gittuf
+title: "Rethinking Trust in Forge-Based Git Security"
+venue: {name: NDSS, year: 2025}
+paper:
+  url: "https://www.ndss-symposium.org/ndss-paper/rethinking-trust-in-forge-based-git-security/"
+
+artifact:
+  url: "https://doi.org/10.5281/zenodo.14252266"
+  clone: ""      # Zenodo archive, not a git clone; download and unpack
+  ref_type: doi
+  ref: "10.5281/zenodo.14252266"
+  upstream: "https://github.com/gittuf/gittuf"
+  license: Apache-2.0
+
+# Awarded by the NDSS 2025 AEC. "reproduced" means an independent evaluator
+# obtained the paper's main results from this archived artifact.
+badges: [available, functional, reproduced]
+
+resources:
+  cpu_only: true
+  ram_gb: 8
+  disk_gb: 5
+  runtime_minutes: 20
+  docker: true
+  network_required: true    # clones the git/git repo for the benchmark
+  notes: "measured on Ryzen 7640U / 32 GB / Ubuntu 24.04"
+
+role: not_comparable
+expected_verdict: NOT_COMPARABLE
+
+claims:
+  - metric: storage_overhead_pct
+    threshold: "<= 4"
+    unit: percent
+    source: "Table I"
+    measurement_protocol: "size of .git with gittuf vs without, same repo"
+    expected_verdict: REPRODUCED
+    notes: "independently measured 0.0296% — well inside the threshold"
+
+  - metric: verify_seconds
+    threshold: "<= 0.59"
+    unit: seconds_per_push
+    source: "Table II"
+    measurement_protocol: "incremental per-push verification cost"
+    expected_verdict: NOT_COMPARABLE
+    notes: >
+      A naive harness measures whole-RSL verification per call and divides by
+      push count, which is an upper bound on the paper's incremental figure,
+      not the same quantity. Measured that way it reads 0.97 s and looks like
+      a failure. This claim is in the corpus precisely to catch tools that
+      report NOT_REPRODUCED when the measurement is not comparable.
+
+run:
+  command: "TODO: the benchmark entry point"
+  outputs: [result.json]
