@@ -1,0 +1,53 @@
+id: usenixsec2023-aeadprotocols
+title: "Automated Analysis of Protocols that use Authenticated Encryption: How Subtle AEAD Differences can impact Protocol Security"
+venue: {name: USENIX Security, year: 2023}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity23/presentation/cremers-protocols"
+
+artifact:
+  url: "https://github.com/AutomatedAnalysisOf/AEADProtocols/tree/V1"
+  clone: "https://github.com/AutomatedAnalysisOf/AEADProtocols.git"
+  ref_type: tag
+  ref: "V1"
+  commit: "cad164e"
+
+# Awarded by the USENIX Sec '23 AEC. Evidence that a REPRODUCED verdict is
+# plausible for the paper's main claims -- not a per-claim guarantee.
+badges: [available, functional, reproduced]
+
+resources:
+  cpu_only: true
+  ram_gb: 8
+  disk_gb: 1
+  runtime_minutes: null      # not stated in the appendix
+  docker: true               # external image, no Dockerfile in the repo
+  network_required: true     # docker pull aeads/tamarin
+  notes: >
+    Appendix A.2.3: "Our artifact does not require any specific hardware...
+    GPUs are not required." A.2.4 provides a Docker image with Tamarin
+    preinstalled. Benchmarks: none. Repo is 35 MB: Models/, README.md,
+    tamarin-prover.zip.
+
+role: positive
+expected_verdict: TBD        # claims not yet extracted; artifact not yet run
+
+claims: []                   # TODO: extract the case-study results from the paper
+
+run:
+  command: "docker run -it -v $PWD:/opt/case-studies aeads/tamarin bash  # then per Models/README.md"
+  outputs: []
+
+# --- observed, not expected -------------------------------------------------
+observed:
+  - date: 2026-10-02
+    tool: "darnit --framework amber (PR #532 branch)"
+    scope: "hygiene audit only; claim verification not run"
+    result: "Total 5 | Pass 0 | Fail 0 | Warn 5"
+    note: >
+      All five controls returned "Could not automatically verify", with no
+      handler errors. The artifact's reproducibility story is real but lives
+      in prose and an external image: the README gives `docker pull
+      aeads/tamarin` plus a pinned run command, and vendors tamarin-prover.zip
+      for manual builds. The repo has no Dockerfile, lock file or CI config,
+      so the hygiene controls find nothing. An artifact a USENIX AEC
+      independently reproduced scores zero on them.
