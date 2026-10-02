@@ -37,3 +37,15 @@ claims:
 run:
   command: ""
   outputs: []           # files Amber should capture and compare
+
+# Filled in after a first successful capture, not from the paper. External
+# ground truth (the AE badge) only certifies claims within tolerance; nobody
+# records output digests, because most artifacts are not bit-reproducible.
+# This block is self-generated and only meaningful for run-to-run comparison
+# on the same machine.
+baseline:
+  captured_on: ""        # date
+  machine: ""            # CPU / RAM / OS
+  outputs: []            # - {path: result.json, sha256: ""}
+  metrics: {}            # measured values, for drift tracking
+  bit_for_bit_expected: false   # true only if the artifact claims determinism

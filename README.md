@@ -30,3 +30,12 @@ runtime and disk, no credentials or gated datasets.
 Copy `entries/TEMPLATE.yaml`, fill it in and open a PR. Quote the appendix for
 resource claims and the paper for metric thresholds - including how the paper
 measured them.
+
+-> No expected output hash
+
+The obvious design would be record a digest of the expected output, compare. The Results Reproduced badge certifies that an evaluator obtained results *supporting the paper's claims*, within tolerance - USENIX states the goal is
+"not to reproduce the results exactly but instead to generate results independently within an allowed tolerance." No digest is recorded, because most artifacts are not bit-reproducible: timings depend on hardware, ML runs on seeds
+and backends, fuzzing on chance.
+
+So each entry's external ground truth is a threshold on a metric, not a digest, and the fields are `threshold`, `measurement_protocol` and `expected_verdict`.
+
