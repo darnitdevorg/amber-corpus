@@ -1,0 +1,118 @@
+id: usenixsec2024-camp
+title: "CAMP: Compiler and Allocator-based Heap Memory Protection"
+venue: {name: USENIX Security, year: 2024}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity24/presentation/lin"
+
+artifact:
+  url: "https://github.com/cla7aye15I4nd/CAMP/tree/a74a3069adb4aeff2426bba1fd6391c7d1fbb405"
+  clone: "https://github.com/cla7aye15I4nd/CAMP.git"
+  ref_type: commit
+  ref: "a74a3069adb4aeff2426bba1fd6391c7d1fbb405"
+  license: Apache-2.0       # root LICENSE; bundled dependencies retain their own notices
+
+# Awarded badges verified at https://secartifacts.github.io/usenixsec2024/results
+# (CAMP row), not inferred from the appendix's requested badges.
+badges: [available, functional, reproduced]
+
+# Research requirements from appendix A.2.3-A.2.4, not source-audit requirements.
+# Appendix: https://secartifacts.github.io/usenixsec2024/appendix-files/sec24summerae-final10.pdf
+resources:
+  cpu_only: true
+  ram_gb: 32
+  disk_gb: 1000             # appendix specifies at least 1 TB SSD
+  runtime_minutes: null    # not specified in the appendix
+  docker: true             # externally published experiment images, not a root Dockerfile
+  network_required: true   # source/submodule/image retrieval; some experiments access websites
+  notes: >
+    Appendix A.2.3 specifies "A minimum of 32GB RAM" and "At least 1TB of SSD
+    storage", and recommends an Intel i7-12700 or comparable CPU. A.2.4 lists
+    Docker and Ubuntu 22.04. README.md:25-26 specifies Ubuntu 22.04 and Clang
+    12.0.1 for native setup. Appendix A.3 lists prebuilt experiment images;
+    their availability and contents were not tested. These requirements exceed
+    a small-laptop experiment budget but do not prevent a source-only audit.
+    No research dependencies were built, images pulled, or experiments run.
+
+role: positive             # candidate supported by the conference reproduction badge
+expected_verdict: TBD       # scientific claims not evaluated by this hygiene audit
+claims: []
+
+# Documented research commands from appendix A.4.2 E1, NOT executed here.
+# Run INSIDE a prepared dataisland/camp-juliet container, not the source checkout.
+# Console results are documented; no benchmark output files were captured.
+run:
+  command: "cd /root/camp-experiment/juliet && python3 test_fp.py 2>/dev/null && python3 test_fn.py 2>/dev/null"
+  outputs: []
+
+# --- observed, not expected -------------------------------------------------
+observed:
+  - date: 2026-10-21
+    tool: "darnit --framework amber (darnit-core/darnit-amber 0.1.0; commit 037b53c4a759bafe0e32ca3cfe3e2c41f3d690fe)"
+    scope: "hygiene audit only; CLI without LLM consultation; claim verification not run"
+    command: "/tmp/amber-gigadoram-wutdIC/darnit/.venv/bin/darnit audit /tmp/amber-camp-ZEdoGr/artifact --framework amber --output json"
+    exit_code: 0
+    result: "Total 5 | Pass 0 | Fail 0 | Warn 5"
+    note: >
+      Reused the isolated, clean darnit checkout installed using uv sync
+      --frozen --no-dev --package darnit-amber with Python 3.12.3. Verified the
+      tool revision, framework discovery and all five registered handlers.
+      Initialized the pinned source submodules recursively before auditing:
+      src/safe_tcmalloc at 9d7759449e3e90d0d6f857d07fbf360645a0bad6 and its
+      abseil-cpp at f8b5a041bd596a72197b6f23082e9a90844d5ae1. Default
+      configuration; all five handlers returned inconclusive and reached
+      manual fallback WARN. No handler errors, N/A or pending-LLM results.
+      The separate experiment repository linked at README.md:52 and external
+      container images were outside this source-checkout audit.
+
+      RE-01.01 DependenciesPinned: no recognized dependency files found.
+      This misses useful pinning evidence: the allocator and Abseil gitlinks
+      above fix source revisions, and src/safe_tcmalloc/WORKSPACE:19-48
+      declares archive URLs with commit identifiers and SHA-256 checksums.
+      CMakeLists.txt:6 nevertheless finds externally installed LLVM without
+      enforcing a version; README.md:26 specifies Clang 12.0.1 only in prose.
+      Amber does not inspect these CMake/Bazel declarations or gitlinks.
+      WARN remains reasonable for unverified complete dependency pinning,
+      but its explanation must not be read as absence of any pinned inputs.
+
+      RE-01.02 BuildEnvDeclared: no recognized environment definition found.
+      README.md:22-37 provides OS/compiler versions and build instructions;
+      appendix A.3 provides Docker image names without immutable digests.
+      No Dockerfile, Nix flake, devcontainer or Vagrantfile was found in the
+      source checkout. WARN is supported for a pinned machine-readable build
+      environment, not for a claim that setup instructions do not exist.
+
+      RE-02.01 HermeticBuild: files_scanned is empty; the handler reports no
+      CI or build files. This misses root CMakeLists.txt:6-13 and
+      src/safe_tcmalloc/CMakeLists.txt:33-40, which assemble LLVM, the allocator
+      and Abseil. It also misses the nested dependency workflow at
+      src/safe_tcmalloc/tcmalloc/.github/workflows/ci.yml:40-63, which installs
+      system packages and runs Bazel tests. That nested file is not a root
+      CAMP workflow and does not prove CAMP CI executes those steps.
+      The pinned scanner does not select CMakeLists.txt or nested dependency
+      workflows. src/safe_tcmalloc/WORKSPACE declares remote archives, but
+      no runtime network isolation or build trace was verified. WARN does
+      not establish hermeticity. The handler returns before its Witness
+      lookup; no remote attestation or authentication check was attempted.
+
+      RE-02.02 ProvenanceExists: no CI provenance signals found; files_checked
+      is empty. The root has no CI workflow, and the nested allocator workflow
+      above contains build/test steps but no provenance generation or signing.
+      No local attestation files were found. Remote releases and container
+      provenance were not checked, so their absence is not established.
+
+      RE-03.01 BitForBitReproducible: no reproducibility signals found;
+      files_checked is empty. The reviewed build configuration and nested
+      workflow contain no independent-build hash comparison or reprotest/
+      diffoscope evidence. No builds were run; bit-for-bit reproducibility
+      remains unverified. The conference badge concerns research results,
+      not byte-identical binaries or passing every hygiene control.
+
+      Separately, stderr reports that plugin verification cannot find package
+      amber; the installed distribution is darnit-amber. The plugin loads
+      anyway and pass_history confirms all five repro_* handlers executed.
+      This startup warning is not a handler failure. Initial submodule
+      retrieval hit sandbox DNS restrictions; a network-enabled retry
+      succeeded before the audit. Raw JSON, stderr, timestamps, exact command,
+      exit status, tool/artifact/submodule revisions and lockfile/output hashes
+      are retained locally under downloads/camp-audit-2026-10-21/ (gitignored).
+      These hashes identify the audit capture, not scientific output.
