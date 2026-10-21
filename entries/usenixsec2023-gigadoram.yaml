@@ -1,0 +1,108 @@
+id: usenixsec2023-gigadoram
+title: "GigaDORAM: Breaking the Billion Address Barrier"
+venue: {name: USENIX Security, year: 2023}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity23/presentation/falk"
+
+artifact:
+  url: "https://github.com/jacob14916/GigaDORAM-USENIX23-Artifact/tree/06cfefbbf178b5a6e2e509ef67ecdc9001880e9a"
+  clone: "https://github.com/jacob14916/GigaDORAM-USENIX23-Artifact.git"
+  ref_type: commit
+  ref: "06cfefbbf178b5a6e2e509ef67ecdc9001880e9a"
+  license: ""              # no license file or declaration found at this revision
+
+# Awarded badges verified at https://secartifacts.github.io/usenixsec2023/results
+# (GigaDORAM row). These certify the artifact evaluation, not these five controls.
+badges: [available, functional, reproduced]
+
+# Research experiment requirements, not the requirements of the source audit.
+resources:
+  cpu_only: true
+  ram_gb: 20               # appendix A.4.2, E1; basic evaluation recommends 8 GB
+  disk_gb: null            # not specified in the appendix
+  runtime_minutes: 90      # E1's stated compute time, not measured here
+  docker: false            # GigaDORAM uses native CMake/EMP; Docker references are for baselines
+  network_required: true   # source/dependency retrieval; E2 additionally requires AWS
+  notes: >
+    The artifact's bundled USENIX_23_Artifact_Appendix___GigaDORAM_breaking_the_billion_address_barrier.pdf,
+    A.2.3, specifies SSE2 and recommends 8 CPU cores and 8 GB RAM for evaluation.
+    A.4.2 E1 (Figures 6a/6b) specifies "1.5 compute hour + 20 compute threads
+    and 20 GB RAM", plus 10 human-minutes, on the authors' setup. E2 requires
+    three AWS EC2 machines. README.md:51-67 documents Linux, EMP-toolkit,
+    system packages and ./compile.sh. E1 changes loopback traffic shaping
+    with sudo tc; the authors recommend a dedicated VM. No benchmarks,
+    dependency builds, traffic shaping or AWS operations were executed here.
+
+role: positive
+expected_verdict: TBD       # claims not extracted or evaluated by this hygiene audit
+claims: []
+
+# Documented E1 research commands, NOT the Amber audit command. Requires the
+# README's EMP/toolchain setup and ./compile.sh first. Outputs are expected
+# benchmark files, not files captured during this source-only audit.
+run:
+  command: "./single_server_experiments.py Figure6a && ./single_server_experiments.py Figure6b"
+  outputs:
+    - single_server_results/doram_timing_report1.txt
+    - single_server_results/doram_timing_report2.txt
+    - single_server_results/doram_timing_report3.txt
+
+# --- observed, not expected -------------------------------------------------
+observed:
+  - date: 2026-10-21
+    tool: "darnit --framework amber (darnit-core/darnit-amber 0.1.0; commit 037b53c4a759bafe0e32ca3cfe3e2c41f3d690fe)"
+    scope: "hygiene audit only; CLI without LLM consultation; claim verification not run"
+    command: "/tmp/amber-gigadoram-wutdIC/darnit/.venv/bin/darnit audit /tmp/amber-gigadoram-wutdIC/artifact --framework amber --output json"
+    exit_code: 0
+    result: "Total 5 | Pass 0 | Fail 0 | Warn 5"
+    note: >
+      Installed from an isolated checkout using uv sync --frozen --no-dev
+      --package darnit-amber with Python 3.12.3. Framework discovery and handler
+      registration were verified for all five controls. Default configuration;
+      all five handlers returned inconclusive and reached manual fallback WARN,
+      with no handler errors, N/A or pending-LLM results. This pinned revision
+      is not assumed identical to the earlier AEADProtocols PR #532 execution.
+
+      RE-01.01 DependenciesPinned: no recognized dependency files found.
+      CMakeLists.txt:6-10 locates externally installed EMP configuration and
+      calls find_package(emp-tool REQUIRED) without a version constraint;
+      README.md:53-54 lists dependency installation without exact pins or
+      checksums. The warning is supported, but the evidence misses the CMake
+      dependency declaration.
+
+      RE-01.02 BuildEnvDeclared: no recognized environment definition found.
+      README.md:49-67 documents Linux/SSE2, system dependencies and compilation,
+      but the checkout has no Dockerfile, Nix flake, devcontainer or Vagrantfile.
+      The warning is supported for a pinned, machine-readable environment;
+      the artifact does have prose setup instructions.
+
+      RE-02.01 HermeticBuild: files_scanned is empty and the handler reports
+      no CI or build files. That description misses CMakeLists.txt,
+      test/CMakeLists.txt and root-level compile.sh. This Amber revision's
+      _iter_build_files does not select CMakeLists.txt or root-level compile.sh.
+      compile.sh:1-4 invokes cmake and make against external EMP dependencies;
+      reading these files alone does not establish a hermetic build. WARN is
+      appropriate, but the file-discovery gap limits the explanation. The
+      handler returns before its Witness lookup, so remote attestations were
+      not checked; no authentication failure was reported.
+
+      RE-02.02 ProvenanceExists: no CI workflow provenance signals found.
+      No provenance attestations or signing configuration were found in the
+      pinned checkout. Remote release attestations were not checked; the
+      warning does not establish that none exist elsewhere.
+
+      RE-03.01 BitForBitReproducible: no reproducibility signals found.
+      The checkout has no CI configuration, reprotest/diffoscope evidence or
+      recorded comparison of independent build hashes. No builds were run,
+      so bit-for-bit reproducibility remains unverified.
+
+      Separately, stderr reports a plugin-verification warning: the verifier
+      looks up package amber, while the installed distribution is darnit-amber.
+      Discovery loads the plugin anyway; pass_history confirms all five
+      repro_* handlers executed. This warning is not a handler failure.
+      Raw JSON, stderr, exact command, timestamps, exit status, revisions and
+      lockfile/output hashes are retained locally under the gitignored
+      downloads/gigadoram-audit-2026-10-21/ directory. Those hashes identify
+      the audit capture, not expected scientific output. The conference badge
+      is not evidence that every hygiene control should pass; these warnings
+      do not demonstrate a failure to reproduce the paper.
