@@ -1,0 +1,107 @@
+id: usenixsec2022-synthetic-data
+title: "Synthetic Data – Anonymisation Groundhog Day"
+venue: {name: USENIX Security, year: 2022}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity22/presentation/stadler"
+
+artifact:
+  url: "https://github.com/spring-epfl/synthetic_data_release/tree/cc8269d3063ebef7d8614092cbe026a95b629ac4"
+  clone: "https://github.com/spring-epfl/synthetic_data_release.git"
+  ref_type: commit
+  ref: "cc8269d3063ebef7d8614092cbe026a95b629ac4" # resolved from appendix tag v1.1
+  license: BSD-3-Clause     # root LICENSE; LICENSE.MIT covers third-party code
+
+# Awarded badges verified in the Synthetic Data row:
+# https://secartifacts.github.io/usenixsec2022/results
+badges: [available, functional, reproduced]
+
+# Research requirements, not requirements of the source-only audit.
+# https://secartifacts.github.io/usenixsec2022/appendix-files/sec22summerae-final15.pdf
+resources:
+  cpu_only: true            # appendix A.2: GPUs optional, not needed for example experiments
+  ram_gb: null             # no numeric requirement specified
+  disk_gb: 14              # approximate Docker image size, excluding unspecified output storage
+  runtime_minutes: 75      # appendix estimate for the linkage example, not measured here
+  docker: true             # optional; direct Python installation is also documented
+  network_required: true   # setup downloads packages/images and CTGAN source
+  notes: >
+    Appendix A.2 estimates 75 minutes for the linkage example and three hours
+    for all examples on an Intel i7-7600U with two cores and hyperthreading.
+    Preparation is estimated below one hour, depending on download bandwidth.
+    The Docker image needs approximately 14 GB; the output-space sentence is
+    incomplete, so total disk usage is unknown. GPUs accelerate PATE-GAN/CTGAN
+    but are not required for the example experiments. README.md:25 and 51-58
+    document Python 3.9, a CUDA-containing image and native setup. No images,
+    research dependencies or experiments were executed during this audit.
+
+role: positive             # conference reproduction badge, not a hygiene PASS oracle
+expected_verdict: TBD
+claims: []
+
+# README.md:86-94 and appendix A.5; NOT executed. Output path follows
+# linkage_cli.py:64,256-260 and is expected output, not a captured baseline.
+run:
+  command: "python3 linkage_cli.py -D data/texas -RC tests/linkage/runconfig.json -O tests/linkage"
+  outputs: [tests/linkage/ResultsMIA_texas.json]
+
+observed:
+  - date: 2026-10-23
+    tool: "darnit --framework amber (darnit-core/darnit-amber 0.1.0; commit 037b53c4a759bafe0e32ca3cfe3e2c41f3d690fe)"
+    scope: "hygiene audit only; CLI without LLM consultation; claim verification not run"
+    command: "/tmp/amber-gigadoram-wutdIC/darnit/.venv/bin/darnit audit /tmp/amber-three-p3Xad2/synthetic-data-artifact --framework amber --output json"
+    exit_code: 1
+    result: "Total 5 | Pass 0 | Fail 1 | Warn 4"
+    note: >
+      Reused the clean isolated tool checkout installed with uv sync --frozen
+      --no-dev --package darnit-amber and Python 3.12.3. All five controls and
+      handlers were verified before the audit; pass_history confirms each ran.
+      Default configuration; no artifact submodules. Exit 1 represents the
+      HermeticBuild FAIL, not a setup failure. No ERROR, N/A or pending-LLM
+      results. Three controls reached manual fallback; DependenciesPinned
+      returned WARN directly and HermeticBuild returned FAIL directly.
+
+      RE-01.01 DependenciesPinned (WARN): requirements.txt:1-10 pins ten
+      direct packages with == but contains no hashes or transitive lock.
+      The finding is supported. README.md:64-70 additionally asks users to
+      install CTGAN from an unpinned repository; that dependency is outside
+      the handler's root requirements inspection.
+
+      RE-01.02 BuildEnvDeclared (WARN): the handler reports no environment
+      declaration, missing docker/Dockerfile because its container lookup
+      only checks root Dockerfile/Containerfile. docker/Dockerfile:1 declares
+      CUDA 11.4.2 on Ubuntu 20.04 using a tag, not an immutable digest.
+      README.md:25 describes the packaged environment. WARN is reasonable
+      for incomplete pinning, but absence of an environment declaration is
+      an inaccurate explanation caused by file discovery.
+
+      RE-02.01 HermeticBuild (FAIL): this handler does scan docker/Dockerfile
+      and flags pip install. Lines 24-28 upgrade pip/wheel and install packages
+      without an offline source; lines 30-34 clone CTGAN and this project
+      without fixed revisions and install CTGAN. This supports the reported
+      possible live-fetch finding. apt-get install is separately deferred
+      as image setup. The scan stops after the first violation in each file,
+      so the report is not an exhaustive inventory. No build/network trace
+      was executed; this is static evidence, not an observed network event.
+
+      RE-02.02 ProvenanceExists (WARN): files_checked is empty, with no CI
+      provenance signals. No CI workflows, local attestations or signing
+      configuration were found in the pinned checkout. Remote releases and
+      image provenance were not verified; absence elsewhere is not established.
+
+      RE-03.01 BitForBitReproducible (WARN): no signals found; files_checked
+      is empty. No independent-build hash comparison, reprotest/diffoscope
+      configuration or reproducibility workflow was found. Builds were not
+      run, so binary reproducibility remains unknown. Appendix A.6 also warns
+      about statistical variation in research results, a different question.
+
+      Witness verification is unavailable in this unchanged tool environment:
+      a separate import check confirmed SIGSTORE_VERIFY_AVAILABLE is false.
+      witness_attestation.py returns before a remote lookup in that case;
+      the audit JSON does not expose that prerequisite failure. No remote
+      attestation or authentication check was performed. Stderr also reports
+      the known nonfatal package amber versus distribution darnit-amber
+      verification warning; it did not prevent handler execution.
+      Raw JSON, stderr and command/timestamp/revision/hash metadata remain
+      local in gitignored downloads/synthetic-data-audit-2026-10-23/.
+      Neither the FAIL nor the WARN results demonstrate failure to reproduce
+      the paper's scientific claims; those claims remain unevaluated here.
