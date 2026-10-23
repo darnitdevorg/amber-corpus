@@ -1,0 +1,111 @@
+id: usenixsec2023-autofz
+title: "autofz: Automated Fuzzer Composition at Runtime"
+venue: {name: USENIX Security, year: 2023}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity23/presentation/fuyufu"
+
+artifact:
+  url: "https://github.com/sslab-gatech/autofz/tree/b9a795dda252aa37406d593434b710b0fbedd177"
+  clone: "https://github.com/sslab-gatech/autofz.git"
+  ref_type: commit
+  ref: "b9a795dda252aa37406d593434b710b0fbedd177"
+  license: MIT              # root LICENSE; bundled fuzzer sources retain their own licenses
+
+# Awarded badges verified at https://secartifacts.github.io/usenixsec2023/results
+# (autofz row), not inferred from the audit verdict.
+badges: [available, functional, reproduced]
+
+# Research requirements, not source-audit requirements.
+# https://secartifacts.github.io/usenixsec2023/appendix-files/sec23fallae-final43.pdf
+resources:
+  cpu_only: true
+  ram_gb: 32               # authors' per-machine evaluation configuration, not a stated minimum
+  disk_gb: 200             # appendix A.4.2 E1/E2; image alone needs 30 GB
+  runtime_minutes: 1440    # one documented 24-hour run, not the full evaluation
+  docker: true             # Docker/Podman; a prepared VM is also offered
+  network_required: true   # image/source/dependency downloads during setup
+  notes: >
+    Appendix A.2.3 and README.md:14-21 describe Ubuntu 20.04 machines with
+    Ryzen 9 3900 CPUs (12 cores/24 threads), 32 GB RAM and 512 GB SSDs;
+    30 GB is required for the supplied image. Appendix A.4.2 budgets 32000
+    compute-hours for E1 and 7680 for E2, each with 200 GB disk. These are
+    not laptop-sized full evaluations. README.md:111-144 and appendix A.2.1
+    warn that initialization changes host kernel settings, including ASLR,
+    and recommend a VM. No privileged containers, kernel/cgroup changes,
+    dependency builds or fuzzing experiments were executed during this audit.
+
+role: positive             # conference reproduction badge; claims not verified here
+expected_verdict: TBD
+claims: []
+
+# Appendix A.4.2 E1; NOT executed. Requires the authors' prepared environment.
+# Logs under output-exiv2-autofz have timestamped names (autofz/main.py:1487-1488);
+# no fixed output filename or captured scientific baseline is asserted here.
+run:
+  command: "autofz -o output-exiv2-autofz -t exiv2 -T 24h -f all"
+  outputs: []
+
+observed:
+  - date: 2026-10-23
+    tool: "darnit --framework amber (darnit-core/darnit-amber 0.1.0; commit 037b53c4a759bafe0e32ca3cfe3e2c41f3d690fe)"
+    scope: "hygiene audit only; CLI without LLM consultation; claim verification not run"
+    command: "/tmp/amber-gigadoram-wutdIC/darnit/.venv/bin/darnit audit /tmp/amber-three-p3Xad2/autofz-artifact --framework amber --output json"
+    exit_code: 1
+    result: "Total 5 | Pass 0 | Fail 1 | Warn 4"
+    note: >
+      Reused the clean isolated tool checkout installed with uv sync --frozen
+      --no-dev --package darnit-amber and Python 3.12.3. All five controls and
+      handlers were verified before auditing; pass_history confirms each ran.
+      Default configuration; no artifact submodules. Exit 1 reflects the
+      HermeticBuild FAIL, not a setup failure. No ERROR, N/A or pending-LLM
+      results. DependenciesPinned and BuildEnvDeclared returned WARN directly;
+      ProvenanceExists and BitForBitReproducible reached manual fallback WARN.
+
+      RE-01.01 DependenciesPinned (WARN): requirements.txt:1-16 contains exact
+      versions but no hashes or transitive lock. Amber counts 16 requirement
+      lines, including numpy twice, rather than 16 distinct packages.
+      setup.py:10-15 reads those requirements for installation. The warning is
+      supported. Some non-Python inputs are pinned separately, for example
+      the AFL commit at docker/fuzzer_base/afl/Dockerfile:6-8; that evidence is
+      outside the root requirements scan and does not lock the whole build.
+
+      RE-01.02 BuildEnvDeclared (WARN): the root Dockerfile is recognized,
+      but its 18 FROM image references lack digests. Dockerfile:1-18 uses
+      fuzzer_base/* and autofz_bench/* images and line 20 uses ubuntu:16.04.
+      These references can depend on locally built/tagged images; the report
+      does not establish they are all pulled from a registry. WARN is still
+      supported because their identities are not immutable in this file.
+
+      RE-02.01 HermeticBuild (FAIL): scanned setup.py,
+      docker/fuzzer_source/LearnAFL/Makefile and the root Dockerfile. The curl
+      finding is supported by Dockerfile:38, which downloads and executes
+      get-pip.py. Lines 40-44 clone QSYM without a commit and install it;
+      lines 88-91 and 132-138 download compiler/Python sources and pip.
+      System-package installation is separately deferred as image setup.
+      The report stops at the first violation per file; it also omits
+      root build.sh/build-compose.sh and deeper Dockerfiles, including
+      docker/fuzzer_base/afl/Dockerfile:6-15. Thus it is not an exhaustive
+      build audit. No runtime network activity was measured.
+
+      RE-02.02 ProvenanceExists (WARN): no CI provenance signals found;
+      files_checked is empty. The pinned checkout has no root CI workflows
+      or local attestation/signing configuration found in review. A published
+      image tag or digest is not a signed build provenance statement. Remote
+      image/release attestations were not verified.
+
+      RE-03.01 BitForBitReproducible (WARN): no reproducibility signals found;
+      files_checked is empty. No independent-build hash comparison or
+      reprotest/diffoscope configuration was found in reviewed build files.
+      No builds were run. Timestamped experiment logs are research outputs,
+      not evidence about byte-identical compiled binaries; that property
+      remains unverified.
+
+      A separate import check in this unchanged tool environment confirmed
+      SIGSTORE_VERIFY_AVAILABLE is false. Witness verification therefore
+      returns before remote lookup; its prerequisite failure is not exposed
+      in the audit JSON. No remote attestation or authentication check was
+      performed. Stderr also records the known nonfatal package amber versus
+      distribution darnit-amber verification warning; all handlers still ran.
+      Raw JSON, stderr and command/timestamp/revision/hash metadata are local
+      in gitignored downloads/autofz-audit-2026-10-23/. These hygiene findings
+      do not establish failure to reproduce the paper's scientific claims.
