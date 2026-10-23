@@ -1,0 +1,125 @@
+id: usenixsec2024-operation-mango
+title: "Operation Mango: Scalable Discovery of Taint-Style Vulnerabilities in Binary Firmware Services"
+venue: {name: USENIX Security, year: 2024}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity24/presentation/gibbs"
+
+artifact:
+  url: "https://github.com/sefcom/operation-mango-public/tree/ff15727d3d9f7016e91e3f07a983e81090a62b3d"
+  clone: "https://github.com/sefcom/operation-mango-public.git"
+  ref_type: commit
+  ref: "ff15727d3d9f7016e91e3f07a983e81090a62b3d"
+  license: ""              # no project license file/declaration found at the audited revision
+
+# Awarded badges verified in the Operation Mango row:
+# https://secartifacts.github.io/usenixsec2024/results
+badges: [available, functional, reproduced]
+
+# Research requirements, not the source audit's requirements.
+# https://secartifacts.github.io/usenixsec2024/appendix-files/sec24fallae-final33.pdf
+resources:
+  cpu_only: true
+  ram_gb: 10               # appendix A.4.2 experiment budget; not a guaranteed upper bound
+  disk_gb: 500             # appendix A.2.3 minimum for all experiments, not just E2 below
+  runtime_minutes: null    # compute-hour budgets do not establish wall-clock runtime
+  docker: true             # local experiments; Kubernetes is an alternative
+  network_required: true   # source/dependency/image and firmware-dataset retrieval
+  notes: >
+    Appendix A.2.3 requires at least 500 GB for all experiments; A.4.2 E2
+    budgets eight compute-hours, 5 GB disk and 10 GB RAM for seven firmware
+    images. A.2.4 describes Ubuntu 22.04 x64, Python 3.11 and pip 24 or later.
+    ExperimentReplication.md:14-17 describes single-core containers with at
+    least 5 GB RAM, parallelized across 4000 cores, and warns that some binaries
+    exceed 20 GB RAM. These are not bounded small-laptop full experiments.
+    No firmware datasets, containers or research dependencies were installed
+    or executed; only the pinned source checkout was audited.
+
+role: positive             # conference reproduction badge, not endorsement of every hygiene result
+expected_verdict: TBD
+claims: []
+
+# Documented E2/Table 3 workflow, ExperimentReplication.md:72-82; NOT executed.
+# Requires both project packages, Docker and the unpacked 7_firmware dataset.
+# The results-directory placeholder must be chosen before any future execution.
+# Outputs are per-binary analysis trees; none were captured in this audit.
+run:
+  command: >-
+    mango-pipeline --path 7_firmware --results your/7-firmware-results/dir --env --parallel 20 &&
+    mango-pipeline --path 7_firmware --results your/7-firmware-results/dir --mango --parallel 20 &&
+    mango-pipeline --path 7_firmware --results your/7-firmware-results/dir --mango --parallel 20 --category overflow
+  outputs: []
+
+observed:
+  - date: 2026-10-23
+    tool: "darnit --framework amber (darnit-core/darnit-amber 0.1.0; commit 037b53c4a759bafe0e32ca3cfe3e2c41f3d690fe)"
+    scope: "hygiene audit only; CLI without LLM consultation; claim verification not run"
+    command: "/tmp/amber-gigadoram-wutdIC/darnit/.venv/bin/darnit audit /tmp/amber-three-p3Xad2/operation-mango-artifact --framework amber --output json"
+    exit_code: 1
+    result: "Total 5 | Pass 1 | Fail 1 | Warn 3"
+    note: >
+      Reused the clean isolated tool checkout installed with uv sync --frozen
+      --no-dev --package darnit-amber and Python 3.12.3. Verified all five
+      controls and registered handlers; pass_history confirms each ran.
+      Default configuration; no artifact submodules. The conference-pinned
+      commit was absent from the normal clone and was fetched explicitly by
+      its full SHA before checkout. No newer source was substituted. Exit 1
+      reflects DependenciesPinned FAIL, not a setup failure. No ERROR, N/A
+      or pending-LLM results. The three WARN controls reached manual fallback.
+
+      RE-01.01 DependenciesPinned (FAIL): Amber finds root pyproject.toml
+      without a recognized lockfile and fails by manifest presence, without
+      inspecting its dependency versions. pyproject.toml:22-29 actually pins
+      all six direct runtime dependencies. However, build requirements at
+      lines 1-3 and optional development dependencies at lines 31-38 are not
+      exactly pinned, and no transitive lock was found. pipeline/pyproject.toml:
+      20-31 includes exact versions and a commit-pinned binwalk reference,
+      but argument_resolver and its build requirements float. Incomplete
+      overall pinning is supported; the evidence should not be read as all
+      runtime dependencies being unpinned. The root manifest receives harsher
+      treatment than version-only requirements.txt files in this tool revision.
+
+      RE-01.02 BuildEnvDeclared (PASS): Amber passes solely on shell.nix
+      presence, treating it as inherently pinned. This confirms a declaration
+      exists but does not support the control's full pinning requirement.
+      shell.nix:1 imports ambient <nixpkgs> without a revision; lines 7-17
+      use Python 3.8, whereas the appendix's evaluated setup uses Python 3.11.
+      Lines 50-53 install unicorn without a version and editable sibling
+      packages. docker/Dockerfile:1-2 also uses a mutable Ubuntu 22.04 tag
+      and is not inspected by this root-only environment-file lookup.
+      The recorded PASS is retained as observed, with this overclaim noted.
+
+      RE-02.01 HermeticBuild (WARN): Amber scans
+      package/tests/binaries/Makefile and docker/Dockerfile, reports no
+      suspicious patterns and finds no strong hermeticity signal. Yet
+      docker/Dockerfile:32-33 installs both local packages with pip install -e
+      without --no-deps or an offline index. Their declared dependencies can
+      still be fetched. The pinned scanner unconditionally classifies that
+      editable-install pattern as safe. It also misses apt-get variants at
+      lines 8 and 12 with options between apt-get and install. shell.nix is
+      outside this scan despite its installation commands. WARN preserves
+      uncertainty, but the clean pattern result is incomplete; no build or
+      runtime network trace was executed.
+
+      RE-02.02 ProvenanceExists (WARN): files_checked is empty; no root CI
+      workflow, local attestations or signing configuration was found.
+      Dataset SHA-256 values in ExperimentReplication.md:45,74,104,167 are
+      useful integrity identifiers, not signed build provenance. Remote
+      release/image attestations were not verified.
+
+      RE-03.01 BitForBitReproducible (WARN): the workflow-only scan finds
+      no signals. shell.nix:43 contains SOURCE_DATE_EPOCH but assigns the
+      current time, not a stable source timestamp, and is not scanned.
+      This is not evidence of identical independent builds. No build hash
+      comparison, reprotest or diffoscope evidence was found in review;
+      no builds were run, so byte-for-byte reproducibility remains unknown.
+
+      A separate import check in the unchanged tool environment confirmed
+      SIGSTORE_VERIFY_AVAILABLE is false. Witness verification returns before
+      remote lookup, but its missing-prerequisite detail is not exposed in
+      audit JSON. No remote attestation or authentication check was performed.
+      Stderr also records the known nonfatal package amber versus distribution
+      darnit-amber verification warning; it did not prevent handler execution.
+      Raw JSON, stderr and command/timestamp/revision/hash metadata remain
+      local under gitignored downloads/operation-mango-audit-2026-10-23/.
+      Scientific claim reproduction remains unevaluated; these hygiene
+      verdicts, including the overclaimed PASS, are not claim verdicts.
