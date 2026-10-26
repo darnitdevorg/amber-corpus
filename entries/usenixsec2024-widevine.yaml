@@ -1,0 +1,367 @@
+# Awarded badges: Widevine row, https://secartifacts.github.io/usenixsec2024/results
+id: usenixsec2024-widevine
+title: Formal Security Analysis of Widevine through the W3C EME Standard
+venue:
+  name: USENIX Security
+  year: 2024
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity24/presentation/delaune
+artifact:
+  url: https://github.com/Avalonswanderer/eme_widevine_formal_verification/tree/44ffbe6c676aebaf42229321248477672cc83be1
+  clone: https://github.com/Avalonswanderer/eme_widevine_formal_verification.git
+  ref_type: commit
+  ref: 44ffbe6c676aebaf42229321248477672cc83be1
+  license: GPL-3.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 2.2
+  disk_gb: 3.3
+  runtime_minutes: 11
+  docker: false
+  network_required: true
+  notes: |
+    Appendix A.2.3: "Running our artifact does not require any specific hardware."
+    The authors used a 16 GB laptop; this is not a measured minimum.
+    Appendix A.4.2 describes proofs taking seconds to minutes:
+    https://secartifacts.github.io/usenixsec2024/appendix-files/sec24winterae-final20.pdf.
+    The numeric resource fields are execution budgets for the selected subset:
+    2 GiB aggregate RSS plus swap sampled every 0.1 s, 3 GiB checkout/output budget,
+    300 s wall/CPU per proof, 64 MiB per file, 128 MiB combined output per proof.
+    The GHC runtime uses one worker and a 1 GiB heap cap; symbolic inputs and proof
+    strategy are unchanged. The memory watcher conservatively sums process RSS,
+    which can count shared pages more than once; it is not a cgroup hard limit.
+    First captures on 2026-10-26, Ubuntu 24.04.4 / AMD Ryzen 5 6600H / 15166 MiB RAM:
+    executability 28.84 s, 345808896 B sampled aggregate peak RSS; renewal 119.38 s,
+    1159729152 B sampled aggregate peak RSS, no sampled swap. GNU time measured
+    1106888 KiB maximum RSS for the renewal command. Retained local dependencies,
+    downloads (including one interrupted transfer), sources and first captures
+    occupied about 68 MiB; setup did not require a compiler or container.
+    The exact command below also passed from a second fresh checkout in 148.57 s
+    (executability 29.26 s, renewal 118.95 s). Both complete summaries were checked
+    independently again; all ten declared outputs were captured.
+    Prerequisites: Linux x86_64 with /proc, Git, Python 3.9+, GNU /usr/bin/time,
+    Tamarin 1.8.0 and Maude 3.3.1 on PATH. Headless batch proving does not render
+    graphs. The author oracle emits Python 3.12 SyntaxWarning messages about legacy
+    regex string escapes; these diagnostics and its verbose progress are retained
+    in stderr.log. The analyzed proof output contains no Tamarin warnings or sorry
+    proofs; all expected lemma outcomes are checked explicitly.
+    Install the official tools in a new isolated dependency directory:
+      curl -fL --max-time 360 --max-filesize 16777216 -o tamarin.tar.gz https://github.com/tamarin-prover/tamarin-prover/releases/download/1.8.0/tamarin-prover-1.8.0-linux64-ubuntu.tar.gz
+      curl -fL --max-time 360 --max-filesize 16777216 -o maude.zip https://github.com/maude-lang/Maude/releases/download/Maude3.3.1/Maude-linux.zip
+      echo '2bed5d3a5b7ad7b39a96fd1892246f4645a87d754498106c2466df5b4b26ce88  tamarin.tar.gz' | sha256sum -c -
+      echo '9837c4bd0be1adea5d2dea0c72837367d173e7e98fe34722a9175e2e044f139c  maude.zip' | sha256sum -c -
+      tar -xzf tamarin.tar.gz
+      unzip -q maude.zip
+      chmod +x Linux64/maude.linux64
+      ln -s maude.linux64 Linux64/maude
+      export PATH="$PWD:$PWD/Linux64:$PATH"
+      export MAUDE_LIB="$PWD/Linux64"
+    Keep that environment, clone artifact.clone into a different directory, check
+    out artifact.ref, and run the command from the clean artifact root. A new
+    amber-widevine output directory is required. The command itself is offline;
+    network_required describes public source/tool retrieval. Record setup storage
+    alongside the checkout; the monitor inside the command measures the checkout
+    and its outputs. This is only the patched desktop renewal subset, not the full
+    paper, an attack replay, a timing claim, or a test of deployed Widevine software.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: renewal_authenticity_verified
+  threshold: == 1
+  unit: boolean
+  source: Table 1, Section 6.2, p.6411, with fix / without KCB, Goal 5; Sections 4.2, 5.3 and 6.1; https://www.usenix.org/system/files/usenixsecurity24-delaune.pdf;
+    appendix A.4.2 E3 maps goals to lemmas.
+  measurement_protocol: 'Every modeled renewal response loaded for a legitimate content key was previously
+    issued by its OTT. Assign 1 only when OTTRefreshResponseBeforeLoadRefresh is explicitly verified and
+    both commands have complete successful coverage. Run Tamarin 1.8.0 / Maude 3.3.1 on the unmodified
+    FixWithoutKCB/widevine.spthy with its widevine.oracle, --prove, --derivcheck-timeout=0, --heuristic=O,
+    -DSecrecy and -DGoalRenewalPart. Require all 26 named active lemmas to be verified with all-traces
+    quantifiers in one complete final summary. First run the separate -DExecutability command with --stop-on-trace=seqdfs;
+    require OTT2 (all-traces) and exec (exists-trace) verified. Preserve the five renewal restrictions:
+    UseKeyLegal, LicenceRenewOrStop, UniqueRootCert, TimeIncreasing and GenerateRequestUniquePerSession.
+    LoadUnique must be proved, not assumed.'
+  expected_verdict: REPRODUCED
+  notes: Preserve symbolic perfect cryptography, trusted CDM/OTT and certificate authority, attacker-controlled
+    browser/network, untampered CDM clock, the separate derive/load abstraction and minimal OTT model.
+    The executability test retains its original additional finite-flow restrictions including noCDMUseKey;
+    it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
+    or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
+    resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+- metric: renewal_freshness_verified
+  threshold: == 1
+  unit: boolean
+  source: Table 1, Section 6.2, p.6411, with fix / without KCB, Goal 6; Sections 4.2, 5.3 and 6.1; https://www.usenix.org/system/files/usenixsecurity24-delaune.pdf;
+    appendix A.4.2 E3 maps goals to lemmas.
+  measurement_protocol: 'A modeled renewal response with the same counter cannot be successfully loaded
+    twice. Assign 1 only when LoadRefreshRespUnique is explicitly verified and both commands have complete
+    successful coverage. Run Tamarin 1.8.0 / Maude 3.3.1 on the unmodified FixWithoutKCB/widevine.spthy
+    with its widevine.oracle, --prove, --derivcheck-timeout=0, --heuristic=O, -DSecrecy and -DGoalRenewalPart.
+    Require all 26 named active lemmas to be verified with all-traces quantifiers in one complete final
+    summary. First run the separate -DExecutability command with --stop-on-trace=seqdfs; require OTT2
+    (all-traces) and exec (exists-trace) verified. Preserve the five renewal restrictions: UseKeyLegal,
+    LicenceRenewOrStop, UniqueRootCert, TimeIncreasing and GenerateRequestUniquePerSession. LoadUnique
+    must be proved, not assumed.'
+  expected_verdict: REPRODUCED
+  notes: Preserve symbolic perfect cryptography, trusted CDM/OTT and certificate authority, attacker-controlled
+    browser/network, untampered CDM clock, the separate derive/load abstraction and minimal OTT model.
+    The executability test retains its original additional finite-flow restrictions including noCDMUseKey;
+    it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
+    or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
+    resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+- metric: renewal_expiration_verified
+  threshold: == 1
+  unit: boolean
+  source: Table 1, Section 6.2, p.6411, with fix / without KCB, Goal 7; Sections 4.2, 5.3 and 6.1; https://www.usenix.org/system/files/usenixsecurity24-delaune.pdf;
+    appendix A.4.2 E3 maps goals to lemmas.
+  measurement_protocol: 'After a renewal, modeled content-key use occurs within an interval previously
+    authorized by the OTT. Assign 1 only when UseAuthorised is explicitly verified and both commands have
+    complete successful coverage. Run Tamarin 1.8.0 / Maude 3.3.1 on the unmodified FixWithoutKCB/widevine.spthy
+    with its widevine.oracle, --prove, --derivcheck-timeout=0, --heuristic=O, -DSecrecy and -DGoalRenewalPart.
+    Require all 26 named active lemmas to be verified with all-traces quantifiers in one complete final
+    summary. First run the separate -DExecutability command with --stop-on-trace=seqdfs; require OTT2
+    (all-traces) and exec (exists-trace) verified. Preserve the five renewal restrictions: UseKeyLegal,
+    LicenceRenewOrStop, UniqueRootCert, TimeIncreasing and GenerateRequestUniquePerSession. LoadUnique
+    must be proved, not assumed.'
+  expected_verdict: REPRODUCED
+  notes: Preserve symbolic perfect cryptography, trusted CDM/OTT and certificate authority, attacker-controlled
+    browser/network, untampered CDM clock, the separate derive/load abstraction and minimal OTT model.
+    The executability test retains its original additional finite-flow restrictions including noCDMUseKey;
+    it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
+    or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
+    resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+- metric: renewal_policy_verified
+  threshold: == 1
+  unit: boolean
+  source: Table 1, Section 6.2, p.6411, with fix / without KCB, Goal 8; Sections 4.2, 5.3 and 6.1; https://www.usenix.org/system/files/usenixsecurity24-delaune.pdf;
+    appendix A.4.2 E3 maps goals to lemmas.
+  measurement_protocol: 'A modeled renewal response is loaded only when the preceding policy is renewable.
+    Assign 1 only when LoadRefreshOnlyIfRenewable is explicitly verified and both commands have complete
+    successful coverage. Run Tamarin 1.8.0 / Maude 3.3.1 on the unmodified FixWithoutKCB/widevine.spthy
+    with its widevine.oracle, --prove, --derivcheck-timeout=0, --heuristic=O, -DSecrecy and -DGoalRenewalPart.
+    Require all 26 named active lemmas to be verified with all-traces quantifiers in one complete final
+    summary. First run the separate -DExecutability command with --stop-on-trace=seqdfs; require OTT2
+    (all-traces) and exec (exists-trace) verified. Preserve the five renewal restrictions: UseKeyLegal,
+    LicenceRenewOrStop, UniqueRootCert, TimeIncreasing and GenerateRequestUniquePerSession. LoadUnique
+    must be proved, not assumed.'
+  expected_verdict: REPRODUCED
+  notes: Preserve symbolic perfect cryptography, trusted CDM/OTT and certificate authority, attacker-controlled
+    browser/network, untampered CDM clock, the separate derive/load abstraction and minimal OTT model.
+    The executability test retains its original additional finite-flow restrictions including noCDMUseKey;
+    it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
+    or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
+    resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+run:
+  command: |
+    set -eu
+    python3 -I - <<'PYTHON'
+    """Exact selected-lemma coverage, fixed before proof execution."""
+    import json
+    from pathlib import Path
+    import re
+
+    RENEWAL = '''OTT2 kDeviceSecrecy kOTTSecrecy kDeviceSignSecrecy
+    kCertificateSecrecy kSessionKeySecrecyKU kSessionKeySecrecyK
+    CDMkSessionKeySecrecyKU CDMkSessionKeySecrecyK contentKeySecrecyKU
+    OTTkDeviceSecrecyKU CDMKeysInit CDMContentKeyInit CDMKeysNull
+    OTTLicenseResponseBeforeLoad LoadUnique OTTRefreshResponseBeforeLoadRefresh
+    counterIncrease counterIncreaseStrict LoadRefreshRespUnique SameCounterBetween
+    SameCounterNoLoad SameCounterSamePolicy LoadRefreshOnlyIfRenewable
+    CDMContentKeyAuthorised UseAuthorised'''.split()
+    MAIN = {
+        'renewal_authenticity_verified': 'OTTRefreshResponseBeforeLoadRefresh',
+        'renewal_freshness_verified': 'LoadRefreshRespUnique',
+        'renewal_expiration_verified': 'UseAuthorised',
+        'renewal_policy_verified': 'LoadRefreshOnlyIfRenewable',
+    }
+
+    def verify_text(text, case):
+        if case not in {'executability', 'renewal'}:
+            raise ValueError('Unknown case')
+        if not text.endswith('\n') or text.count('summary of summaries:') != 1:
+            raise ValueError('Missing, duplicate or truncated summary')
+        before, summary = text.split('summary of summaries:')
+        if re.search(r'(?i)\bwarning\b|\bsorry\b|\bunknown\b|\badmitted\b', before):
+            raise ValueError('Warnings or unproved assumptions in analyzed output')
+        if re.fullmatch(r'\s*analyzed:\s*widevine\.spthy\s+processing time:\s*[0-9.]+s\s+.*?\n={10,}\s*', summary, re.S) is None:
+            raise ValueError('Incomplete final summary envelope')
+        expected = {name: 'all-traces' for name in RENEWAL} if case == 'renewal' else {'OTT2': 'all-traces', 'exec': 'exists-trace'}
+        parsed = []
+        for line in summary.splitlines():
+            if not line.strip() or re.fullmatch(r'\s*(analyzed:.*|processing time:.*|={10,})\s*', line):
+                continue
+            match = re.fullmatch(r'\s*(\w+) \((all-traces|exists-trace)\): verified \(([1-9][0-9]*) steps\)\s*', line)
+            if match is None:
+                raise ValueError('Malformed, false or incomplete lemma outcome: ' + line)
+            parsed.append((match[1], match[2], int(match[3])))
+        if len(parsed) != len(expected) or len({p[0] for p in parsed}) != len(expected):
+            raise ValueError('Missing or duplicate lemma coverage')
+        if {name: quantifier for name, quantifier, _ in parsed} != expected:
+            raise ValueError('Unexpected lemma name or trace quantifier')
+        return {name: {'quantifier': quantifier, 'steps': steps, 'status': 'verified'} for name, quantifier, steps in parsed}
+
+    def verify(executability, renewal):
+        ex = verify_text(executability, 'executability')
+        renew = verify_text(renewal, 'renewal')
+        return {'metrics': {metric: 1 for metric in MAIN}, 'executability_lemmas': ex, 'renewal_lemmas': renew}
+
+
+    """Bounded offline command capture; no shell and no system configuration changes."""
+    import datetime
+    import json
+    import os
+    from pathlib import Path
+    import resource
+    import signal
+    import subprocess
+    import time
+
+    ROOT = Path.cwd()
+
+    def size_bytes():
+        total = 0
+        for folder, _, names in os.walk(ROOT):
+            for name in names:
+                try:
+                    total += (Path(folder) / name).lstat().st_size
+                except FileNotFoundError:
+                    pass
+        return total
+
+    def group_memory(group):
+        rss = swap = 0
+        for path in Path('/proc').iterdir():
+            if not path.name.isdecimal():
+                continue
+            try:
+                stat = (path / 'stat').read_text().rsplit(')', 1)[1].split()
+                if int(stat[2]) != group:
+                    continue
+                for line in (path / 'status').read_text().splitlines():
+                    if line.startswith('VmRSS:'):
+                        rss += int(line.split()[1]) * 1024
+                    elif line.startswith('VmSwap:'):
+                        swap += int(line.split()[1]) * 1024
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
+                pass
+        return rss, swap
+
+    def capture(command, cwd, output, seconds=300):
+        output = Path(output).resolve()
+        output.mkdir(parents=True, exist_ok=False)
+        if size_bytes() >= 3 * 2**30:
+            raise RuntimeError('Task storage limit exhausted before launch')
+        def limits():
+            resource.setrlimit(resource.RLIMIT_CPU, (seconds, seconds))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (64 * 2**20, 64 * 2**20))
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        then = time.monotonic()
+        reason = None
+        peak_rss = peak_swap = peak_combined = 0
+        with (output / 'stdout.log').open('xb') as stdout, (output / 'stderr.log').open('xb') as stderr:
+            proc = subprocess.Popen(['/usr/bin/time', '-v', '-o', str(output / 'resources.txt'), '--'] + command,
+                                    cwd=cwd, stdout=stdout, stderr=stderr,
+                                    start_new_session=True, preexec_fn=limits)
+            tick = 0
+            while proc.poll() is None:
+                rss, swap = group_memory(proc.pid)
+                peak_rss = max(peak_rss, rss)
+                peak_swap = max(peak_swap, swap)
+                peak_combined = max(peak_combined, rss + swap)
+                if rss + swap >= 2 * 2**30:
+                    reason = 'aggregate_memory_limit'
+                elif time.monotonic() - then >= seconds:
+                    reason = 'wall_timeout'
+                elif tick % 10 == 0 and size_bytes() >= 3 * 2**30:
+                    reason = 'task_storage_limit'
+                elif sum(p.stat().st_size for p in output.iterdir() if p.is_file()) >= 128 * 2**20:
+                    reason = 'output_limit'
+                if reason:
+                    os.killpg(proc.pid, signal.SIGTERM)
+                    try:
+                        proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    break
+                tick += 1
+                time.sleep(0.1)
+            code = proc.wait()
+        result = dict(command=command, cwd=str(Path(cwd).resolve()), started_at=started,
+                      finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                      runtime_seconds=time.monotonic() - then, exit_status=code,
+                      limit_reason=reason, task_storage_bytes=size_bytes(),
+                      sampled_aggregate_peak_rss_bytes=peak_rss,
+                      sampled_aggregate_peak_swap_bytes=peak_swap,
+                      sampled_aggregate_peak_rss_plus_swap_bytes=peak_combined,
+                      sample_interval_seconds=0.1, aggregate_memory_limit_bytes=2 * 2**30,
+                      file_size_limit_bytes=64 * 2**20, wall_cpu_limit_seconds=seconds)
+        (output / 'metadata.json').write_text(json.dumps(result, indent=2) + '\n')
+        print(json.dumps(result), flush=True)
+        if code or reason:
+            raise RuntimeError('Command did not finish successfully within the frozen limits')
+        return result
+
+
+
+    import hashlib
+    import platform
+    import shutil
+
+    PIN = '44ffbe6c676aebaf42229321248477672cc83be1'
+    def git(*args):
+        return subprocess.check_output(['git', *args], text=True).strip()
+    if git('rev-parse', 'HEAD') != PIN or git('status', '--porcelain', '--untracked-files=no'):
+        raise ValueError('A clean pinned artifact checkout is required')
+    for name, expected in {
+        'widevine.spthy': '57e5ebf76f1553e94b6e0318e7db2eb18c33fbeb538b08fb3690e2c950798452',
+        'widevine.oracle': 'b45326cac42e1e8376f6eca6574d317f1e00a8a625909212df1956ef51343480',
+    }.items():
+        if hashlib.sha256((ROOT/'FixWithoutKCB'/name).read_bytes()).hexdigest() != expected:
+            raise ValueError('Selected source differs from the evaluated release')
+    out = ROOT/'amber-widevine'
+    out.mkdir(exist_ok=False)
+    binary = shutil.which('tamarin-prover')
+    if binary is None:
+        raise ValueError('Install Tamarin 1.8.0 and Maude 3.3.1 first')
+    rts = ['+RTS', '-N1', '-M1G', '-RTS']
+    version = subprocess.run([binary, '--version'] + rts, text=True,
+                             capture_output=True, check=True, timeout=15)
+    maude = subprocess.run(['maude', '--version'], text=True,
+                           capture_output=True, check=True, timeout=15)
+    versions = {'tamarin_stdout':version.stdout, 'tamarin_stderr':version.stderr,
+                'maude_stdout':maude.stdout, 'maude_stderr':maude.stderr,
+                'python':platform.python_version(), 'platform':platform.platform(),
+                'tamarin_binary_sha256':hashlib.sha256(Path(binary).read_bytes()).hexdigest()}
+    (out/'versions.json').write_text(json.dumps(versions, indent=2)+'\n')
+    if not version.stdout.startswith('tamarin-prover 1.8.0,') or 'Maude version 3.3.1' not in version.stdout or maude.stdout.strip() != '3.3.1':
+        raise ValueError('Unexpected verifier versions')
+    common = [binary, '--prove', '--derivcheck-timeout=0', '--heuristic=O', '--oraclename=widevine.oracle']
+    cases = {
+        'executability': ['--stop-on-trace=seqdfs', 'widevine.spthy', '-DExecutability'],
+        'renewal': ['widevine.spthy', '-DSecrecy', '-DGoalRenewalPart'],
+    }
+    for case, flags in cases.items():
+        capture(common + flags + rts, ROOT/'FixWithoutKCB', out/case)
+        verify_text((out/case/'stdout.log').read_text(), case)
+    result = verify((out/'executability/stdout.log').read_text(),
+                    (out/'renewal/stdout.log').read_text())
+    if git('status', '--porcelain', '--untracked-files=no'):
+        raise ValueError('Tracked artifact files changed during execution')
+    (out/'metrics.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
+    print(json.dumps(result['metrics'], sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-widevine/versions.json
+  - amber-widevine/executability/stdout.log
+  - amber-widevine/executability/stderr.log
+  - amber-widevine/executability/resources.txt
+  - amber-widevine/executability/metadata.json
+  - amber-widevine/renewal/stdout.log
+  - amber-widevine/renewal/stderr.log
+  - amber-widevine/renewal/resources.txt
+  - amber-widevine/renewal/metadata.json
+  - amber-widevine/metrics.json
