@@ -1,0 +1,250 @@
+id: usenixsec2024-mixnets
+title: "Shaken, not Stirred - Automated Discovery of Subtle Attacks on Protocols using Mix-Nets"
+venue: {name: USENIX Security, year: 2024}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity24/presentation/dreier"
+
+artifact:
+  url: "https://gitlab.limos.fr/dhmahmoud/usenix24-632/-/tree/a877ffca4339b09ae0b674074aa3186e6508230c"
+  clone: "https://gitlab.limos.fr/dhmahmoud/usenix24-632.git"
+  ref_type: commit
+  ref: "a877ffca4339b09ae0b674074aa3186e6508230c"
+  license: "GPL-3.0"  # artifact README, License section
+
+# Shaken, not Stirred row: https://secartifacts.github.io/usenixsec2024/results
+badges: [available, functional, reproduced]
+
+resources:
+  cpu_only: true
+  ram_gb: 2.2          # per-process execution ceiling: 2 GiB address space
+  disk_gb: 3.3         # 3 GiB task budget, including dependencies and captures
+  runtime_minutes: 11 # two sequential 300-second proof limits plus validation
+  docker: false
+  network_required: true # public clone/tool setup; the proofs themselves are offline
+  notes: >
+    Appendix A.2.3 recommends a "standard laptop with at least 8GB of RAM"
+    for the artifact; A.3.1 permits an existing ProVerif 2.05 installation.
+    A.4 E2 estimates one compute-minute for the entire strong-ZKP suite:
+    https://secartifacts.github.io/usenixsec2024/appendix-files/sec24winterae-final104.pdf.
+    The numeric fields above are imposed budgets for this two-model subset,
+    not the paper's minimum requirements or a performance threshold.
+    First captures on 2026-10-26, Ubuntu 24.04.4 / AMD Ryzen 5 6600H / 15166 MiB
+    RAM: exponentiation 7.70 s and 12860 KiB peak RSS; re-encryption 1.96 s and
+    32220 KiB peak RSS (GNU time). Both completed sequentially with empty stderr.
+    The artifact, sources and captures initially occupied about 1.2 MB.
+    The native verifier and OCaml 4.14.2 compiler were reused read-only from
+    isolated local builds; their retained setup tree occupies about 1.32 GiB.
+    The exact command below passed from a second fresh clone in 9.97 s,
+    with 31956 KiB maximum per-proof RSS; all declared outputs were captured.
+    ProVerif source: https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz
+    (SHA-256 4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4).
+    With OCaml 4.14.2 on PATH, extract that archive and run ./build -nointeract
+    inside proverif2.05; then put its native proverif binary on PATH.
+    No GUI dependencies or privileged artifact installation script are needed.
+    Other prerequisites: Linux, Git, Python 3.9+, GNU timeout, Linux prlimit,
+    and GNU /usr/bin/time. Clone artifact.clone, check out artifact.ref, and
+    run the command from the artifact root. Each output file is capped at
+    64 MiB; the command monitors a 128 MiB combined-output budget.
+    This tests only the two strong-ZKP Anonymous Shuffling cells of Table 4;
+    it excludes weak/absent ZKP attacks, all Table 5 protocols and timing claims.
+
+role: positive
+expected_verdict: REPRODUCED
+
+claims:
+  - metric: exponentiation_anonymous_shuffling_verified
+    threshold: "== 1"
+    unit: boolean
+    source: "Definition 3.3, p.3139; Section 3.5 and Table 4, p.3142; https://www.usenix.org/system/files/usenixsecurity24-dreier.pdf"
+    measurement_protocol: >
+      Run ProVerif 2.05 without extra flags on the unmodified
+      Exp-MixNets_Anonymous-Shuffling_Strong-ZKP.pv. Require exactly one
+      Observational equivalence is true result and a complete matching final
+      summary. The biprocess swaps the two honest senders' secret keys while
+      the replicated honest mix also processes one adversary-supplied key.
+      Preserve the equational theory, strong-ZKP checks, distinct-key check,
+      private input channels, all ten non-deducibility declarations and both
+      selection directives. All ten secrecy-assumption checks must be verified.
+    expected_verdict: REPRODUCED
+    notes: >
+      This is a symbolic Anonymous Shuffling proof under the supplied model's
+      assumptions. No active reachability/correspondence queries are omitted.
+      Proof outcome is the threshold; the paper's three-second timing is not.
+
+  - metric: reencryption_anonymous_shuffling_verified
+    threshold: "== 1"
+    unit: boolean
+    source: "Definition 3.3, p.3139; Table 4, p.3142; Section 4.2, p.3146; https://www.usenix.org/system/files/usenixsecurity24-dreier.pdf"
+    measurement_protocol: >
+      Run ProVerif 2.05 without extra flags on the unmodified
+      ReEncryption-MixNets_Anonymous-Shuffling_Strong-ZKP.pv. Require exactly
+      one Observational equivalence is true result and a complete matching
+      final summary. Preserve the two honest senders' swapped plaintexts,
+      adversary-supplied ciphertext, replicated honest mix, decryption authority,
+      strong-ZKP and ElGamal first-component checks, distinct-ciphertext checks,
+      and the authority's rejection of the adversarial duplicate plaintext.
+    expected_verdict: REPRODUCED
+    notes: >
+      The source header's Result: Attack comment conflicts with the strong-ZKP
+      expectation in the paper and README. The complete proof output, not the
+      comment, establishes this selected result. No active auxiliary queries
+      or secrecy-assumption declarations occur in this model.
+
+# New amber-mixnets output directory required; full logs precede validation.
+run:
+  command: |
+    set -eu
+    python3 -I - <<'PYTHON'
+    """Check exactly the two frozen Table 4 strong-ZKP equivalence proofs."""
+    import json
+    from pathlib import Path
+    import re
+
+    FILES = {
+        'exponentiation': 'Exp-MixNets_Anonymous-Shuffling_Strong-ZKP.pv',
+        'reencryption': 'ReEncryption-MixNets_Anonymous-Shuffling_Strong-ZKP.pv',
+    }
+    EXPECTED = 'Observational equivalence is true.'
+    ASSUMPTIONS = {f'attacker2({a},{b})' for secret in ['chMix1[]', 'chMix2[]', 'skN[]', 'skS1[]', 'skS2[]']
+                   for a, b in [(secret, 'x'), ('x', secret)]}
+
+    def verify_text(text, case):
+        if case not in FILES:
+            raise ValueError('Unknown case')
+        if not text.endswith('\n') or text.count('Verification summary:') != 1:
+            raise ValueError('Missing/duplicate/incomplete summary')
+        before, after = text.split('Verification summary:')
+        if not re.fullmatch(r'\s*Observational equivalence is true\.\s*\n-{10,}\s*\n', after):
+            raise ValueError('Unproved, malformed or incomplete final equivalence')
+        if [line[7:] for line in before.splitlines() if line.startswith('RESULT ')] != [EXPECTED]:
+            raise ValueError('Expected exactly one matching detailed proof result')
+        if len(re.findall(r'^-- Observational equivalence in biprocess \d+.*:$', before, re.M)) != 1:
+            raise ValueError('Unexpected equivalence task count')
+        facts = []
+        for line in before.splitlines():
+            if 'secrecy assumption' in line:
+                match = re.fullmatch(r'ok, secrecy assumption verified: fact unreachable (.+)', line)
+                if match is None:
+                    raise ValueError('Unverified secrecy assumption')
+                facts.append(match[1])
+        expected = ASSUMPTIONS if case == 'exponentiation' else set()
+        if len(facts) != len(expected) or set(facts) != expected:
+            raise ValueError('Missing/duplicate/unexpected secrecy-assumption checks')
+        if re.search(r'(?im)^(?:fatal|error|exception|interrupted|out of memory)', text):
+            raise ValueError('Execution error')
+        return {'equivalence_proved': 1, 'secrecy_assumptions_verified': len(facts)}
+
+    def verify_directory(directory):
+        directory = Path(directory)
+        actual = {p.name.removesuffix('.stdout.log') for p in directory.glob('*.stdout.log')}
+        if actual != set(FILES):
+            raise ValueError('Missing/extra/duplicate case coverage')
+        answer = {}
+        for case, source in FILES.items():
+            metadata = json.loads((directory / f'{case}.json').read_text())
+            if metadata['case'] != case or metadata['source'] != source:
+                raise ValueError('Incorrect case/source identity')
+            if metadata['exit_status'] != 0 or metadata['limit_reason'] is not None:
+                raise ValueError('Failed or resource-limited run')
+            if (directory / f'{case}.stderr.log').read_bytes():
+                raise ValueError('Unexpected stderr')
+            answer[case] = verify_text((directory / f'{case}.stdout.log').read_text(), case)
+        return answer
+
+
+    import datetime
+    import hashlib
+    import os
+    import platform
+    import shutil
+    import signal
+    import subprocess
+    import time
+
+
+    def run_entry():
+        revision = 'a877ffca4339b09ae0b674074aa3186e6508230c'
+        pins = {
+            'exponentiation': '270284f3febab27198145e096aec09c589c1e78f27e237d668346bbdce2148ac',
+            'reencryption': 'e7f419cc401dbed3c5ffdcbb09cd863d12eeb635ed38ffefdc7bb414feac9629',
+        }
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        if head != revision:
+            raise ValueError('Wrong artifact revision')
+        subprocess.run(['git', 'diff', '--exit-code', 'HEAD', '--', *FILES.values()], check=True)
+        for case, source in FILES.items():
+            if hashlib.sha256(Path(source).read_bytes()).hexdigest() != pins[case]:
+                raise ValueError('Modified/missing model: ' + source)
+        pv = shutil.which('proverif')
+        if pv is None:
+            raise ValueError('Put native ProVerif 2.05 on PATH')
+        version = subprocess.run([pv, '-help'], capture_output=True, text=True, check=True, timeout=10)
+        expected_version = 'Proverif 2.05. Cryptographic protocol verifier, by Bruno Blanchet, Vincent Cheval, and Marc Sylvestre'
+        if version.stderr or version.stdout.splitlines()[0] != expected_version:
+            raise ValueError('Unexpected verifier version')
+        output = Path('amber-mixnets')
+        output.mkdir()  # A new directory prevents reuse of old or bundled results.
+        (output / 'proverif-version.txt').write_text(version.stdout)
+        binary_hash = hashlib.sha256(Path(pv).read_bytes()).hexdigest()
+        (output / 'provenance.json').write_text(json.dumps({
+            'artifact_commit': revision, 'source_sha256': pins, 'proverif_sha256': binary_hash,
+            'python': platform.python_version(), 'machine': platform.platform(),
+            'support_tools': {tool: subprocess.check_output([tool, '--version'], text=True).splitlines()[0]
+                              for tool in ['git', 'timeout', 'prlimit', '/usr/bin/time']},
+        }, sort_keys=True, indent=2) + '\n')
+        for case, source in FILES.items():
+            command = ['timeout', '--signal=TERM', '--kill-after=5s', '300s',
+                       'prlimit', '--as=2147483648', '--cpu=300', '--fsize=67108864', '--core=0', '--',
+                       '/usr/bin/time', '-v', '-o', str(output / f'{case}.resources.txt'), '--', pv, source]
+            started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            before = time.monotonic()
+            reason = None
+            with (output / f'{case}.stdout.log').open('wb') as stdout, (output / f'{case}.stderr.log').open('wb') as stderr:
+                proc = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
+                while proc.poll() is None:
+                    if sum(p.stat().st_size for p in output.iterdir()) > 128 * 2**20:
+                        reason = 'output_storage_limit'
+                    elif time.monotonic() - before > 310:
+                        reason = 'supervisor_timeout'
+                    if reason:
+                        os.killpg(proc.pid, signal.SIGTERM)
+                        try:
+                            proc.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(proc.pid, signal.SIGKILL)
+                        break
+                    time.sleep(0.1)
+                code = proc.wait()
+            metadata = {
+                'case': case, 'source': source, 'command': command, 'exit_status': code,
+                'limit_reason': reason, 'started_at': started,
+                'finished_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'runtime_seconds': time.monotonic() - before,
+            }
+            (output / f'{case}.json').write_text(json.dumps(metadata, sort_keys=True, indent=2) + '\n')
+            if code != 0 or reason:
+                raise ValueError('Proof did not complete: ' + case)
+        verified = verify_directory(output)
+        metrics = {
+            'exponentiation_anonymous_shuffling_verified': verified['exponentiation']['equivalence_proved'],
+            'reencryption_anonymous_shuffling_verified': verified['reencryption']['equivalence_proved'],
+            'exponentiation_secrecy_assumptions_verified': verified['exponentiation']['secrecy_assumptions_verified'],
+        }
+        (output / 'metrics.json').write_text(json.dumps(metrics, sort_keys=True) + '\n')
+        print(json.dumps(metrics, sort_keys=True))
+
+
+    run_entry()
+    PYTHON
+  outputs:
+    - amber-mixnets/proverif-version.txt
+    - amber-mixnets/provenance.json
+    - amber-mixnets/exponentiation.stdout.log
+    - amber-mixnets/exponentiation.stderr.log
+    - amber-mixnets/exponentiation.resources.txt
+    - amber-mixnets/exponentiation.json
+    - amber-mixnets/reencryption.stdout.log
+    - amber-mixnets/reencryption.stderr.log
+    - amber-mixnets/reencryption.resources.txt
+    - amber-mixnets/reencryption.json
+    - amber-mixnets/metrics.json
