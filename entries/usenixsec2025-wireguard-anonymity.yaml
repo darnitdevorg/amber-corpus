@@ -1,0 +1,257 @@
+# Selected two-model PQ-WireGuard-star anonymity subset; claims tested before entry creation.
+# Badges: https://secartifacts.github.io/usenixsec2025/results (WireGuard Hybridization row).
+id: usenixsec2025-wireguard-anonymity
+title: A Tale of Two Worlds, a Formal Story of WireGuard Hybridization
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity25/presentation/lafourcade
+artifact:
+  url: https://doi.org/10.5281/zenodo.16736982
+  clone: |
+    curl -fL --max-time 60 -o artifact.zip https://zenodo.org/api/records/16736982/files/artifacts-usenix-2025-wireguard-hybridization.zip/content
+    printf "%s  artifact.zip\n" 7ccd000f2c785aa83318bceea5218742c57a2c40eb8c37b98488752f1e2273e7 | sha256sum -c -
+    unzip artifact.zip
+    cd artifacts-usenix-2025-wireguard-hybridization
+  ref_type: doi
+  ref: 10.5281/zenodo.16736982
+  license: GPL-3.0 (symbolic-analysis README)
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1.1
+  disk_gb: 1.1
+  runtime_minutes: 10
+  docker: false
+  network_required: true
+  notes: >
+    The full-study appendix A.2.3 states: "Our artifacts do not require any specific hardware." It reports
+    a 12-core 1.8 GHz laptop with 16 GB RAM for the full study; these are not measured minima for this
+    subset. A.2.4 specifies ProVerif 2.05. https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle2ae-final53.pdf
+
+    The numeric resources above are conservative execution budgets for these two native proofs, not the
+    complete Docker build or verifier installation. Each child has 512 MiB address space, 180 CPU/wall
+    seconds and a 64 MiB file limit; the artifact/output workspace is capped at 1 GiB. The command requires
+    Linux, Python 3, an already installed native ProVerif 2.05, at least 1 GiB available RAM and 10 GiB
+    free disk. Set PROVERIF to its absolute path or put it on PATH. Network is needed only to retrieve
+    public sources; proof execution is offline.
+
+    The exact archive is 1,442,890 bytes, expanding to 7,867,404 file bytes. Dependency preparation copied
+    an existing isolated ProVerif 2.05 build/source tree (about 28 MB) and retained its official source
+    archive and OCaml 4.14.2 build provenance. No system install or new compiler build was performed.
+    ProVerif source: https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz (SHA-256 4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4);
+    upstream build command ./build -nointeract, after providing OCaml. Provisioning a compiler from scratch
+    is a separate prerequisite, outside these execution budgets.
+
+    Initial capture on 2026-10-28 (Asia/Kolkata), Ubuntu 24.04.4, AMD Ryzen 5 6600H, about 15 GiB physical
+    RAM: initiator 0.344 s / 20,360 KiB peak RSS; responder 1.750 s / 49,692 KiB peak RSS. Total retained
+    preparation and first-run evidence was below 40 MB. Full stdout/stderr, actual exit codes, source/tool
+    hashes, timestamps and wait4 resource data were captured.
+
+    The entry's literal command also passed from a second clean archive extraction: 2.92 s overall, 49,712
+    KiB maximum child peak RSS, all 802 source files unchanged. Both proof logs matched the initial capture.
+    Total retained task data after this test was about 48 MB, including both extractions and copied dependencies.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: pq_wireguard_star_initiator_anonymity_verified
+  threshold: == 1
+  unit: boolean
+  source: Paper Section 4.2 (anonymity), Section 5.2 and Table 4; artifact appendix A.4.2 E3, p.395; https://www.usenix.org/system/files/usenixsecurity25-lafourcade.pdf
+  measurement_protocol: >
+    Run native ProVerif 2.05 directly on the unmodified supplied proverif-anonymity-initiator-Eiq-Re.pv
+    in artifacts_evaluation/pq_wireguard_star/equivalence_properties/Anonymity. Eiq (initiator ephemeral
+    KEM secret) and Re (responder ephemeral encapsulation randomness) are revealed; responder static KEM
+    secret, both static-encapsulation randoms and the PSK remain secret. The choice is between two initiator
+    identities. Preserve the process replication (unbounded sessions and honest participants, no dishonest
+    participants), equations/reductions, choice terms, not declarations and both original set directives.
+    Assign 1 only for a completed observational-equivalence proof with exactly one matching true RESULT
+    and complete final summary, all 8 distinct left/right secrecy-assumption checks verified, and actual
+    process exit zero. All cases must finish; missing, duplicate, false or inconclusive results fail acceptance.
+  expected_verdict: REPRODUCED
+  notes: >
+    This is one sufficient anonymity case of E3, not a reconstruction of the minimal attack CNF, a necessity
+    proof, a complete protocol analysis or a performance reproduction. ProVerif prints four verboseTerm
+    clause-selection termination warnings in each selected model; they are retained and checked explicitly.
+    Its 2.05 manual and selfun.ml describe these as termination diagnostics; successful completion and
+    all proof results remain mandatory. No threshold or verifier setting was changed after the first execution.
+- metric: pq_wireguard_star_responder_anonymity_verified
+  threshold: == 1
+  unit: boolean
+  source: Paper Section 4.2 (anonymity), Section 5.2 and Table 4; artifact appendix A.4.2 E3, p.395; https://www.usenix.org/system/files/usenixsecurity25-lafourcade.pdf
+  measurement_protocol: >
+    Run native ProVerif 2.05 directly on the unmodified supplied proverif-anonymity-responder-Siq-Rr-Eiq-Re.pv
+    in artifacts_evaluation/pq_wireguard_star/equivalence_properties/Anonymity. Siq (initiator static
+    KEM secret), Rr (responder static-encapsulation randomness), Eiq and Re are revealed; initiator static-encapsulation
+    randomness Ri and the PSK remain secret. The choice is between two responder identities. Preserve
+    the process replication (unbounded sessions and honest participants, no dishonest participants), equations/reductions,
+    choice terms, not declarations and both original set directives. Assign 1 only for a completed observational-equivalence
+    proof with exactly one matching true RESULT and complete final summary, all 4 distinct left/right
+    secrecy-assumption checks verified, and actual process exit zero. All cases must finish; missing,
+    duplicate, false or inconclusive results fail acceptance.
+  expected_verdict: REPRODUCED
+  notes: >
+    This is one sufficient anonymity case of E3, not a reconstruction of the minimal attack CNF, a necessity
+    proof, a complete protocol analysis or a performance reproduction. ProVerif prints four verboseTerm
+    clause-selection termination warnings in each selected model; they are retained and checked explicitly.
+    Its 2.05 manual and selfun.ml describe these as termination diagnostics; successful completion and
+    all proof results remain mandatory. No threshold or verifier setting was changed after the first execution.
+run:
+  command: |
+    set -eu
+    python3 -I - <<'PYTHON'
+    """Run from the root of the pinned extracted artifact; PROVERIF selects a native 2.05 binary."""
+    import datetime
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    import re
+    import resource
+    import shutil
+    import signal
+    import subprocess
+    import time
+
+    ROOT = Path.cwd()
+    OUT = ROOT / 'amber-anonymity'
+    MODEL_DIR = ROOT / 'artifacts_evaluation/pq_wireguard_star/equivalence_properties/Anonymity'
+    MODELS = [
+        ('initiator', 'proverif-anonymity-initiator-Eiq-Re.pv',
+         '31113891a90148495fa98a778e297b5009dabdce2cc0a47a1c62f0d3950f0b8b',
+         ['kemltkR_2', 'ra_2', 'rb_2', 'psk_2']),
+        ('responder', 'proverif-anonymity-responder-Siq-Rr-Eiq-Re.pv',
+         '017ed575372cfa09065cb2afebe75f93354a6d79cc95b498964cc72dcd11ce2f',
+         ['rb_2', 'psk_2']),
+    ]
+
+    def digest(path):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def verify(stdout, stderr, exit_code, secrets):
+        if exit_code != 0 or stderr:
+            raise ValueError('ProVerif failed or emitted stderr')
+        lines = stdout.splitlines()
+        if [line for line in lines if line.startswith('RESULT ')] != ['RESULT Observational equivalence is true.']:
+            raise ValueError('Exactly one successful equivalence proof is required')
+        if stdout.count('Verification summary:') != 1:
+            raise ValueError('Missing or duplicate final summary')
+        if not re.fullmatch(r'\s*Observational equivalence is true\.\s*-+\s*', stdout.split('Verification summary:')[1]):
+            raise ValueError('Incomplete or inconclusive final summary')
+        expected = {(secret, side) for secret in secrets for side in (0, 1)}
+        actual = []
+        for line in lines:
+            if line.startswith('ok, secrecy assumption verified:'):
+                match = re.fullmatch(r'ok, secrecy assumption verified: fact unreachable attacker2\((?:(\w+)\[[^\]]+\],x|x,(\w+)\[[^\]]+\])\)', line)
+                if not match:
+                    raise ValueError('Malformed secrecy check')
+                actual.append((match[1] or match[2], 0 if match[1] else 1))
+        if len(actual) != len(expected) or set(actual) != expected:
+            raise ValueError('Missing, unexpected or duplicate secrecy checks')
+        # ProVerif 2.05 verboseTerm diagnostics concern selection/termination, not proof success.
+        # Check their exact form, retaining all diagnostics and requiring a complete proof above.
+        known = [
+            'Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad',
+            'Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad',
+        ]
+        if [line for line in lines if re.search('warning:', line, re.I)] != known * 2:
+            raise ValueError('Unexpected verifier diagnostics')
+        if lines.count('Selecting 0') != 4 or re.search(r'cannot be proved|is false|Error:|out of memory', stdout, re.I):
+            raise ValueError('Incomplete or failed verification')
+        return {'equivalence_verified': 1, 'secrecy_checks_verified': len(actual)}
+
+    def limits():
+        for kind, value in [(resource.RLIMIT_AS, 536870912), (resource.RLIMIT_CPU, 180), (resource.RLIMIT_FSIZE, 67108864)]:
+            resource.setrlimit(kind, (value, value))
+
+    def run(name, argv, cwd, wall_seconds=180):
+        started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        start = time.monotonic()
+        reason = None
+        peak_storage = 0
+        with (OUT / (name + '.stdout.log')).open('xb') as out, (OUT / (name + '.stderr.log')).open('xb') as err:
+            process = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True, preexec_fn=limits)
+            while True:
+                pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+                if pid:
+                    process.returncode = os.waitstatus_to_exitcode(status)
+                    break
+                storage = sum(p.stat().st_size for p in ROOT.rglob('*') if p.is_file())
+                peak_storage = max(peak_storage, storage)
+                if storage > 1073741824 or time.monotonic() - start > wall_seconds:
+                    reason = 'workspace limit or wall timeout'
+                    os.killpg(process.pid, signal.SIGKILL)
+                time.sleep(0.05)
+        report = {
+            'argv': argv, 'cwd': str(cwd), 'started_at': started,
+            'ended_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'elapsed_seconds': time.monotonic() - start, 'exit_code': process.returncode,
+            'wait_status': status, 'termination_reason': reason, 'peak_rss_kib': usage.ru_maxrss,
+            'user_seconds': usage.ru_utime, 'system_seconds': usage.ru_stime,
+            'workspace_peak_sampled_bytes': peak_storage, 'binary_sha256': digest(BINARY),
+            'stdout_sha256': digest(OUT / (name + '.stdout.log')),
+            'stderr_sha256': digest(OUT / (name + '.stderr.log')),
+        }
+        (OUT / (name + '.capture.json')).write_text(json.dumps(report, indent=2) + '\n')
+        if reason:
+            raise RuntimeError(reason)
+        return report, (OUT / (name + '.stdout.log')).read_text(), (OUT / (name + '.stderr.log')).read_text()
+
+    available = int(next(line.split()[1] for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))) * 1024
+    if available < 1073741824 or shutil.disk_usage(ROOT).free < 10737418240:
+        raise RuntimeError('Require 1 GiB available RAM and 10 GiB free disk')
+    resolved = shutil.which(os.environ.get('PROVERIF', 'proverif'))
+    if not resolved:
+        raise RuntimeError('Install native ProVerif 2.05 and set PROVERIF or PATH')
+    BINARY = Path(resolved).resolve()
+    for _, filename, expected_hash, _ in MODELS:
+        if digest(MODEL_DIR / filename) != expected_hash:
+            raise ValueError('Selected source differs from DOI 10.5281/zenodo.16736982')
+    OUT.mkdir()  # Refuse existing captures.
+    version, version_out, version_err = run('version', [str(BINARY), '-help'], ROOT, 10)
+    if version['exit_code'] != 0 or version_err or not version_out.startswith('Proverif 2.05. Cryptographic protocol verifier,'):
+        raise RuntimeError('Native ProVerif 2.05 required')
+    results = []
+    for name, filename, expected_hash, secrets in MODELS:
+        report, stdout, stderr = run(name, [str(BINARY), filename], MODEL_DIR)
+        checked = verify(stdout, stderr, report['exit_code'], secrets)
+        results.append({'case': name, 'source_sha256': expected_hash, **checked,
+                        'elapsed_seconds': report['elapsed_seconds'], 'peak_rss_kib': report['peak_rss_kib']})
+    summary = {'artifact_doi': '10.5281/zenodo.16736982', 'verifier': 'ProVerif 2.05',
+               'cases_completed': len(results), 'results': results, 'verdict': 'REPRODUCED'}
+    (OUT / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+    print(json.dumps(summary, indent=2))
+    PYTHON
+  outputs:
+  - amber-anonymity/version.stdout.log
+  - amber-anonymity/version.stderr.log
+  - amber-anonymity/version.capture.json
+  - amber-anonymity/initiator.stdout.log
+  - amber-anonymity/initiator.stderr.log
+  - amber-anonymity/initiator.capture.json
+  - amber-anonymity/responder.stdout.log
+  - amber-anonymity/responder.stderr.log
+  - amber-anonymity/responder.capture.json
+  - amber-anonymity/summary.json
+baseline:
+  captured_on: '2026-10-28'
+  machine: AMD Ryzen 5 6600H / about 15 GiB RAM / Ubuntu 24.04.4 LTS x86-64 / native ProVerif 2.05 built
+    with OCaml 4.14.2
+  outputs:
+  - path: amber-anonymity/initiator.stdout.log
+    sha256: d5f7553eff25f2e3563d9e9c2003410fbb37b161dffbcccc9a7cd85c736d6291
+  - path: amber-anonymity/responder.stdout.log
+    sha256: b892e6f701b759e25540ed889302372f5d68b746839f1b0be66f570330590eca
+  metrics:
+    initiator_equivalence_verified: 1
+    responder_equivalence_verified: 1
+    initiator_secrecy_checks: 8
+    responder_secrecy_checks: 4
+    initiator_seconds: 0.3438636080827564
+    responder_seconds: 1.7502531628124416
+    maximum_prover_peak_rss_kib: 49692
+  bit_for_bit_expected: false
