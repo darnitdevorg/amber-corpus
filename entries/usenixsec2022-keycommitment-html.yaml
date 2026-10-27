@@ -1,0 +1,340 @@
+id: usenixsec2022-keycommitment-html
+title: How to Abuse and Fix Authenticated Encryption Without Key Commitment
+venue:
+  name: USENIX Security
+  year: 2022
+paper:
+  url: https://www.usenix.org/system/files/sec22-albertini.pdf
+artifact:
+  url: https://github.com/corkami/mitra/tree/Usenix22
+  clone: https://github.com/corkami/mitra.git
+  ref_type: commit
+  ref: b5f15d935a68c521206f56ba671181566036a5e7
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 12
+  docker: false
+  network_required: true
+  notes: |
+    AEC badge evidence: https://secartifacts.github.io/usenixsec2022/results
+    Appendix: https://secartifacts.github.io/usenixsec2022/appendix-files/sec22summerae-final14.pdf
+    Appendix A.2 lists "6 Mb" and approximately five minutes each for preparation and experiments;
+    those estimates do not include the Python environment. This entry bounds the entire checkout,
+    local environment, build scratch and results below 1 GiB and requires 3 GiB free disk and 1 GiB
+    available RAM before each command. Every child inherits a 512 MiB address-space ceiling; a 50 ms
+    sampler terminates a command if its process group plus runner exceeds 512 MiB RSS. Native builds
+    are sequential. Setup has 60/180/300-second limits; the three scientific stages share 120
+    seconds.
+    Prerequisites: Linux x86_64, Python 3.12 with venv and pip (tested 3.12.3 / pip 24.0), Git, GCC
+    and Python development headers, /usr/bin/time, public PyPI access during setup. No root, Docker,
+    SageMath, browser or service credentials. The command installs the artifact-pinned BitVector
+    3.4.9 and pycryptodome 3.9.7, cryptography 44.0.2, cffi 1.17.1, pycparser 2.22, html5lib 1.1,
+    six 1.17.0, webencodings 0.5.1 and setuptools 84.2.1 into amber-html/.venv. The experiment and
+    validation are offline after setup.
+    First author-script capture: 0.576 seconds, 43,556,864 B sampled aggregate peak RSS; dependency
+    setup 79.480 seconds, 287,600,640 B sampled aggregate peak RSS. Initial setup and sources
+    occupied about 71 MB. Fresh-command measurements are captured in amber-html/measurements.json
+    and manifest.json.
+    Final exact-command capture from another fresh checkout: 52.126 seconds including setup, 0.738
+    seconds for the three scientific stages; largest sampled command-group-plus-runner RSS
+    276,017,152 B, largest sampled workspace including build scratch 171,950,321 B, final
+    checkout/environment/results 75,475,824 B. Measured on Ryzen 5 6600H / Ubuntu 24.04.4 / Python
+    3.12.3.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: distinct_authenticated_html_payloads
+  threshold: == 2
+  unit: payloads
+  source: Paper Section 4.6, p.3300, supported by Section 3 AES-GCM construction; artifact appendix A.5.2
+    (Ambiguous HTML file).
+  measurement_protocol: |
+    Use the exact A.5.2 HTML/HTML example, clarified by pinned utils/extra/htmhtm.md: normal.htm is <html>Hello World!</html> followed by CRLF; evil.htm is <html><a href="http://www.evil.com">Click here!</a></html> without a final newline. Run unmodified htmhtm.py to generate the 128-byte (4-26)7.d3f286cd.htm.htm template; run unmodified meringue.py -i 7 to create a new attack.gcm; run unmodified decrypt.py to obtain both plaintexts. Preserve default keys Now? and L4t3r!!!, each zero-padded to 16 bytes, the 12-byte zero nonce, and the 16-byte default associated data MyVoiceIsMyPass!.
+    Independently authenticate the same 128-byte ciphertext and 16-byte tag under both distinct keys using PyCryptodome AES-GCM (the author encryption/decryption uses cryptography), compare bytes against both author-generated plaintext files, and re-encrypt both plaintexts to the same ciphertext/tag. Parse both plaintexts using html5lib: plaintext 1 must expose exactly the documented hyperlink and hide Hello World! in a comment; plaintext 2 must expose Hello World! with no hyperlink or Click here! outside comments. Require exact input/template/field/file coverage, two distinct plaintexts, two successful re-encryptions, and four rejected wrong-key/modified-tag controls. No bundled ciphertext or example plaintext is used.
+  expected_verdict: REPRODUCED
+  notes: >
+    Only this single HTML/HTML AES-GCM example was tested. Reproducing the paper-predicted ambiguity
+    is a positive corpus result; it does not establish full-study reproduction, a live Subscribe
+    with Google exploit, browser execution, other file formats, GCM-SIV/OCB, performance claims or
+    security of proposed fixes. No timing threshold, acceptance tolerance or expected output digest
+    is used. The normal page retains the documented binary prefix; validation checks the HTML
+    payload content rather than pixel-identical browser rendering.
+run:
+  command: |
+    python3 <<'PY'
+    import datetime
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    import platform
+    import resource
+    import shutil
+    import signal
+    import subprocess
+    import sys
+    import time
+
+    PIN = 'b5f15d935a68c521206f56ba671181566036a5e7'
+    LIMIT = 512 * 1024**2
+    ROOT = Path.cwd().resolve()
+    OUT = ROOT / 'amber-html'
+    CHECKER_CODE = r'''"""Independent AES-GCM and HTML validation; does not import artifact code."""
+    import hashlib
+    import json
+    from pathlib import Path
+    import re
+    import sys
+    from Crypto.Cipher import AES
+    import html5lib
+
+    NORMAL = b'<html>Hello World!</html>\r\n'
+    EVIL = b'<html><a href="http://www.evil.com">Click here!</a></html>'
+    ORIGIN = '(4-26)7.d3f286cd.htm.htm'
+
+    def require(condition, message):
+        if not condition:
+            raise ValueError(message)
+
+    def visible(element):
+        if not isinstance(element.tag, str):
+            return ''
+        if element.tag.rsplit('}', 1)[-1] in ('script', 'style'):
+            return ''
+        return (element.text or '') + ''.join(visible(child)+(child.tail or '') for child in element)
+
+    def verify(root):
+        root=Path(root)
+        require((root/'normal.htm').read_bytes()==NORMAL,'normal input differs')
+        require((root/'evil.htm').read_bytes()==EVIL,'evil input differs')
+        expected=b'<!---->'+NORMAL+b'<!---->'+EVIL+b'<!--'
+        expected+=(16-len(expected)%16)*b'\0'+16*b'\0'
+        require((root/ORIGIN).read_bytes()==expected,'generated template differs')
+        fields={}
+        for line in (root/'attack.gcm').read_text('ascii').splitlines():
+            require(': ' in line,'malformed record')
+            name,value=line.split(': ',1)
+            require(name not in fields,'duplicate field')
+            fields[name]=value
+        require(set(fields)=={'key1','key2','adata','nonce','ciphertext','tag','exts','origin'},'field coverage differs')
+        require(fields['origin']==ORIGIN and fields['exts']=='htm htm','wrong origin or output types')
+        decoded={}
+        for name,length in [('key1',16),('key2',16),('adata',16),('nonce',12),('ciphertext',128),('tag',16)]:
+            require(re.fullmatch('[0-9a-f]{'+str(length*2)+'}',fields[name]) is not None,'bad '+name)
+            decoded[name]=bytes.fromhex(fields[name])
+        require(decoded['key1']==b'Now?'+12*b'\0','wrong first key')
+        require(decoded['key2']==b'L4t3r!!!'+8*b'\0','wrong second key')
+        require(decoded['nonce']==12*b'\0','wrong nonce')
+        require(decoded['adata']==b'MyVoiceIsMyPass!','wrong associated data')
+        require(decoded['key1']!=decoded['key2'],'keys must differ')
+        ct,tag,nonce,ad=(decoded[k] for k in ('ciphertext','tag','nonce','adata'))
+        digest=hashlib.sha256(ct).hexdigest()[:8]
+        require(sorted(p.name for p in root.glob('attack-*.htm'))==[f'attack-1.{digest}.htm',f'attack-2.{digest}.htm'],'plaintext file coverage differs')
+        plaintexts=[]
+        controls=0
+        for index in (1,2):
+            key=decoded['key'+str(index)]
+            cipher=AES.new(key,AES.MODE_GCM,nonce=nonce)
+            cipher.update(ad)
+            pt=cipher.decrypt_and_verify(ct,tag)
+            require(len(pt)==128,'truncated plaintext')
+            require((root/f'attack-{index}.{digest}.htm').read_bytes()==pt,'author output differs from independent decryption')
+            encryptor=AES.new(key,AES.MODE_GCM,nonce=nonce)
+            encryptor.update(ad)
+            require(encryptor.encrypt_and_digest(pt)==(ct,tag),'reencryption mismatch')
+            for test_key,test_tag in [(bytes([6+index])*16,tag),(key,bytes([tag[0]^1])+tag[1:])]:
+                bad=AES.new(test_key,AES.MODE_GCM,nonce=nonce)
+                bad.update(ad)
+                try:
+                    bad.decrypt_and_verify(ct,test_tag)
+                except ValueError:
+                    controls+=1
+                else:
+                    raise ValueError('negative authentication control accepted')
+            plaintexts.append(pt)
+        require(plaintexts[0]!=plaintexts[1],'plaintexts must differ')
+        pages=[html5lib.parse(pt,treebuilder='etree') for pt in plaintexts]
+        texts=[visible(page) for page in pages]
+        links=[[e for e in page.iter() if isinstance(e.tag,str) and e.tag.rsplit('}',1)[-1]=='a'] for page in pages]
+        require(EVIL in plaintexts[0] and NORMAL in plaintexts[1],'original payload bytes missing')
+        require(len(links[0])==1 and links[0][0].get('href')=='http://www.evil.com' and visible(links[0][0])=='Click here!','first HTML payload differs')
+        require('Hello World!' not in texts[0] and 'Click here!' in texts[0],'first payload not isolated by comments')
+        require(not links[1] and 'Hello World!' in texts[1] and 'Click here!' not in texts[1],'second payload not isolated by comments')
+        require(controls==4,'negative control coverage differs')
+        return {'verdict':'REPRODUCED','ciphertexts':1,'authenticated_distinct_payloads':2,
+                'input_matched_html_payloads':2,'reencryption_matches':2,'negative_controls_rejected':controls,
+                'ciphertext_bytes':len(ct),'tag_bytes':len(tag),'nonce_bytes':len(nonce)}
+
+    if __name__=='__main__':
+        print(json.dumps(verify(sys.argv[1]),indent=2))
+    '''
+
+    def require(condition, message):
+        if not condition:
+            raise RuntimeError(message)
+
+    def stamp():
+        return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    def available():
+        return next(int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines()
+                    if line.startswith('MemAvailable:'))
+
+    def disk_bytes():
+        total = 0
+        for directory, _, files in os.walk(ROOT):
+            for name in files:
+                p = Path(directory)/name
+                try:
+                    if not p.is_symlink():
+                        total += p.stat().st_size
+                except FileNotFoundError:
+                    pass  # An installer may remove scratch files during sampling.
+        return total
+
+    def limits():
+        resource.setrlimit(resource.RLIMIT_AS, (LIMIT, LIMIT))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (64*1024**2, 64*1024**2))
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+    def rss(pgid):
+        total = 0
+        for p in Path('/proc').iterdir():
+            if not p.name.isdecimal():
+                continue
+            try:
+                fields = (p/'stat').read_text().rsplit(')', 1)[1].split()
+                if int(fields[2]) == pgid or int(p.name) == os.getpid():
+                    total += int(fields[21])*os.sysconf('SC_PAGE_SIZE')
+            except (OSError, ValueError, IndexError):
+                pass
+        return total
+
+    records = []
+    def bounded(label, command, seconds, env):
+        stat = os.statvfs(ROOT)
+        preflight = {'available_ram_bytes': available(), 'free_disk_bytes': stat.f_bavail*stat.f_frsize,
+                     'workspace_bytes': disk_bytes()}
+        require(preflight['available_ram_bytes'] >= 1024**3, 'Less than 1 GiB RAM available')
+        require(preflight['free_disk_bytes'] >= 3*1024**3, 'Less than 3 GiB disk free')
+        require(preflight['workspace_bytes'] < 1024**3, 'Workspace exceeds 1 GiB')
+        record = {'label': label, 'command': command, 'started_at': stamp(), 'preflight': preflight,
+                  'timeout_seconds': seconds, 'address_space_limit_bytes': LIMIT}
+        (OUT/(label+'.json')).write_text(json.dumps(record, indent=2)+'\n')
+        start, peak, next_disk, blocker = time.monotonic(), 0, 0, None
+        peak_disk = preflight['workspace_bytes']
+        with (OUT/(label+'.stdout')).open('wb') as stdout, (OUT/(label+'.stderr')).open('wb') as stderr:
+            proc = subprocess.Popen(['/usr/bin/time', '-v', '-o', str(OUT/(label+'.resources')),
+                                      *command], cwd=OUT, env=env, stdout=stdout, stderr=stderr,
+                                    start_new_session=True, preexec_fn=limits)
+            while proc.poll() is None:
+                elapsed = time.monotonic()-start
+                peak = max(peak, rss(proc.pid))
+                if elapsed > seconds:
+                    blocker = 'runtime limit'
+                elif peak > LIMIT:
+                    blocker = 'aggregate RSS limit'
+                if elapsed >= next_disk:
+                    peak_disk = max(peak_disk, disk_bytes())
+                    if peak_disk >= 1024**3:
+                        blocker = 'storage limit'
+                    next_disk = elapsed+1
+                if blocker:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                    break
+                time.sleep(0.05)
+            code = proc.wait()
+        record.update(exit_code=code, blocker=blocker, finished_at=stamp(),
+                      elapsed_seconds=time.monotonic()-start, sampled_aggregate_peak_rss_bytes=peak,
+                      workspace_bytes=disk_bytes(), sampled_peak_workspace_bytes=peak_disk)
+        records.append(record)
+        (OUT/(label+'.json')).write_text(json.dumps(record, indent=2)+'\n')
+        (OUT/'measurements.json').write_text(json.dumps(records, indent=2)+'\n')
+        require(code == 0 and blocker is None, label+' failed; inspect captured streams')
+
+    require(sys.version_info[:2] == (3, 12), 'Use Python 3.12 (tested with 3.12.3)')
+    require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == PIN,
+            'Checkout the pinned artifact commit')
+    subprocess.run(['git', 'diff', '--exit-code', PIN, '--'], check=True)
+    require(not OUT.exists(), 'amber-html already exists; use a fresh checkout')
+    OUT.mkdir()
+    (OUT/'tmp').mkdir()
+    env = os.environ.copy()
+    env.update(TMPDIR=str(OUT/'tmp'), PYTHONDONTWRITEBYTECODE='1', MAKEFLAGS='-j1')
+    start = time.monotonic()
+    files = ['utils/extra/htmhtm.py', 'utils/extra/htmhtm.md', 'utils/gcm/meringue.py',
+             'utils/gcm/decrypt.py', 'utils/gcm/aes_gcm.py', 'utils/gcm/inverts.txt',
+             'utils/gcm/nonces.txt', 'utils/gcm/requirements.txt']
+    manifest = {'artifact_commit': PIN, 'started_at': stamp(), 'python': sys.version,
+                'machine': platform.platform(), 'cpu': platform.processor(),
+                'source_sha256': {f: hashlib.sha256((ROOT/f).read_bytes()).hexdigest() for f in files}}
+    (OUT/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    python = str(OUT/'.venv/bin/python')
+    bounded('setup-venv', [sys.executable, '-m', 'venv', '--without-pip', str(OUT/'.venv')], 60, env)
+    bounded('setup-build-tools', [sys.executable, '-m', 'pip', '--python', python, 'install',
+            '--no-cache-dir', '--report', str(OUT/'build-tools-report.json'), 'setuptools==84.2.1'], 180, env)
+    bounded('setup-dependencies', [sys.executable, '-m', 'pip', '--python', python, 'install',
+            '--no-cache-dir', '--no-build-isolation', '--report', str(OUT/'pip-report.json'),
+            'BitVector==3.4.9', 'pycryptodome==3.9.7', 'cryptography==44.0.2', 'cffi==1.17.1',
+            'pycparser==2.22', 'html5lib==1.1', 'six==1.17.0', 'webencodings==0.5.1'], 300, env)
+    (OUT/'normal.htm').write_bytes(b'<html>Hello World!</html>\r\n')
+    (OUT/'evil.htm').write_bytes(b'<html><a href="http://www.evil.com">Click here!</a></html>')
+    manifest['input_sha256'] = {f: hashlib.sha256((OUT/f).read_bytes()).hexdigest()
+                              for f in ['normal.htm', 'evil.htm']}
+    (OUT/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    experiment_start = time.monotonic()
+    commands = [
+        [python, str(ROOT/'utils/extra/htmhtm.py'), 'normal.htm', 'evil.htm'],
+        [python, str(ROOT/'utils/gcm/meringue.py'), '-i', '7', '(4-26)7.d3f286cd.htm.htm', 'attack.gcm'],
+        [python, str(ROOT/'utils/gcm/decrypt.py'), 'attack.gcm'],
+    ]
+    for index, command in enumerate(commands, 1):
+        remaining = 120-(time.monotonic()-experiment_start)
+        require(remaining > 0, 'Experiment exceeded 120 seconds')
+        bounded('stage'+str(index), command, remaining, env)
+    manifest['experiment_elapsed_seconds'] = time.monotonic()-experiment_start
+    (OUT/'check_result.py').write_text(CHECKER_CODE)
+    bounded('validate', [python, str(OUT/'check_result.py'), str(OUT)], 30, env)
+    result = json.loads((OUT/'validate.stdout').read_text())
+    require(result['verdict'] == 'REPRODUCED' and result['authenticated_distinct_payloads'] == 2,
+            'Incomplete validation')
+    payloads = sorted(OUT.glob('attack-*.htm'))
+    require(len(payloads) == 2, 'Missing or extra author plaintexts')
+    for index, p in enumerate(payloads, 1):
+        shutil.copyfile(p, OUT/('plaintext-'+str(index)+'.htm'))
+    subprocess.run(['git', 'diff', '--exit-code', PIN, '--'], check=True)
+    require(manifest['source_sha256'] == {f: hashlib.sha256((ROOT/f).read_bytes()).hexdigest() for f in files},
+            'Artifact source changed')
+    manifest.update(finished_at=stamp(), elapsed_total_seconds=time.monotonic()-start,
+                    workspace_bytes=disk_bytes())
+    (OUT/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    (OUT/'result.json').write_text(json.dumps(result, indent=2)+'\n')
+    print(json.dumps(result, indent=2))
+    PY
+  outputs:
+  - amber-html/result.json
+  - amber-html/attack.gcm
+  - amber-html/plaintext-1.htm
+  - amber-html/plaintext-2.htm
+  - amber-html/normal.htm
+  - amber-html/evil.htm
+  - amber-html/(4-26)7.d3f286cd.htm.htm
+  - amber-html/manifest.json
+  - amber-html/measurements.json
+  - amber-html/pip-report.json
+  - amber-html/build-tools-report.json
+  - amber-html/stage1.stdout
+  - amber-html/stage1.stderr
+  - amber-html/stage2.stdout
+  - amber-html/stage2.stderr
+  - amber-html/stage3.stdout
+  - amber-html/stage3.stderr
+  - amber-html/validate.stdout
+  - amber-html/validate.stderr
