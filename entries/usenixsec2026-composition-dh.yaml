@@ -1,0 +1,430 @@
+# Awarded badges: Secure Protocol Composition row, https://secartifacts.github.io/usenixsec2026/results
+id: usenixsec2026-composition-dh
+title: 'Secure Protocol Composition under Dynamic Corruption: Scaling Up Symbolic Analysis for Real-World Security
+  Properties'
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity26/presentation/cremers
+artifact:
+  url: https://doi.org/10.6084/m9.figshare.29958290.v6
+  clone: |
+    curl -fL --max-time 180 --max-filesize 2097152 -o composition-v6.zip https://ndownloader.figshare.com/files/61886518
+    printf '%s\n' 'd06bc529054fc83c0a2520e9d2cc486e1a6e96a2109847a3a3e248053062efdd  composition-v6.zip' | sha256sum -c -
+    mkdir composition-v6
+    unzip -q composition-v6.zip -d composition-v6
+  ref_type: doi
+  ref: 10.6084/m9.figshare.29958290.v6
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 0.54
+  disk_gb: 1.1
+  runtime_minutes: 7
+  docker: false
+  network_required: true
+  notes: |-
+    Appendix A.4.2 E1 budgets 100 compute-milliseconds and 10 MB disk for the DH case study;
+    this excludes tool provisioning and is not a measured minimum or timing acceptance rule.
+    Appendix A.2.3 has no special hardware requirement. Its 70–200 GB RAM recommendation
+    and E2's 200 GB disk / hundreds of compute-hours apply to TLS ECH, which is excluded.
+    The resource fields here are conservative budgets: 512 MiB address space per process
+    and sampled aggregate RSS plus swap per case, 1 GiB total workspace, 180 wall/CPU
+    seconds per case, 64 MiB per output file. RAM preflight requires 4 GiB available and
+    5 GiB disk free. Each command is sequential and CPU-only. Sample RSS plus swap every
+    0.1 s and storage every 1 s; these watchdogs are not cgroup hard limits. RLIMIT_AS,
+    RLIMIT_CPU and RLIMIT_FSIZE apply to child processes. A process-group watchdog kills
+    remaining work on a limit event.
+    Initial capture on 2026-10-28 (Asia/Kolkata), Ubuntu 24.04 / Ryzen 5 6600H / 14.8 GiB RAM:
+    monolithic 0.112 s, compositional 0.117 s including the monitor; GNU time reported
+    10,284 and 10,212 KiB maximum child RSS. Polling can miss peaks in these short runs;
+    GNU time's maximum child RSS is reported separately from sampled aggregate RSS.
+    The literal YAML command passed from a second fresh extraction in 0.517 s, with
+    25,196 KiB maximum child RSS for the complete outer validation launcher. Both modes
+    again produced all ten expected query outcomes and three reachability witnesses;
+    all 97 original artifact files remained unchanged. The final checker rejected 70
+    incomplete/invalid real-log fixtures. YAML, shell syntax and verdict checks passed.
+    No sampled swap or limit event. Tools, downloads (including v2 for comparison), source
+    papers, extraction and first captures occupied about 12.8 MB. Only the existing native
+    ProVerif executable was copied into isolated setup; no compiler/container/install needed.
+    The pinned v6 archive is 1,120,238 bytes and 1,532,652 bytes unpacked. Both selected DH
+    files are byte-identical in v2 and v6. The artifact's README describes only the
+    monolithic invocation; appendix E1 additionally requires the compositional invocation
+    and correctly specifies its changed second sanity outcome.
+    Prerequisites: Linux x86_64 with /proc, Python 3.9+, bash, GNU /usr/bin/time, and an
+    already installed native ProVerif 2.05 on PATH. Tool provisioning is a prerequisite;
+    these measured setup figures describe copying an existing native installation. Obtain
+    the official ProVerif 2.05 source from
+    https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz
+    (SHA-256 4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4),
+    also bundled in the artifact. With an isolated OCaml toolchain, extract it and run
+    ./build following its README; alternatively use a pre-existing 2.05 installation.
+    The command below verifies the version and records the actual native binary digest;
+    it does not assume that independently compiled binaries have identical hashes.
+    Download the versioned archive using artifact.clone, extract into a new directory,
+    export PATH to the isolated ProVerif installation, and run from that extraction root.
+    A new amber-composition directory is required. The command itself is offline;
+    network_required covers public artifact/tool retrieval. AMBER_BUDGET_ROOT may point
+    to an enclosing task directory to include setup/downloads in storage monitoring;
+    otherwise the extraction root is monitored. Account for prerequisite storage separately.
+    Only appendix E1's single-session symbolic DH/data-exchange model is tested. No TLS,
+    speedup, computational-security, deployed-protocol, unbounded-session or full-study
+    reproduction claim is made.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: session_key_A_forward_secrecy_verified
+  threshold: == 1
+  unit: boolean
+  source: Section 6.2, pp.447–448, forward-secrecy definition for A and analogous B property; appendix A.4.1
+    C1 / A.4.2 E1 query 4. https://www.usenix.org/system/files/usenixsecurity26-cremers.pdf ; https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle1ae-final98.pdf
+  measurement_protocol: |-
+    Use ProVerif 2.05 and the artifact's bash run_bench on two fresh copies of dh/dh_auth.pv.
+    The monolithic copy is unmodified. In the compositional copy, comment out only the
+    calls ; XP_A(k_sessA) and ; XP_B(k_sessB), as appendix E1 directs (lines 121 and 133).
+    Preserve all five queries and all protocol/cryptographic assumptions. Require the
+    five complete source-ordered outcomes [false,false,true,true,true] for monolithic
+    and [false,true,true,true,true] for compositional; match every query formula and
+    its RESULT line to the final Verification summary. The false negated reachability
+    queries must have witness traces (two monolithic, one compositional). Query 3 must
+    prove the set-up guarantee in both modes, and queries 4/5 must prove forward secrecy
+    of A/B's session key in both modes. Normalize only fresh numeric variable suffixes,
+    redundant parentheses, and equivalent reversed time comparisons through a formula
+    parser. No repetitions, averaging or runtime tolerance apply. Reject incomplete,
+    duplicate, malformed, inconclusive or unexpected outcomes and any limit/setup failure.
+    Assign 1 to this metric only when query 4 for party A is explicitly true in both modes and the complete ten-query gate passes.
+  expected_verdict: REPRODUCED
+  notes: |-
+    One modeled DH session per role; ideal symmetric encryption, signatures, and the
+    specified DH equation; freshly generated honest signing keys; attacker-controlled
+    public channels c and xc; either long-term signing key can be dynamically revealed.
+    Forward secrecy means a derived session key can be known by the attacker only if
+    some long-term key was revealed before its derivation event. The set-up guarantee
+    allows unequal DH keys only following a prior reveal. No extra axioms, restrictions,
+    helper lemmas, changed prover settings, or universal-session claims are introduced.
+    This entry verifies the case study's mechanized claims, not the general composition
+    theorem or the TLS benchmark. Expected false sanity outcomes indicate reachability,
+    not a failed forward-secrecy claim.
+- metric: session_key_B_forward_secrecy_verified
+  threshold: == 1
+  unit: boolean
+  source: Section 6.2, pp.447–448, forward-secrecy definition for A and analogous B property; appendix A.4.1
+    C1 / A.4.2 E1 query 5. https://www.usenix.org/system/files/usenixsecurity26-cremers.pdf ; https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle1ae-final98.pdf
+  measurement_protocol: |-
+    Use ProVerif 2.05 and the artifact's bash run_bench on two fresh copies of dh/dh_auth.pv.
+    The monolithic copy is unmodified. In the compositional copy, comment out only the
+    calls ; XP_A(k_sessA) and ; XP_B(k_sessB), as appendix E1 directs (lines 121 and 133).
+    Preserve all five queries and all protocol/cryptographic assumptions. Require the
+    five complete source-ordered outcomes [false,false,true,true,true] for monolithic
+    and [false,true,true,true,true] for compositional; match every query formula and
+    its RESULT line to the final Verification summary. The false negated reachability
+    queries must have witness traces (two monolithic, one compositional). Query 3 must
+    prove the set-up guarantee in both modes, and queries 4/5 must prove forward secrecy
+    of A/B's session key in both modes. Normalize only fresh numeric variable suffixes,
+    redundant parentheses, and equivalent reversed time comparisons through a formula
+    parser. No repetitions, averaging or runtime tolerance apply. Reject incomplete,
+    duplicate, malformed, inconclusive or unexpected outcomes and any limit/setup failure.
+    Assign 1 to this metric only when query 5 for party B is explicitly true in both modes and the complete ten-query gate passes.
+  expected_verdict: REPRODUCED
+  notes: |-
+    One modeled DH session per role; ideal symmetric encryption, signatures, and the
+    specified DH equation; freshly generated honest signing keys; attacker-controlled
+    public channels c and xc; either long-term signing key can be dynamically revealed.
+    Forward secrecy means a derived session key can be known by the attacker only if
+    some long-term key was revealed before its derivation event. The set-up guarantee
+    allows unequal DH keys only following a prior reveal. No extra axioms, restrictions,
+    helper lemmas, changed prover settings, or universal-session claims are introduced.
+    This entry verifies the case study's mechanized claims, not the general composition
+    theorem or the TLS benchmark. Expected false sanity outcomes indicate reachability,
+    not a failed forward-secrecy claim.
+run:
+  command: |
+    set -eu
+    python3 -I - <<'PYTHON'
+    import datetime
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    import platform
+    import re
+    import resource
+    import shutil
+    import signal
+    import subprocess
+    import time
+
+    """Complete, query-aware checker for appendix E1's two five-query analyses."""
+    import re
+
+    FORMULAS = [
+        'not (event(DeriveKeyA(k)) && event(DeriveKeyB(k)))',
+        'not (event(Send(x)) && event(Accept(x)))',
+        'event(DeriveKeyA(k_iA))@iA && event(DeriveKeyB(k_iB))@iB ==> k_iA = k_iB || (event(Reveal(k))@j && (j < iA || j < iB))',
+        'event(DeriveKeyA(k_sessA))@i && attacker(k_sessA) ==> event(Reveal(k))@j && j < i',
+        'event(DeriveKeyB(k_sessB))@i && attacker(k_sessB) ==> event(Reveal(k))@j && j < i',
+    ]
+    OUTCOMES = {'monolithic': ['false', 'false', 'true', 'true', 'true'],
+                'compositional': ['false', 'true', 'true', 'true', 'true']}
+
+    def expression(text):
+        # Parse connectives, function applications, event timestamps and comparisons.
+        # Only ProVerif's fresh numeric variable suffixes are alpha-normalized.
+        text = re.sub(r'\b([A-Za-z][A-Za-z0-9_]*?)_[0-9]+\b', r'\1', text)
+        tokens = re.findall(r'==>|&&|\|\||[(),=@<>]|[A-Za-z][A-Za-z0-9_]*', text)
+        if ''.join(tokens) != re.sub(r'\s+', '', text):
+            raise ValueError('Unexpected formula token')
+        index = 0
+        precedence = {'==>': 1, '||': 2, '&&': 3, '=': 4, '<': 4, '>': 4, '@': 5}
+        def parse(minimum=0):
+            nonlocal index
+            if index >= len(tokens):
+                raise ValueError('Incomplete formula')
+            token = tokens[index]; index += 1
+            if token == '(':
+                left = parse()
+                if index >= len(tokens) or tokens[index] != ')':
+                    raise ValueError('Unbalanced formula')
+                index += 1
+            elif token == 'not':
+                left = ('not', parse(6))
+            elif re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', token):
+                if index < len(tokens) and tokens[index] == '(':
+                    index += 1
+                    args = [parse()]
+                    while index < len(tokens) and tokens[index] == ',':
+                        index += 1; args.append(parse())
+                    if index >= len(tokens) or tokens[index] != ')':
+                        raise ValueError('Malformed application')
+                    index += 1
+                    left = (token, *args)
+                else:
+                    left = token
+            else:
+                raise ValueError('Unexpected atom')
+            while index < len(tokens) and precedence.get(tokens[index], -1) >= minimum:
+                op = tokens[index]; index += 1
+                right = parse(precedence[op]+1)
+                left = ('<', right, left) if op == '>' else (op, left, right)
+            return left
+        result = parse()
+        if index != len(tokens):
+            raise ValueError('Extra formula tokens')
+        return result
+
+    def check_text(text, mode):
+        if mode not in OUTCOMES or not text.endswith('\n') or text.count('Verification summary:') != 1:
+            raise ValueError('Missing, repeated or truncated summary')
+        if re.search(r'(?i)\b(warning|error|cannot be proved|unknown|out of memory)\b', text):
+            raise ValueError('Inconclusive analysis or diagnostic')
+        before, summary = text.split('Verification summary:')
+        if re.fullmatch(r'\s*Query .*?\n-{20,}\s*', summary, re.S) is None:
+            raise ValueError('Incomplete summary envelope')
+        rows = []
+        for line in summary.splitlines():
+            if not line.strip() or re.fullmatch('-{20,}', line.strip()):
+                continue
+            match = re.fullmatch(r'Query (.+) is (true|false)\.', line)
+            if not match:
+                raise ValueError('Malformed query outcome: '+line)
+            rows.append((expression(match[1]), match[2]))
+        result_rows = []
+        for line in before.splitlines():
+            if line.startswith('RESULT'):
+                match = re.fullmatch(r'RESULT (.+) is (true|false)\.', line)
+                if not match:
+                    raise ValueError('Malformed RESULT line')
+                result_rows.append((expression(match[1]), match[2]))
+        expected = list(zip(map(expression, FORMULAS), OUTCOMES[mode]))
+        if rows != expected or result_rows != expected or len(set(repr(x[0]) for x in rows)) != 5:
+            raise ValueError('Missing, duplicate, wrong or reordered query coverage')
+        if before.count('A trace has been found.') != OUTCOMES[mode].count('false'):
+            raise ValueError('Missing or duplicate reachability witness traces')
+        return {'query_count': 5, 'outcomes': OUTCOMES[mode],
+                'session_key_A_forward_secrecy_verified': 1,
+                'session_key_B_forward_secrecy_verified': 1,
+                'setup_guarantee_verified': 1}
+
+
+    def task_bytes(root):
+        total = 0
+        for folder, _, names in os.walk(root):
+            for name in names:
+                try:
+                    total += (Path(folder) / name).lstat().st_size
+                except FileNotFoundError:
+                    pass
+        return total
+
+    def group_usage(pgid):
+        rss = swap = ticks = 0
+        for p in Path('/proc').iterdir():
+            if not p.name.isdecimal():
+                continue
+            try:
+                stat = (p/'stat').read_text().rsplit(')', 1)[1].split()
+                if int(stat[2]) != pgid:
+                    continue
+                ticks += sum(int(stat[i]) for i in (11, 12, 13, 14))
+                for line in (p/'status').read_text().splitlines():
+                    if line.startswith('VmRSS:'):
+                        rss += int(line.split()[1]) * 1024
+                    elif line.startswith('VmSwap:'):
+                        swap += int(line.split()[1]) * 1024
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
+                pass
+        return rss, swap, ticks / os.sysconf('SC_CLK_TCK')
+
+    def preflight(root):
+        available = next(int(x.split()[1])*1024 for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:'))
+        if available < 4*2**30 or shutil.disk_usage(root).free < 5*2**30:
+            raise RuntimeError('Resource preflight failed; no proof launched')
+
+    def capture(command, root, out, budget_root):
+        preflight(root)
+        def limits():
+            resource.setrlimit(resource.RLIMIT_AS, (512*2**20, 512*2**20))
+            resource.setrlimit(resource.RLIMIT_CPU, (180, 180))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (64*2**20, 64*2**20))
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        start = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        then = time.monotonic()
+        peak_rss = peak_swap = peak_combined = peak_cpu = 0
+        peak_storage = task_bytes(budget_root)
+        reason = None
+        with (out/'stdout.log').open('xb') as stdout, (out/'stderr.log').open('xb') as stderr:
+            p = subprocess.Popen(['/usr/bin/time', '-v', '-o', str(out/'resources.txt'), '--']+command,
+                                 cwd=root, stdout=stdout, stderr=stderr,
+                                 start_new_session=True, preexec_fn=limits)
+            tick = 0
+            try:
+                while p.poll() is None:
+                    rss, swap, cpu = group_usage(p.pid)
+                    peak_rss, peak_swap = max(peak_rss, rss), max(peak_swap, swap)
+                    peak_combined, peak_cpu = max(peak_combined, rss+swap), max(peak_cpu, cpu)
+                    if tick % 10 == 0:
+                        peak_storage = max(peak_storage, task_bytes(budget_root))
+                    if rss+swap >= 512*2**20:
+                        reason = 'aggregate_memory_limit'
+                    elif time.monotonic()-then >= 180:
+                        reason = 'wall_timeout'
+                    elif cpu >= 180:
+                        reason = 'group_cpu_limit'
+                    elif peak_storage >= 1*2**30:
+                        reason = 'workspace_limit'
+                    if reason:
+                        break
+                    tick += 1
+                    time.sleep(0.1)
+            finally:
+                if p.poll() is None:
+                    os.killpg(p.pid, signal.SIGTERM)
+                    try:
+                        p.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(p.pid, signal.SIGKILL)
+                code = p.wait()
+        result = dict(command=command, cwd=str(root), started_at=start,
+                      finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                      runtime_seconds=time.monotonic()-then, exit_status=code, limit_reason=reason,
+                      sampled_peak_rss_bytes=peak_rss, sampled_peak_swap_bytes=peak_swap,
+                      sampled_peak_rss_plus_swap_bytes=peak_combined, sampled_cpu_seconds=peak_cpu,
+                      sampled_peak_workspace_bytes=max(peak_storage, task_bytes(budget_root)),
+                      memory_sampling_seconds=0.1, storage_sampling_seconds=1,
+                      limits={'aggregate_rss_plus_swap_bytes': 512*2**20, 'wall_seconds': 180,
+                              'cpu_seconds': 180, 'workspace_bytes': 1*2**30, 'file_bytes': 64*2**20})
+        (out/'capture.json').write_text(json.dumps(result, indent=2)+'\n')
+        print(json.dumps(result), flush=True)
+        if code or reason:
+            raise RuntimeError('Proof blocked or failed within frozen limits')
+        return result
+
+
+    MODEL_SHA = '000125fca564ff775454042de5ab008095609ea0c515094f7c47defe1e5f2402'
+    SCRIPT_SHA = '3be1e3cc7337744c393d472a1bfa42afb109444c198556e2e9ccb8080032f362'
+    COMPOSITION_SHA = '1da62af6e968c6828a3d684c853142ae6280ee9fedc3fdcd3371c300c05da7f6'
+
+    def sha(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    def main():
+        root = Path.cwd()
+        preflight(root)
+        for name, digest in [('dh_auth.pv', MODEL_SHA), ('run_bench', SCRIPT_SHA)]:
+            if sha(root/'dh'/name) != digest:
+                raise ValueError('Wrong artifact input: '+name)
+        before = {str(p.relative_to(root)): sha(p) for p in root.rglob('*') if p.is_file()}
+        out = root/'amber-composition'
+        out.mkdir(exist_ok=False)
+        binary = shutil.which('proverif')
+        if binary is None:
+            raise ValueError('ProVerif 2.05 is required')
+        version = subprocess.run([binary, '-help'], text=True, capture_output=True, timeout=15, check=True)
+        if not version.stdout.startswith('Proverif 2.05. Cryptographic protocol verifier, by Bruno Blanchet, Vincent Cheval, and Marc Sylvestre\n'):
+            raise ValueError('Unexpected ProVerif version')
+        (out/'versions.json').write_text(json.dumps(dict(proverif_stdout=version.stdout,
+            proverif_stderr=version.stderr, proverif_binary_sha256=sha(binary),
+            python=platform.python_version(), platform=platform.platform()), indent=2)+'\n')
+        (out/'input-identities.json').write_text(json.dumps(before, indent=2, sort_keys=True)+'\n')
+        budget_root = Path(os.environ.get('AMBER_BUDGET_ROOT', root)).resolve()
+        if budget_root != root and budget_root not in root.parents:
+            raise ValueError('Budget root must contain the artifact')
+        results = {}
+        for mode in OUTCOMES:
+            case = out/mode
+            case.mkdir()
+            model = (root/'dh/dh_auth.pv').read_text()
+            if mode == 'compositional':
+                for party in ('A', 'B'):
+                    old = '    ; XP_'+party+'(k_sess'+party+')'
+                    if model.count(old) != 1:
+                        raise ValueError('Unexpected composition boundary')
+                    model = model.replace(old, '    (* ; XP_'+party+'(k_sess'+party+') *)')
+            (case/'dh_auth.pv').write_text(model)
+            expected = MODEL_SHA if mode == 'monolithic' else COMPOSITION_SHA
+            if sha(case/'dh_auth.pv') != expected:
+                raise ValueError('Wrong derived model identity')
+            shutil.copyfile(root/'dh/run_bench', case/'run_bench')
+            capture(['bash', 'run_bench'], case, case, budget_root)
+            results[mode] = check_text((case/'stdout.log').read_text(), mode)
+        after = {str(root/p): sha(root/p) for p in before}
+        if any(before[p] != after[str(root/p)] for p in before):
+            raise ValueError('Original artifact files changed')
+        result = {'session_key_A_forward_secrecy_verified': 1,
+                  'session_key_B_forward_secrecy_verified': 1,
+                  'total_query_count': 10, 'cases': results}
+        (out/'metrics.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
+        print(json.dumps(result), flush=True)
+
+    if __name__ == '__main__':
+        main()
+    PYTHON
+  outputs:
+  - amber-composition/versions.json
+  - amber-composition/input-identities.json
+  - amber-composition/metrics.json
+  - amber-composition/monolithic/dh_auth.pv
+  - amber-composition/monolithic/run_bench
+  - amber-composition/monolithic/stdout.log
+  - amber-composition/monolithic/stderr.log
+  - amber-composition/monolithic/resources.txt
+  - amber-composition/monolithic/capture.json
+  - amber-composition/compositional/dh_auth.pv
+  - amber-composition/compositional/run_bench
+  - amber-composition/compositional/stdout.log
+  - amber-composition/compositional/stderr.log
+  - amber-composition/compositional/resources.txt
+  - amber-composition/compositional/capture.json
+baseline:
+  captured_on: '2026-10-28'
+  machine: AMD Ryzen 5 6600H; 15166 MiB RAM; Ubuntu 24.04.4; Linux x86_64
+  metrics:
+    session_key_A_forward_secrecy_verified: 1
+    session_key_B_forward_secrecy_verified: 1
+    total_query_count: 10
+  bit_for_bit_expected: false
