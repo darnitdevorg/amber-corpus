@@ -1,0 +1,548 @@
+id: usenixsec2025-messaging-bandwidth
+title: 'How to Compare Bandwidth Constrained Two-Party Secure Messaging Protocols: A Quest for A More
+  Efficient and Secure Post-Quantum Protocol'
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity25-auerbach.pdf
+artifact:
+  url: https://zenodo.org/records/15571277
+  clone: Download https://zenodo.org/api/records/15571277/files/ADJKS25_Artifact.zip/content; require
+    SHA-256 6f89f2ed465d2041f2998b656dd481dc774805ccab8ab9ec3643bfaa3449b755; extract and enter usenix2025_653/.
+  ref_type: doi
+  ref: 10.5281/zenodo.15571277
+  license: AGPL-3.0-only
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 3
+  disk_gb: 3
+  runtime_minutes: 15
+  docker: false
+  network_required: false
+  notes: 'Only the numerical 32-byte primary-primary UniKEM versus Opp-UniKEM subset is tested. Appendix
+    A.2.3 lists hardware dependencies as "None"; A.4.2 E1 estimates one compute-minute and 4 MB generated
+    data for its full chart workflow, not total setup. https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle2ae-final62.pdf.
+    The above RAM/disk values are conservative start gates, not quoted author minima: require 3 GiB
+    available RAM/free disk, cap each process address space and sampled aggregate worker RSS+swap
+    at 1.5 GiB, workspace+cache at 1 GiB, wall/CPU at 900 seconds and each capture at 32 MiB. RSS
+    is sampled every 0.1 s and storage every second. Prerequisites: Linux x86-64 /proc, Python 3.12.3
+    tested, Rustup with pinned Rust/Cargo 1.93.0 (binary identities checked), GCC 13.3.0, and GNU
+    time. Cargo.toml requires Rust >=1.88.0. Before running, use a separate local CARGO_HOME outside
+    the fresh extraction and perform a bounded `cargo fetch --locked`; dependencies are identified
+    by the original Cargo.lock checksums. Export that CARGO_HOME for the command, which builds offline,
+    with one Cargo job/codegen unit and one LLD linker thread. No global toolchain or configuration
+    changes. Installed compilers are prerequisites; the workspace cap includes the cache and generated
+    files, not system tool installations. Initial setup peaked at 454463488 B aggregate RSS in 129.93
+    s; the first four-case CLI/API suite took 3.77 s and 35418112 B aggregate RSS. Artifact archive
+    is 342190 B / 703507 B expanded. Source, isolated cache, generated build and captures used about
+    367 MB before fresh-command validation. No Gnuplot, chart rendering, other bandwidths, offline-device
+    models, real message datasets or full-study reproduction are included. The literal YAML command
+    also passed from a fresh archive extraction and a new build target in 128.76 s, with 466673664
+    B sampled aggregate worker RSS, zero sampled swap and 364971472 B workspace plus dependency cache.
+    All 80 original input files were unchanged; the two original CLI cases, two planned API replays
+    and independent message-pattern audit matched the initial metrics. These are actual bounded captures,
+    not expected output hashes.'
+role: not_comparable
+expected_verdict: NOT_COMPARABLE
+claims:
+- metric: party_A_mean_and_population_variance_ratio_OppUniKEM_over_UniKEM_32B
+  threshold: mean ratio < 1 and population variance ratio < 1, using the paper sampling protocol
+  unit: dimensionless ratios of exposed-message counts and squared-message counts
+  source: Sections 5.1-5.3, printed pp.6729-6731; Section 5.3 opportunistic versus non-opportunistic
+    sending; final Figure 7 right. Artifact appendix C4 refers to earlier figure numbering.
+  measurement_protocol: The paper specifies T=10^6 timesteps with primary-primary send probabilities
+    0.4 per party. Section 5.2 describes recording each party state vulnerability once per timestep
+    in which that state changes, then comparing the mean and variance of |VulM| separately for each
+    compromised party. Section 5.3 uses party A. Preserve that sampling unit when testing the small-chunk
+    directional claim; no numeric tolerance is supplied or invented. The exact artifact command below
+    instead uses the published appendix-script parameters T=100000, --balance 0.5 and BasicMessagingBehavior
+    probabilities 0.4*0.5=0.2 per party, with message-pattern seed 43. More fundamentally, controlled_messaging_healing_test
+    stores a separate compromise snapshot after sending and after a nonempty receive-all event, including
+    two snapshots in one timestep. Its resulting event-weighted histogram is a different statistic
+    from the paper per-timestep description. Do not classify this command as a paper reproduction
+    or paper failure.
+  expected_verdict: NOT_COMPARABLE
+  notes: All three badges are awarded in the paper row at https://secartifacts.github.io/usenixsec2025/results;
+    availability is DOI 10.5281/zenodo.15571277. Both original CLI cases are run unchanged for 32-byte
+    chunks using charts/run_tests.sh parameters, with new output paths. Two explicitly planned public-API
+    replays expose integer histogram counts using identical CKA types/probabilities/timesteps; they
+    must match every CLI probability, CDF bin, mean, standard deviation and decile. Boundary exclusions
+    in the original measurement function remain unchanged. An independent seeded message-pattern counter
+    establishes at most 36107 party-A state-changing timesteps, yet the original API returns 40123
+    Opp-UniKEM and 40043 UniKEM retained snapshots. Thus even after its boundary exclusions the sampled
+    events cannot be one-per-changing-timestep. The means 144.9149614934 and 229.0983692531, and population
+    variances 1065.3604129456 and 2785.0976581053, satisfy the directional relationship within the
+    artifact protocol but do not resolve the method mismatch. Party B is validated as auxiliary evidence,
+    not an extra Section 5.3 claim. The paper notes in Section 5.1 footnote 5 that absolute send probabilities
+    matter less when their ratio is fixed; this does not repair different sampling weights. No altered
+    model, replacement dataset, reduced timestep argument chosen by us, or changed paper threshold
+    is used. The inline Rust examples observe public APIs and add no edits to the 80 original artifact
+    files. Strict rational comparisons check the internal direction; up to eight ULPs only handle
+    independent floating-point arithmetic/serialization checks, not scientific tolerance.
+run:
+  command: |
+    set -eu
+    python3 -I - <<'PY'
+    import hashlib, json, os, subprocess
+    from pathlib import Path
+    root=Path.cwd()
+    assert os.environ.get('CARGO_HOME'), 'Set CARGO_HOME to the isolated prepared dependency cache outside this fresh extraction'
+    assert subprocess.check_output(['rustc','--version'],text=True).startswith('rustc 1.93.0 ')
+    assert subprocess.check_output(['cargo','--version'],text=True).startswith('cargo 1.93.0 ')
+    assert subprocess.check_output(['gcc','-dumpfullversion'],text=True).strip()=='13.3.0'
+    assert not any((root/p).exists() for p in ['amber-tools','amber-build','amber-messaging','.amber-target'])
+    manifest={
+      "usenixbadges-available.pdf": "fa8f9c76b6b95808e214df431f448556bde398d9cad4a4becf6917b5fe1ff039",
+      "usenixbadges-reproduced.png": "12fb430e153ac6b32ea095ea0c7d446f8da6a8074103757578a988b19ada577d",
+      "usenixbadges-available.png": "14a62cc9ea8032649dc798c25e651e27ae8cd8beef51e92f8f5e05e0b6293f14",
+      "clean.sh": "24a2929dc64f92ad1ba9a50f8b400de1bd814028276855175d7bc84792655f40",
+      "usenixbadges-reproduced.pdf": "f1d147e69a2b121cdeb9c796a646bda681988feeae6d1a95c3f7a0afa22ad800",
+      "usenixbadges-functional.pdf": "211fe98d495b26fa7feac9957211445b1bcbfee63835c5e9ec2a0b997877aaff",
+      "usenix-2020-09.sty": "2278c83173e084a00fcf76d3227acb971f5137ecea993a5b4e13a9b2bd67b45e",
+      "usenix25-ae.tex": "2b3f6180efc66d2e50f0511a8b54a8e55984826b80ef59930af3af9194c282a8",
+      "usenixbadges.sty": "dfc6ee9f414bb0c8f6b082394f92cb1b0170149b9471bf03f3688c1a53f9ad49",
+      "README.md": "07275254689f97a02c85c86c98bddbc2e01bde078d0074927936c14276705fca",
+      ".gitignore": "23d5286edb607e4260f8025a7664446121a6e4a86c9d51d79c3f299f5992f7c5",
+      "add_header.sh": "3b12a6e0400abfa1627d614915ee149d2acd4024faf6d99e48e61060b6e72788",
+      "Cargo.toml": "b249ee7ea19b4ca538879913ba53f3928a5d4129ec393315cd54a9e8d314be02",
+      "usenix25_AE_653.pdf": "d32ec584523e64d8f4a2af8f5bcae20f8e760fb43542e6a4f029e79b756d25b0",
+      "usenix25_AE_653.tex": "dbc9ba0400ec9f65d25ba43a68dc82ae7d79ee36e5f419d62adb1dc925b6abbe",
+      "LICENSE": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "Cargo.lock": "98e02035751237927eadf689bc459c151c8865a04b968e7a34c2091d80a5f61a",
+      "usenixbadges-functional.png": "9828cc85586a7bf3dc1f535996391515a5e931fbd6ef7b1762bc542fc2d41c49",
+      "charts/fig5.gp": "e374c7396164c3aa273893890562d03113bc51b50e2c6b72e0ffc86f1b67b570",
+      "charts/vulnset_unikem_distributions_32.gp": "7077b33284c019d49dcc0952ddf3956ff2d39762e5163bb0621dfd29e68ed148",
+      "charts/vulnset_imbal_distributions_128.gp": "84913bf20ecb12b55a25a02af42624a3ded65e3c331610736bbbfc6a4b7f9ffc",
+      "charts/vulnset_imbal_tests_512.sh": "daa34209fe3780058edf3578ca1c6c49c0991a5ffb3611a415794e94764450d8",
+      "charts/vulnset_rkem_distributions_512.gp": "7bc3b8d28178f4ca74ea73bf25d3526f404b885c32a91fa5c932a21c56ba9821",
+      "charts/single_exposure_histograms.gp": "5cbc4551a606a9867f0c35a06b50da6711d6b0d4f2b61cb39786feade1131cf4",
+      "charts/fig7.gp": "cdaba8288652bf1c5c1a705862d17d5b3e0428baec2ca202cc4f3dc25b78e6ff",
+      "charts/appendix_tests.sh": "58d85db21d7d3c5108aaffccd8c54b43a070e6986e77ed4c05a6ad50b62433dc",
+      "charts/fig6b.gp": "7e375c7fc2022be27563754b6f6c22b03bd75a9dadb6092a0f975cf9562beafb",
+      "charts/vulnset_imbal_tests_32.sh": "01a4c73e4670735b8bf488d4367966793030b428c53fbdac2edeb571e409e5a1",
+      "charts/vulnset_imbal_tests_128.sh": "6e15bdb6d92ad659a92e91aea370d4b4ee092a52c04fd3dec5390fb957e949e8",
+      "charts/.gitignore": "380bef25c47ca6490b4fcc39b9df60bf1a5bd56ec635a35eaa54ff6e75e01751",
+      "charts/vulnset_bikem_distributions_512.gp": "c288208ae90aeccadbe27394603834ba2d8889c9955972419a114d819fa0920e",
+      "charts/vulnset_rkem_distributions_128.gp": "829ce0b0b0bcf22d14aff4d9c5892fb21013100db737171648c25b4bce1c1f86",
+      "charts/fig6a.gp": "5e4b95fdd7346493020dae7be9aaf95ee7c6e2cd589bf751cf88c56c536219b9",
+      "charts/fig4.gp": "ab7e4fa1fd11c1cfd9505ecd664468ae1213e952a59e93ff9a71a1f90075ff41",
+      "charts/vulnset_unikem_distributions_128.gp": "b5a1e0dca5b43a0eb2624458f6dd639177faa2c3cc0b4ca8b97589cc0675c99a",
+      "charts/vulnset_bikem_distributions_128.gp": "fb4e6af3ec9a572754fd51f760c96421d4bacb0c91c638f5cad65a56249de82f",
+      "charts/run_tests.sh": "acdb52774ce00b27e5b70ddebb317ed9c082bd044762f3661c671aaa6cd773bd",
+      "charts/vulnset_unikem_distributions_512.gp": "5b899149f7903262ba32b55b0d748e3fad6fb7ff7bf19e9a69db31f557417b41",
+      "charts/vulnset_imbal_distributions_32.gp": "96d72489a7608470487cc819530edfc8fa3e29ccf933d3d55bc978a1ebb3b158",
+      "charts/vulnset_bikem_distributions_32.gp": "b1840aa479f3279c34cb75a8913448d31fbdda7640d838a293a799a56a431903",
+      "charts/vulnset_imbal_distributions_512.gp": "2554f4fc4f205f80c0dea89c0b8c0d5280e39605dd5811f8616593555b0bc161",
+      "charts/vulnset_rkem_distributions_32.gp": "f61ef69337e6ecc923fc5df0815f46f1578c52a0c28494a24db58baf439a3134",
+      "src/encoding.rs": "1b91127c88d9f9e0f28e4f950de7eb13047961a5635e95d21194231321bbbb0e",
+      "src/rkem_mscka.rs": "055f4c64ed6c09a45b9fcb890a15cc1eaca2c9843589a0e48caacd587d70fe2a",
+      "src/messaging_scka.rs": "e220746fcff5897ebfa1b9060590284859e5d6a1dc02c143563899249253bf72",
+      "src/mlkem.rs": "f639f9ec368fd0d777c11cb6714c875862063cf89838cd7d4a1c59f2cf0a1f7d",
+      "src/ack.rs": "e1eb16bcf13b89ab466d8556f9e627e2c75218e33381cfbaa02037dfaf5406af",
+      "src/rkem.rs": "478dcf2b6e147490e98f46b1284d9ff1fe18b377d0ac17cd088900f0c305c1ac",
+      "src/lib.rs": "6b2c271e386cdae9a57e7508b9da53b2467d84f4fddf523a98f57dfbe057c05c",
+      "src/scka.rs": "6dcae99108d7181ac61b507ca63b057e5eb3d78e37442be3d7294ad21d0ae864",
+      "src/main.rs": "78e079f528308bac82933c918f57f989ff3a53b17a6415c7ecfb05d16c99b704",
+      "src/uni_kem_scka.rs": "c4c766b4c87c263a06747d3f1406e477eab3e90beb580913551e481b7e9e7f0d",
+      "src/test.rs": "93a8a3567f16837f880d2aecb56841817c28f56e08bf22ffa62354420d3b1e38",
+      "src/bi_kem_scka.rs": "4761546077edefaef8320712c737b1e3f4d348953d61c3699ca0da82aae016e4",
+      "src/responder.rs": "1a8e8bbfdb54d74f0958adf92b4539ec1813949b58b886dc9ed91bad23ba74dd",
+      "src/rkem_scka.rs": "e00663a0cae9873d44c79f651d86ad242f528b437a9bc5d86f616e8267a94fc0",
+      "src/opp_bi_kem_scka.rs": "c79d78685b6ca43852ec37b9ed31135d3d1cb6c593e7e79aea8a285839f4d49d",
+      "src/requestor.rs": "59b7e24cc64e55c08f48c59e4b172bf0aed44993450ac876f366b4dba8746c9c",
+      "src/opp_uni_kem_scka.rs": "6f00294d23f54babf5df15a3707ea5e9d307b6ac2f9c1c9ded57d2357da9bb36",
+      "charts/figs/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "charts/imbal/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "charts/appendix_charts/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "charts/ch_large/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "charts/ch_small/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "charts/ch_medium/placehoder.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "src/opp_uni_kem_scka/ct_sender.rs": "0382c7c11e0d55b1893f2b7df7c4e021128fdda58573b4f3ad106e41c2f9e4dd",
+      "src/opp_uni_kem_scka/ek_sender.rs": "2c062fbff3601bd0cb6ddbecdb7ad6c36714a010ec26401d4cd9691c6c17d83b",
+      "src/test/orchestrator.rs": "e2063665fdebb830fec776363f8c735f30ce1f5806f413de9ccd4324e8102fe4",
+      "src/test/pingpong_messaging_behavior.rs": "9db0929ae0ba1b83baa51fc54fd210423912095af87ad21ff5ea320d9b225516",
+      "src/test/timezone.rs": "9e73d552e8eb9cbc5c1123a23e4c13d27424b047f7140c5c391edd3acaca2928",
+      "src/test/onlineoffline.rs": "54f0705dd3d9f8042efa5fa9df48be8660e4b2759c0c27f94b135db1da6e3763",
+      "src/test/basic_messaging_behavior.rs": "cba77bcfc861dc3aa77eb6cbcfd6b0c6699c4a5689e0122e7a86ff8f3959f01c",
+      "src/test/messaging_behavior.rs": "cd4a9c5bc622d3b59e898bbd17e21b48d95b60c02fb423cedf22e15e4fbfd2df",
+      "src/rkem/kyber_rkem.rs": "1e22eeb113791763af9cf1b24ae88a50db6dedbac1494fcd4efcd1d49a4aea76",
+      "src/rkem/mock_katana.rs": "8bcea41f7441aaeac887ab25052265792be8910d678692037e83c86e5ccf6f0f",
+      "src/rkem/mock_mlkem_split_ct0.rs": "a3a3cd72735a213ae20a62339ac98f0bb7b56e4cc91d1050a0323af8a1ee492c",
+      "src/rkem/x25519_rkem.rs": "9be584cc3ff8e7a09f4f8f86ce07472c1f88b51cec896ed169b6a5d716517a43",
+      "src/encoding/polynomial.rs": "d9e710978c0217fe7a8a103567a3b10a7dfa0bf4819e7f9b1c5eb07dddd0d1a9",
+      "src/encoding/gf.rs": "6574e111a755d2a9d341fd902f643f0d2220442111c74043cb17e93ca3c87a42",
+      "src/encoding/round_robin.rs": "bf949128e824f343646b91af97761c74ad71f11dbd1eba05847462059717fae5"
+    }
+    assert all(hashlib.sha256((root/p).read_bytes()).hexdigest()==h for p,h in manifest.items()), 'pinned original source mismatch'
+    assert hashlib.sha256(Path(subprocess.check_output(['rustup','which','rustc'],text=True).strip()).read_bytes()).hexdigest()=='d32249a7c3bfcfc67b471460386e46323accae7125e344567a12d5664d99bb57', 'pinned rustc mismatch'
+    assert hashlib.sha256(Path(subprocess.check_output(['rustup','which','cargo'],text=True).strip()).read_bytes()).hexdigest()=='9548937d530bf439ff1ba47a3b2bd26eeb9c3aff1961c20c01798613de922578', 'pinned cargo mismatch'
+    (root/'amber-tools').mkdir()
+    (root/'amber-build').mkdir()
+    (root/'examples').mkdir(exist_ok=True)
+    assert not (root/'examples/amber_counts.rs').exists()
+    (root/'examples/amber_counts.rs').write_text(r'''// Observe the unmodified artifact's public histogram API with the CLI's exact types.
+    use usenix2025sims::{
+        opp_uni_kem_scka::OppUniKemMscka,
+        rkem::mock_mlkem_split_ct0::MockMlkemSplitCt0,
+        rkem_mscka::RkemMessagingScka,
+        uni_kem_scka::UniKemMscka,
+        test::{basic_messaging_behavior::BasicMessagingBehavior,
+               orchestrator::controlled_messaging_healing_test},
+    };
+    fn main() {
+        let case = std::env::args().nth(1).expect("protocol argument");
+        let mut behavior = BasicMessagingBehavior::new(0.2, 0.2, 1.0);
+        let hist = match case.as_str() {
+            "opp-uni-kem" => controlled_messaging_healing_test::<
+                OppUniKemMscka<MockMlkemSplitCt0, 32>, _>(&mut behavior, 100000),
+            "uni-kem" => controlled_messaging_healing_test::<
+                RkemMessagingScka<UniKemMscka<32>>, _>(&mut behavior, 100000),
+            _ => panic!("unexpected protocol"),
+        }.expect("complete histogram");
+        println!("num_exposed,count_A,count_B");
+        for e in hist {
+            println!("{},{},{}", e.num_msgs, e.tot_by_a, e.tot_by_b);
+        }
+    }
+    ''')
+    assert not (root/'examples/amber_pattern.rs').exists()
+    (root/'examples/amber_pattern.rs').write_text(r'''// Count state-change opportunities independently of either CKA protocol.
+    use rand::{rngs::StdRng, SeedableRng};
+    use usenix2025sims::test::{basic_messaging_behavior::BasicMessagingBehavior,
+        messaging_behavior::{MessagingBehavior, Command, Agent}};
+    fn main() {
+        let mut behavior = BasicMessagingBehavior::new(0.2, 0.2, 1.0);
+        let mut rng = StdRng::seed_from_u64(43);
+        let mut pending = [false; 2];
+        let mut sent = [0usize; 2];
+        let mut received = [0usize; 2];
+        let mut changed = [0usize; 2];
+        for _tick in 0..100000 {
+            let mut tick_changed = [false; 2];
+            for command in behavior.next_commands(&mut rng) {
+                match command {
+                    Command::ReceiveAll(agent) => {
+                        let p = if agent == Agent::Alex {0} else {1};
+                        if pending[p] {received[p] += 1; tick_changed[p] = true;}
+                        pending[p] = false;
+                    },
+                    Command::Send(agent) => {
+                        let p = if agent == Agent::Alex {0} else {1};
+                        sent[p] += 1; tick_changed[p] = true; pending[1-p] = true;
+                    },
+                    Command::Receive(_) => panic!("unexpected command in selected behavior"),
+                }
+            }
+            for p in 0..2 {if tick_changed[p] {changed[p] += 1;}}
+        }
+        println!("party,send_events,nonempty_receive_events,state_change_timesteps,candidate_snapshots");
+        for p in 0..2 {
+            println!("{},{},{},{},{}", if p==0 {"A"} else {"B"}, sent[p], received[p], changed[p], sent[p]+received[p]);
+        }
+    }
+    ''')
+    assert not (root/'amber-tools/run_suite.py').exists()
+    (root/'amber-tools/run_suite.py').write_text(r'''"""Run the two frozen CLI cases and their two planned raw-count API replays."""
+    import datetime
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+    import time
+
+    artifact = Path.cwd()
+    out = artifact/'amber-messaging'
+    out.mkdir(exist_ok=False)
+    target = Path(os.environ['AMBER_MESSAGING_TARGET']).resolve()
+    cases = ['opp-uni-kem','uni-kem']
+    records = []
+
+    def run(label,command,stdout_path):
+        started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        then = time.monotonic()
+        with stdout_path.open('xb') as stdout,(out/(label+'.stderr.log')).open('xb') as stderr:
+            p = subprocess.run(['/usr/bin/time','-v','-o',str(out/(label+'.resources.txt')),'--',*command],stdout=stdout,stderr=stderr)
+        record = dict(label=label,command=command,started_at=started,finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),runtime_seconds=time.monotonic()-then,exit_status=p.returncode)
+        records.append(record)
+        (out/'commands.json').write_text(json.dumps(records,indent=2)+'\n')
+        print(json.dumps(record),flush=True)
+        if p.returncode: raise RuntimeError('frozen command failed; no retry')
+
+    for protocol in cases:
+        run('cli-'+protocol,[str(target/'release/usenix2025sims'),'--fnamebase','amber-messaging/run','--numsteps','100000','--balance','0.5','--windowpp','50','--varpp','2',protocol,'balanced','fs-rkem','hist','small'],out/('cli-'+protocol+'.stdout.log'))
+    for protocol in cases:
+        run('counts-'+protocol,[str(target/'release/examples/amber_counts'),protocol],out/('counts-'+protocol+'.csv'))
+    (out/'binary-identities.json').write_text(json.dumps({str(p.relative_to(target)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [target/'release/usenix2025sims',target/'release/examples/amber_counts']},indent=2)+'\n')
+    ''')
+    assert not (root/'amber-tools/validate.py').exists()
+    (root/'amber-tools/validate.py').write_text(r'''"""Independent integer-count validation, including every original CSV bin/statistic."""
+    import csv
+    from fractions import Fraction
+    import json
+    import math
+    from pathlib import Path
+    import sys
+
+    def rows(path):
+        with path.open(newline='') as f:
+            return list(csv.reader(f))
+
+    def close(actual,expected):
+        return math.isfinite(actual) and abs(actual-expected) <= 8*math.ulp(expected)
+
+    def validate(out):
+        commands=json.loads((out/'commands.json').read_text())
+        cases=['opp-uni-kem','uni-kem']
+        assert [x['label'] for x in commands]==['cli-'+p for p in cases]+['counts-'+p for p in cases]
+        assert all(x['exit_status']==0 and x['runtime_seconds']>0 for x in commands)
+        expected_tail=['--fnamebase','amber-messaging/run','--numsteps','100000','--balance','0.5','--windowpp','50','--varpp','2']
+        for i,p in enumerate(cases):
+            assert commands[i]['command'][1:]==expected_tail+[p,'balanced','fs-rkem','hist','small']
+            assert commands[i+2]['command'][1:]==[p]
+        data={};fractions={}
+        for protocol,short in [('opp-uni-kem','oppunikem'),('uni-kem','unikem')]:
+            raw=rows(out/('counts-'+protocol+'.csv'))
+            assert raw.pop(0)==['num_exposed','count_A','count_B']
+            assert raw and all(len(row)==3 and all(s.isdecimal() for s in row) for row in raw)
+            raw=[[int(v) for v in row] for row in raw]
+            assert [v[0] for v in raw]==list(range(len(raw)))
+            assert raw[-1][1]+raw[-1][2]>0
+            n=[sum(row[i] for row in raw) for i in [1,2]]
+            assert all(0 < v <= 400000 for v in n)
+            hist=rows(out/f'run_bal_{short}_hist.csv')
+            assert hist.pop(0)==['num exposed','freq exposed by a','freq exposed by b','cumulative exposed by a',' cumulative exposed by b','']
+            assert len(hist)==len(raw)
+            cumulative=[0,0]
+            for original,counts in zip(hist,raw):
+                assert len(original)==6 and original[-1]=='' and original[0]==str(counts[0])
+                expected=[]
+                for party in [0,1]:
+                    cumulative[party]+=counts[party+1]
+                    expected.append(counts[party+1]/n[party])
+                expected += [cumulative[p]/n[p] for p in [0,1]]
+                actual=[float(v) for v in original[1:5]]
+                assert all(math.isfinite(v) and 0<=v<=1 for v in actual)
+                assert actual==expected
+            assert cumulative==n
+            stats=rows(out/f'run_bal_{short}_stats.csv')
+            assert stats.pop(0)==['compromised party','mean',' stddev',' min','p10','p20','p30','p40','p50','p60','p70','p80','p90','max']
+            assert len(stats)==2 and [row[0] for row in stats]==['A','B']
+            data[protocol]={};fractions[protocol]={}
+            for party,label in enumerate(['A','B']):
+                f=party+1;count=n[party]
+                total=sum(c[0]*c[f] for c in raw)
+                squares=sum(c[0]*c[0]*c[f] for c in raw)
+                mean=Fraction(total,count);variance=Fraction(squares,count)-mean*mean
+                assert variance>0
+                mean_f=total/count;sd=math.sqrt(squares/count-mean_f*mean_f)
+                assert len(stats[party])==14
+                assert close(float(stats[party][1]),mean_f) and close(float(stats[party][2]),sd)
+                assert close(float(stats[party][1]),float(mean)) and close(float(stats[party][2]),math.sqrt(float(variance)))
+                support=[c[0] for c in raw if c[f]>0]
+                quantiles=[support[0]]
+                for q in range(1,10):
+                    cumulative_count=0
+                    for c in raw:
+                        cumulative_count+=c[f]
+                        if cumulative_count>(count*q)//10:
+                            quantiles.append(c[0]);break
+                quantiles.append(support[-1])
+                assert [int(s) for s in stats[party][3:]]==quantiles
+                data[protocol][label]=dict(samples=count,bins=len(raw),sum_exposed=total,sum_squared_exposed=squares,mean=float(mean),population_variance=float(variance),stddev=math.sqrt(float(variance)),deciles=quantiles)
+                fractions[protocol][label]=(mean,variance)
+        opp=fractions['opp-uni-kem']['A'];plain=fractions['uni-kem']['A']
+        assert opp[0]<plain[0] and opp[1]<plain[1], 'frozen internal directional consistency failed'
+        return dict(expected_verdict='NOT_COMPARABLE',role='not_comparable',cases=2,cli_runs=2,planned_count_api_replays=2,actual_timesteps_per_run=100000,paper_timesteps_per_run=1000000,actual_send_probability_per_party=0.2,paper_send_probability_per_party=0.4,message_pattern_seed=43,chunk_bytes=32,party_A_mean_ratio=float(opp[0]/plain[0]),party_A_variance_ratio=float(opp[1]/plain[1]),metrics=data,scope='Original artifact 32-byte primary-primary subset; different paper horizon and send probability; no paper reproduction or failure claim')
+
+    if __name__=='__main__':
+        result=validate(Path(sys.argv[1]));print(json.dumps(result,indent=2))
+    ''')
+    assert not (root/'amber-tools/validate_pattern.py').exists()
+    (root/'amber-tools/validate_pattern.py').write_text(r'''import csv
+    import json
+    from pathlib import Path
+
+    def validate_pattern(metrics, csv_path, metadata_path):
+        metadata=json.loads(Path(metadata_path).read_text())
+        assert metadata['exit_status']==0
+        assert Path(metadata['command'][-1]).name=='amber_pattern'
+        with Path(csv_path).open(newline='') as f:
+            reader=csv.reader(f);header=next(reader);records=list(reader)
+        assert header==['party','send_events','nonempty_receive_events','state_change_timesteps','candidate_snapshots']
+        assert len(records)==2 and [r[0] for r in records]==['A','B']
+        result={}
+        for r in records:
+            assert len(r)==5 and all(v.isdecimal() for v in r[1:])
+            sent,received,changed,candidate=map(int,r[1:])
+            assert 0<sent<=100000 and 0<received<=100000
+            assert max(sent,received)<=changed<=100000
+            assert changed<candidate==sent+received<=200000
+            for protocol in ['opp-uni-kem','uni-kem']:
+                retained=metrics['metrics'][protocol][r[0]]['samples']
+                assert changed<retained<=candidate, 'event-sample count must exceed distinct changed ticks'
+            result[r[0]]=dict(send_events=sent,nonempty_receive_events=received,state_change_timesteps=changed,candidate_snapshots=candidate,ticks_with_both_send_and_receive=candidate-changed)
+        metrics['sampling_audit']=result
+        metrics['scope']+='; additionally, retained event snapshots exceed distinct state-changing ticks, demonstrating different sampling weights from the per-timestep paper description'
+        return metrics
+    ''')
+    assert not (root/'amber-tools/entry_driver.py').exists()
+    (root/'amber-tools/entry_driver.py').write_text(r'''import json
+    import os
+    from pathlib import Path
+    import subprocess
+    import time
+
+    root=Path.cwd()
+    tools=root/'amber-tools'
+    build=root/'amber-build'
+    env=os.environ.copy()
+    for k in list(env):
+        if k.startswith(('RUSTFLAGS','CARGO_ENCODED_RUSTFLAGS','RUSTC_WRAPPER','RUSTC_WORKSPACE_WRAPPER','LIBCRUX_','CARGO_PROFILE_')):
+            del env[k]
+    rustc=subprocess.check_output(['rustup','which','rustc'],text=True).strip()
+    cargo=subprocess.check_output(['rustup','which','cargo'],text=True).strip()
+    env.update(CARGO_TARGET_DIR=str(root/'.amber-target'),CARGO_NET_OFFLINE='true',
+               CARGO_BUILD_JOBS='1',CARGO_PROFILE_RELEASE_CODEGEN_UNITS='1',
+               CARGO_INCREMENTAL='0',RAYON_NUM_THREADS='1',
+               RUSTFLAGS='-C link-arg=-Wl,--threads=1',RUSTC=rustc,
+               TMPDIR=str(build/'tmp'),AMBER_MESSAGING_TARGET=str(root/'.amber-target'))
+    (build/'tmp').mkdir()
+    (build/'environment.json').write_text(json.dumps({k:v for k,v in env.items() if k.startswith(('CARGO_','RUSTC','RUSTFLAGS','RAYON_','TMPDIR'))},indent=2)+'\n')
+    cmd=[cargo,'build','--release','--locked','--offline','--jobs','1','--bin','usenix2025sims','--example','amber_counts','--example','amber_pattern']
+    start=time.monotonic()
+    with (build/'stdout.log').open('xb') as stdout,(build/'stderr.log').open('xb') as stderr:
+        result=subprocess.run(['/usr/bin/time','-v','-o',str(build/'resources.txt'),'--',*cmd],env=env,stdout=stdout,stderr=stderr)
+    (build/'command.json').write_text(json.dumps(dict(command=cmd,exit_status=result.returncode,runtime_seconds=time.monotonic()-start),indent=2)+'\n')
+    assert result.returncode==0,'bounded offline build failed'
+    subprocess.run(['python3','-I',str(tools/'run_suite.py')],env=env,check=True)
+    out=root/'amber-messaging'
+    cmd=[str(root/'.amber-target/release/examples/amber_pattern')]
+    with (out/'pattern.csv').open('xb') as stdout,(out/'pattern.stderr.log').open('xb') as stderr:
+        result=subprocess.run(['/usr/bin/time','-v','-o',str(out/'pattern.resources.txt'),'--',*cmd],stdout=stdout,stderr=stderr)
+    (out/'pattern-command.json').write_text(json.dumps(dict(command=cmd,exit_status=result.returncode),indent=2)+'\n')
+    assert result.returncode==0,'sampling audit failed'
+    ''')
+    assert not (root/'amber-tools/entry_monitor.py').exists()
+    (root/'amber-tools/entry_monitor.py').write_text(r'''import datetime
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    import resource
+    import signal
+    import subprocess
+    import sys
+    import time
+
+    root=Path.cwd()
+    cache=Path(os.environ['CARGO_HOME']).resolve(strict=True)
+    assert cache.is_dir() and root!=cache and root not in cache.parents
+    build=root/'amber-build'
+    roots=[root,cache] if cache not in root.parents else [cache]
+    memory=1536*1024**2
+    storage=1024**3
+    seconds=900
+
+    def size():
+        return sum(p.stat().st_size for base in roots for p in base.rglob('*') if p.is_file())
+
+    def group_memory(group):
+        rss=swap=0
+        for p in Path('/proc').iterdir():
+            if not p.name.isdecimal():continue
+            try:
+                if int((p/'stat').read_text().rsplit(')',1)[1].split()[2])!=group:continue
+                for line in (p/'status').read_text().splitlines():
+                    if line.startswith('VmRSS:'):rss+=int(line.split()[1])*1024
+                    elif line.startswith('VmSwap:'):swap+=int(line.split()[1])*1024
+            except (FileNotFoundError,ProcessLookupError,PermissionError):pass
+        return rss,swap
+
+    def limits():
+        for key,value in [(resource.RLIMIT_AS,memory),(resource.RLIMIT_FSIZE,32*1024**2),(resource.RLIMIT_CPU,seconds),(resource.RLIMIT_CORE,0)]:
+            resource.setrlimit(key,(value,value))
+
+    available=next(int(l.split()[1])*1024 for l in Path('/proc/meminfo').read_text().splitlines() if l.startswith('MemAvailable:'))
+    disk=os.statvfs(root)
+    assert available>=3*1024**3 and disk.f_bavail*disk.f_frsize>=3*1024**3,'start resource gate'
+    assert size()<storage
+    started=datetime.datetime.now(datetime.timezone.utc).isoformat()
+    then=time.monotonic();reason=None;peak_rss=peak_swap=peak_total=peak_disk=0
+    with (build/'driver.stdout.log').open('xb') as stdout,(build/'driver.stderr.log').open('xb') as stderr:
+        proc=subprocess.Popen(['/usr/bin/time','-v','-o',str(build/'driver.resources.txt'),'--','python3','-I',str(root/'amber-tools/entry_driver.py')],stdout=stdout,stderr=stderr,start_new_session=True,preexec_fn=limits)
+        tick=0
+        while proc.poll() is None:
+            rss,swap=group_memory(proc.pid)
+            peak_rss=max(peak_rss,rss);peak_swap=max(peak_swap,swap);peak_total=max(peak_total,rss+swap)
+            if rss+swap>=memory:reason='aggregate_memory_limit'
+            elif time.monotonic()-then>=seconds:reason='wall_timeout'
+            if tick%10==0:
+                used=size();peak_disk=max(peak_disk,used)
+                if used>=storage:reason='storage_limit'
+            if reason:
+                os.killpg(proc.pid,signal.SIGTERM)
+                try:proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL)
+                break
+            tick+=1;time.sleep(0.1)
+        status=proc.wait()
+    metadata=dict(started_at=started,finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),runtime_seconds=time.monotonic()-then,exit_status=status,limit_reason=reason,peak_aggregate_rss_bytes=peak_rss,peak_aggregate_swap_bytes=peak_swap,peak_aggregate_rss_plus_swap_bytes=peak_total,peak_workspace_and_cache_bytes=max(peak_disk,size()),sample_interval_seconds=0.1,storage_sample_interval_seconds=1,limits=dict(address_space_bytes=memory,aggregate_rss_plus_swap_bytes=memory,workspace_and_cache_bytes=storage,per_capture_file_bytes=32*1024**2,wall_seconds=seconds,per_process_cpu_seconds=seconds))
+    (build/'capture.json').write_text(json.dumps(metadata,indent=2)+'\n')
+    assert status==0 and reason is None,'incomplete bounded command; preserve captures and stop'
+    sys.path.insert(0,str(root/'amber-tools'))
+    from validate import validate
+    from validate_pattern import validate_pattern
+    out=root/'amber-messaging'
+    metrics=validate_pattern(validate(out),out/'pattern.csv',out/'pattern-command.json')
+    manifest=json.loads((root/'amber-tools/source-manifest.json').read_text())
+    assert all(hashlib.sha256((root/p).read_bytes()).hexdigest()==h for p,h in manifest.items()),'original input changed'
+    metrics['original_files_unchanged']=len(manifest)
+    (out/'metrics.json').write_text(json.dumps(metrics,indent=2)+'\n')
+    print(json.dumps(metrics,indent=2))
+    ''')
+    (root/'amber-tools/source-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+    (root/'amber-build/tool-versions.json').write_text(json.dumps({str(cmd):subprocess.check_output(cmd,text=True) for cmd in [['rustc','--version','--verbose'],['cargo','--version'],['gcc','--version'],['python3','--version']]},indent=2)+'\n')
+    exec(compile((root/'amber-tools/entry_monitor.py').read_text(),str(root/'amber-tools/entry_monitor.py'),'exec'))
+    PY
+  outputs:
+  - amber-messaging/metrics.json
+  - amber-messaging/run_bal_oppunikem_hist.csv
+  - amber-messaging/run_bal_oppunikem_stats.csv
+  - amber-messaging/run_bal_unikem_hist.csv
+  - amber-messaging/run_bal_unikem_stats.csv
+  - amber-messaging/counts-opp-uni-kem.csv
+  - amber-messaging/counts-uni-kem.csv
+  - amber-messaging/pattern.csv
+  - amber-messaging/commands.json
+  - amber-messaging/pattern-command.json
+  - amber-messaging/binary-identities.json
+  - amber-build/capture.json
+  - amber-build/resources.txt
+  - amber-build/driver.resources.txt
+  - amber-build/stdout.log
+  - amber-build/stderr.log
+  - amber-build/driver.stdout.log
+  - amber-build/driver.stderr.log
+  - amber-build/tool-versions.json
+  - amber-build/environment.json
+baseline:
+  captured_on: '2026-10-29'
+  machine: AMD Ryzen 5 6600H, 12 logical CPUs; 14 GiB RAM; Linux x86-64; Python 3.12.3; Rust/Cargo
+    1.93.0; GCC 13.3.0
+  outputs: []
+  metrics:
+    artifact_timesteps: 100000
+    opportunistic_samples_per_party: 40123
+    nonopportunistic_samples_per_party: 40043
+    party_A_mean_ratio: 0.6325447097938112
+    party_A_population_variance_ratio: 0.38252174384087045
+    party_A_changed_timesteps_upper_bound: 36107
+    party_B_changed_timesteps_upper_bound: 36121
+  bit_for_bit_expected: false
