@@ -1,0 +1,156 @@
+id: usenixsec2024-oideli
+title: "Election Eligibility with OpenID: Turning Authentication into Transferable Proof of Eligibility"
+venue: {name: USENIX Security, year: 2024}
+paper:
+  url: "https://www.usenix.org/conference/usenixsecurity24/presentation/cortier"
+
+artifact:
+  url: "https://gitlab.inria.fr/oideli/oideli-artifact/-/tree/8c71077e40a100344ed817cbb06f4c16881a0c06"
+  clone: "https://gitlab.inria.fr/oideli/oideli-artifact.git"
+  ref_type: commit
+  ref: "8c71077e40a100344ed817cbb06f4c16881a0c06"  # release v1.0
+  license: "MIT OR Apache-2.0"  # proverif-files; other components have separate terms
+
+# Awarded badges: OIDEli row, https://secartifacts.github.io/usenixsec2024/results
+badges: [available, functional, reproduced]
+
+resources:
+  cpu_only: true
+  ram_gb: 2.2             # execution budget; each process has a 2 GiB address-space cap
+  disk_gb: 3.3            # 3 GiB workspace budget, including the local compiler build
+  runtime_minutes: 11     # two sequential 300-second timeouts plus validation
+  docker: false
+  network_required: true # public source/tool retrieval; the selected proofs are offline
+  notes: >
+    Appendix A.2.3 says the ProVerif proofs run on a standard laptop; A.2.4
+    requires ProVerif 2.05. A.4.2 E1 budgets five compute-minutes for the full
+    proof experiment. https://secartifacts.github.io/usenixsec2024/appendix-files/sec24winterae-final54.pdf.
+    The numeric resources above are conservative budgets for this tested
+    two-model subset, not minimum requirements quoted from the paper.
+    On 2026-10-26, Ubuntu 24.04 / AMD Ryzen 5 6600H / 15 GiB RAM,
+    the eligibility run took 0.52 seconds with 14952 KiB peak RSS; id-hiding
+    took 0.97 seconds with 25624 KiB peak RSS. Both ran unmodified and
+    sequentially under the stated caps. Local OCaml 4.14.2 setup and a native
+    ProVerif 2.05 build used about 1.5 GiB, including retained sources and logs.
+    ProVerif was built with ./build -nointeract from the official source:
+    https://bblanche.gitlabpages.inria.fr/proverif/proverif2.05.tar.gz
+    (SHA-256 4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4).
+    Installation instructions: https://bblanche.gitlabpages.inria.fr/proverif/README.
+    Put the native ProVerif 2.05 binary on PATH before running this entry.
+    The command also needs Git, Python 3, grep, GNU timeout and Linux prlimit.
+    This subset excludes the other models, ZKP performance benchmarks and
+    Belenios/Google integration; it does not reproduce the complete study.
+
+role: positive
+expected_verdict: REPRODUCED
+
+claims:
+  - metric: oideli_id_eligibility_verified
+    threshold: "== 1"
+    unit: boolean
+    source: "Section 5.2, Definition 1, p.3794; Table 4, p.3795; https://www.usenix.org/system/files/usenixsecurity24-cortier.pdf"
+    measurement_protocol: >
+      Run ProVerif 2.05 with the supplied default.pvl and unmodified
+      proverif-files/oideli/oideli_id-eligibility-and-others.pv. Assign 1 only
+      when the PublishBallot injective correspondence is explicitly proved:
+      the published proof identifies an eligible voter, with a matching
+      Voted event or a compromised eligible voter. Preserve the model's
+      uniqueness and ballot-weeding restrictions and its threat model:
+      only the identity provider must be honest. The second active query,
+      authenticated-as-expected (IdProViderAuthorized), must also be true;
+      it is an auxiliary check, not a separate Table 4 claim.
+    expected_verdict: REPRODUCED
+    notes: >
+      This tests the OIDEli-id eligibility cell of Table 4. A complete final
+      summary must contain both named true queries. Missing, false or
+      inconclusive results do not satisfy the threshold. Runtime is recorded
+      for resource accounting, not compared with the paper's laptop timings.
+
+  - metric: oideli_zk_id_hiding_verified
+    threshold: "== 1"
+    unit: boolean
+    source: "Section 5.2, Definition 2, p.3794; Table 4, p.3795; https://www.usenix.org/system/files/usenixsecurity24-cortier.pdf"
+    measurement_protocol: >
+      Run ProVerif 2.05 with the supplied default.pvl and unmodified
+      proverif-files/oideli/oideli_zk-id-hiding.pv. Assign 1 only when its
+      biprocess diff-equivalence is explicitly proved, establishing the
+      modeled identity-hiding property. Preserve the choice terms, process
+      replication, restrictions and selection directives. The voting server
+      and identity provider are honest; the model includes dishonest voters
+      alongside the honest voters whose identities are protected.
+    expected_verdict: REPRODUCED
+    notes: >
+      The complete final summary must contain exactly one result:
+      Diff-equivalence is true. This is the OIDEli-zk id-hiding cell of Table 4,
+      not a claim about OIDEli-id id-hiding, everlasting privacy of the
+      integrated voting system, or the Rust ZKP implementation.
+
+# Run from a clean pinned artifact checkout with ProVerif 2.05 on PATH.
+# A new amber-oideli directory is required so old outputs cannot be reused.
+# Keep stderr visible. Full stdout files are captured before validation.
+# The checker compares detailed results with complete final summaries and
+# accounts for both active eligibility queries and the one equivalence result.
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 8c71077e40a100344ed817cbb06f4c16881a0c06
+    git diff --exit-code HEAD -- proverif-files/oideli/default.pvl proverif-files/oideli/oideli_id-eligibility-and-others.pv proverif-files/oideli/oideli_zk-id-hiding.pv
+    mkdir amber-oideli
+    proverif -help > amber-oideli/proverif-version.txt
+    grep -Fx 'Proverif 2.05. Cryptographic protocol verifier, by Bruno Blanchet, Vincent Cheval, and Marc Sylvestre' amber-oideli/proverif-version.txt
+    cd proverif-files/oideli
+    timeout --signal=TERM --kill-after=5s 300s prlimit --as=2147483648 --cpu=300 --fsize=67108864 -- proverif -lib default.pvl oideli_id-eligibility-and-others.pv > ../../amber-oideli/eligibility.stdout.log
+    timeout --signal=TERM --kill-after=5s 300s prlimit --as=2147483648 --cpu=300 --fsize=67108864 -- proverif -lib default.pvl oideli_zk-id-hiding.pv > ../../amber-oideli/id-hiding.stdout.log
+    cd ../..
+    python3 -I - <<'PYTHON'
+    """Validate the complete selected ProVerif 2.05 summaries, not exit status alone."""
+    import json
+    from pathlib import Path
+    import re
+    import sys
+
+
+    def summary(text, count, restrictions):
+        if text.count('Verification summary:') != 1:
+            raise ValueError('Missing or duplicate verification summary')
+        before, after = text.split('Verification summary:')
+        match = re.fullmatch(r'\s*Query\(ies\):\n(.*?)Associated restriction\(s\):\n(.*?)\n-{10,}\s*', after, re.S)
+        if match is None:
+            raise ValueError('Incomplete verification summary')
+        queries = [line.removeprefix(' - ').removeprefix('Query ') for line in match[1].splitlines() if line.strip()]
+        if len(queries) != count or len(set(queries)) != count:
+            raise ValueError('Unexpected or duplicate query results')
+        if any(not query.endswith(' is true.') for query in queries):
+            raise ValueError('A selected query was not proved')
+        if len(re.findall(r'^ - Restriction ', match[2], re.M)) != restrictions:
+            raise ValueError('Unexpected restriction coverage')
+        results = [line.removeprefix('RESULT ') for line in before.splitlines() if line.startswith('RESULT ')]
+        if results != queries:
+            raise ValueError('Detailed results and final summary disagree')
+        return queries
+
+
+    def verify(eligibility, hiding):
+        queries = summary(eligibility, 2, 2)
+        if not queries[0].startswith('inj-event(PublishBallot('):
+            raise ValueError('Missing eligibility correspondence')
+        for required in ['==>', 'Id(is_eligible(', 'inj-event(Voted(', 'inj-event(MaliciousVoter(']:
+            if required not in queries[0]:
+                raise ValueError('Incomplete eligibility correspondence')
+        if not queries[1].startswith('event(IdProViderAuthorized(') or 'event(VoterWantsToCast(' not in queries[1]:
+            raise ValueError('Missing authenticated-as-expected query')
+        if summary(hiding, 1, 6) != ['Diff-equivalence is true.']:
+            raise ValueError('Missing identity-hiding equivalence')
+        return {'oideli_id_eligibility_verified': 1, 'oideli_zk_id_hiding_verified': 1}
+    results = verify(
+        Path('amber-oideli/eligibility.stdout.log').read_text(),
+        Path('amber-oideli/id-hiding.stdout.log').read_text(),
+    )
+    Path('amber-oideli/metrics.json').write_text(json.dumps(results, sort_keys=True) + '\n')
+    print(json.dumps(results, sort_keys=True))
+    PYTHON
+  outputs:
+    - amber-oideli/proverif-version.txt
+    - amber-oideli/eligibility.stdout.log
+    - amber-oideli/id-hiding.stdout.log
+    - amber-oideli/metrics.json
