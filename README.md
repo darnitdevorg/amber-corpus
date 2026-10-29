@@ -39,3 +39,26 @@ and backends, fuzzing on chance.
 
 So each entry's external ground truth is a threshold on a metric, not a digest, and the fields are `threshold`, `measurement_protocol` and `expected_verdict`.
 
+-> What goes in `run.command`
+
+The command is what a researcher would type: pin the checkout (or verify the
+archive's digest), set up the tool, run the artifact's own commands, and end
+with a short checker that writes every claim's value into one `metrics.json`
+under a fresh `amber-<name>/` directory listed in `outputs`. That is all.
+
+Leave out resource watchdogs, RSS samplers, RLIMIT handling and manifests of
+the artifact's files: Amber records every input and output digest through
+Witness and the runner enforces limits. A command that embeds hundreds of lines
+of Python is unreviewable and will not be maintained. As a guide, the whole
+command should fit on one screen; the checker is the only part that should
+need reading.
+
+Give each claim a `measure` block (`file`, `regex` with the value in group 1,
+optional `scale`, and `comparable: false` with a `reason` for values measured
+under conditions the paper's are not) pointing at `metrics.json`, so
+`darnit-amber run --claims <entry>` computes the verdict and a rerun compares
+the value, not only the file.
+
+After the first successful run, fill `baseline` (date, machine, outputs,
+metrics). It is the record that the entry was actually run.
+

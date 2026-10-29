@@ -28,15 +28,37 @@ expected_verdict: REPRODUCED
 claims:
   - metric: ""
     threshold: ""       # e.g. "<= 0.59"
+    tolerance: 0        # optional, absolute, for numeric thresholds
     unit: ""
     source: ""          # "Table II, p.9"
     measurement_protocol: ""   # HOW the paper measured it
     expected_verdict: REPRODUCED
     notes: ""
+    # How darnit-amber reads the value out of the run: a file the command
+    # writes and a regex whose group 1 is the value. Without it the claim is
+    # carried but never judged (NOT_COMPARABLE).
+    measure:
+      file: amber-<name>/metrics.json
+      regex: '"<metric>": ([0-9.]+)'
+      # scale: 100                 # optional multiplier (0.71 -> 71)
+      # comparable: false          # record the value, do not judge it
+      # reason: "different hardware"
 
+# What a researcher would type, and nothing else: pin the checkout (or verify
+# the archive), set up the tool, run the artifact's own commands, then a short
+# checker that writes every claim's value into amber-<name>/metrics.json.
+# No watchdogs, samplers, RLIMITs or file manifests: Amber records inputs and
+# outputs through Witness and the runner enforces limits. Keep it to one screen.
 run:
-  command: ""
-  outputs: []           # files Amber should capture and compare
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = <ref>
+    mkdir amber-<name>
+    <the artifact's own command> > amber-<name>/run.log
+    <checker> > amber-<name>/metrics.json
+  outputs:              # files Amber captures and compares across reruns
+    - amber-<name>/run.log
+    - amber-<name>/metrics.json
 
 # Filled in after a first successful capture, not from the paper. External
 # ground truth (the AE badge) only certifies claims within tolerance; nobody
