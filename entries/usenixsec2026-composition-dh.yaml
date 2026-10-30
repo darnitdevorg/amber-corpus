@@ -1,0 +1,202 @@
+id: usenixsec2026-composition-dh
+title: 'Secure Protocol Composition under Dynamic Corruption: Scaling Up Symbolic Analysis for Real-World Security
+  Properties'
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity26/presentation/cremers
+artifact:
+  url: https://doi.org/10.6084/m9.figshare.29958290.v6
+  clone: Download https://ndownloader.figshare.com/files/61886518 as composition-v6.zip into a fresh working
+    directory. run.command verifies its SHA-256 and extracts it.
+  ref_type: doi
+  ref: 10.6084/m9.figshare.29958290.v6
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 0.54
+  disk_gb: 1.1
+  runtime_minutes: 7
+  docker: false
+  network_required: true
+  notes: |
+    Appendix A.4.2 E1 estimates 100 compute-milliseconds and 10 MB disk for the selected DH case
+    study, excluding tool provisioning; these are not timing acceptance thresholds. The 70–200 GB RAM
+    recommendation and E2's 200 GB disk / hundreds of compute-hours apply to TLS ECH, which is excluded.
+    https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle1ae-final98.pdf
+    The numeric resource fields are conservative execution budgets. Amber enforces limits and records
+    input/output digests. Resource samplers, watchdogs and artifact manifests remain only in ignored
+    local verification, outside run.command. Prerequisites: Linux x86_64, Python 3.9+, unzip, sha256sum
+    and native ProVerif 2.05 on PATH. The pinned archive bundles the official ProVerif 2.05 source
+    (SHA-256 4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc4); build it with an
+    isolated OCaml toolchain following its README, or use an existing 2.05 installation. The command
+    checks the version. Download composition-v6.zip via artifact.clone before running; the command
+    itself is offline. Require a new amber-composition directory. The archive is 1120238 B and
+    1532652 B expanded; both DH files are byte-identical between versions 2 and 6. Initial setup,
+    downloads, source and captures used about 12.8 MB, reusing an existing native verifier. Initial
+    captures on 2026-10-28: monolithic 0.112 s / 10284 KiB maximum child RSS, compositional 0.117 s /
+    10212 KiB. The earlier literal command passed a fresh extraction in 0.517 s, with 25196 KiB peak
+    child RSS for the outer validation launcher. Independent checks confirmed all ten outcomes,
+    three reachability witnesses and all 97 original files unchanged. Baseline hashes identify a local
+    capture, not scientific acceptance thresholds. Only appendix E1's single-session symbolic model is
+    tested; no TLS, speedup, general-theorem, computational-security or full-study claim is made.
+    On 2026-10-30 the revised literal command passed fresh inputs in 0.316 s; sampled aggregate RSS plus swap peaked at 5197824 B, with no sampled swap or limit event. Independent validation passed. The short checker rejected 66 malformed/incomplete fixtures. Baseline records this actual capture.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: session_key_A_forward_secrecy_verified
+  threshold: == 1
+  unit: boolean
+  source: Section 6.2, pp.447–448, forward-secrecy definition for A and analogous B property; appendix A.4.1
+    C1 / A.4.2 E1 query 4. https://www.usenix.org/system/files/usenixsecurity26-cremers.pdf ; https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle1ae-final98.pdf
+  measurement_protocol: |-
+    Use ProVerif 2.05 and the artifact's bash run_bench on two fresh copies of dh/dh_auth.pv.
+    The monolithic copy is unmodified. In the compositional copy, comment out only the
+    calls ; XP_A(k_sessA) and ; XP_B(k_sessB), as appendix E1 directs (lines 121 and 133).
+    Preserve all five queries and all protocol/cryptographic assumptions. Require the
+    five complete source-ordered outcomes [false,false,true,true,true] for monolithic
+    and [false,true,true,true,true] for compositional; match every query formula and
+    its RESULT line to the final Verification summary. The false negated reachability
+    queries must have witness traces (two monolithic, one compositional). Query 3 must
+    prove the set-up guarantee in both modes, and queries 4/5 must prove forward secrecy
+    of A/B's session key in both modes. Compare the complete query text after normalizing whitespace and fresh numeric variable
+    suffixes, retaining all connectives, grouping and explicit time-order comparisons. No repetitions, averaging or runtime tolerance apply. Reject incomplete,
+    duplicate, malformed, inconclusive or unexpected outcomes and any limit/setup failure.
+    Assign 1 to this metric only when query 4 for party A is explicitly true in both modes and the complete ten-query gate passes.
+  expected_verdict: REPRODUCED
+  notes: |-
+    One modeled DH session per role; ideal symmetric encryption, signatures, and the
+    specified DH equation; freshly generated honest signing keys; attacker-controlled
+    public channels c and xc; either long-term signing key can be dynamically revealed.
+    Forward secrecy means a derived session key can be known by the attacker only if
+    some long-term key was revealed before its derivation event. The set-up guarantee
+    allows unequal DH keys only following a prior reveal. No extra axioms, restrictions,
+    helper lemmas, changed prover settings, or universal-session claims are introduced.
+    This entry verifies the case study's mechanized claims, not the general composition
+    theorem or the TLS benchmark. Expected false sanity outcomes indicate reachability,
+    not a failed forward-secrecy claim.
+  measure:
+    file: amber-composition/metrics.json
+    regex: '"session_key_A_forward_secrecy_verified": ([0-9]+)'
+- metric: session_key_B_forward_secrecy_verified
+  threshold: == 1
+  unit: boolean
+  source: Section 6.2, pp.447–448, forward-secrecy definition for A and analogous B property; appendix A.4.1
+    C1 / A.4.2 E1 query 5. https://www.usenix.org/system/files/usenixsecurity26-cremers.pdf ; https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle1ae-final98.pdf
+  measurement_protocol: |-
+    Use ProVerif 2.05 and the artifact's bash run_bench on two fresh copies of dh/dh_auth.pv.
+    The monolithic copy is unmodified. In the compositional copy, comment out only the
+    calls ; XP_A(k_sessA) and ; XP_B(k_sessB), as appendix E1 directs (lines 121 and 133).
+    Preserve all five queries and all protocol/cryptographic assumptions. Require the
+    five complete source-ordered outcomes [false,false,true,true,true] for monolithic
+    and [false,true,true,true,true] for compositional; match every query formula and
+    its RESULT line to the final Verification summary. The false negated reachability
+    queries must have witness traces (two monolithic, one compositional). Query 3 must
+    prove the set-up guarantee in both modes, and queries 4/5 must prove forward secrecy
+    of A/B's session key in both modes. Compare the complete query text after normalizing whitespace and fresh numeric variable
+    suffixes, retaining all connectives, grouping and explicit time-order comparisons. No repetitions, averaging or runtime tolerance apply. Reject incomplete,
+    duplicate, malformed, inconclusive or unexpected outcomes and any limit/setup failure.
+    Assign 1 to this metric only when query 5 for party B is explicitly true in both modes and the complete ten-query gate passes.
+  expected_verdict: REPRODUCED
+  notes: |-
+    One modeled DH session per role; ideal symmetric encryption, signatures, and the
+    specified DH equation; freshly generated honest signing keys; attacker-controlled
+    public channels c and xc; either long-term signing key can be dynamically revealed.
+    Forward secrecy means a derived session key can be known by the attacker only if
+    some long-term key was revealed before its derivation event. The set-up guarantee
+    allows unequal DH keys only following a prior reveal. No extra axioms, restrictions,
+    helper lemmas, changed prover settings, or universal-session claims are introduced.
+    This entry verifies the case study's mechanized claims, not the general composition
+    theorem or the TLS benchmark. Expected false sanity outcomes indicate reachability,
+    not a failed forward-secrecy claim.
+  measure:
+    file: amber-composition/metrics.json
+    regex: '"session_key_B_forward_secrecy_verified": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    printf '%s\n' 'd06bc529054fc83c0a2520e9d2cc486e1a6e96a2109847a3a3e248053062efdd  composition-v6.zip' | sha256sum -c -
+    mkdir amber-composition
+    unzip -q composition-v6.zip -d amber-composition/artifact
+    proverif -help > amber-composition/version.txt
+    grep -Fx 'Proverif 2.05. Cryptographic protocol verifier, by Bruno Blanchet, Vincent Cheval, and Marc Sylvestre' amber-composition/version.txt
+    for mode in monolithic compositional; do
+      mkdir "amber-composition/$mode"
+      cp amber-composition/artifact/dh/* "amber-composition/$mode/"
+    done
+    sed 's/; XP_A(k_sessA)/(* & *)/;s/; XP_B(k_sessB)/(* & *)/' amber-composition/artifact/dh/dh_auth.pv > amber-composition/compositional/dh_auth.pv
+    for mode in monolithic compositional; do
+      (cd "amber-composition/$mode"; bash run_bench > stdout.log 2> stderr.log)
+    done
+    python3 -I - <<'PY'
+    import json, re
+    from pathlib import Path
+    expected = [
+     'not (event(DeriveKeyA(k)) && event(DeriveKeyB(k)))',
+     'not (event(Send(x)) && event(Accept(x)))',
+     'event(DeriveKeyA(k_iA))@iA && event(DeriveKeyB(k_iB))@iB ==> k_iA = k_iB || (event(Reveal(k))@j && (iA > j || iB > j))',
+     'event(DeriveKeyA(k_sessA))@i && attacker(k_sessA) ==> event(Reveal(k))@j && i > j',
+     'event(DeriveKeyB(k_sessB))@i && attacker(k_sessB) ==> event(Reveal(k))@j && i > j']
+    def normalize(s): return re.sub(r'\s+|_\d+\b', '', s)
+    def check(folder, statuses):
+        text = (folder/'stdout.log').read_text()
+        assert not (folder/'stderr.log').read_bytes() and text.endswith('\n')
+        assert text.count('Verification summary:') == 1 and not re.search(r'(?i)warning|error|cannot be proved|unknown', text)
+        before, summary = text.split('Verification summary:')
+        assert re.fullmatch(r'\s*(?:Query [^\n]+\n\s*){5}-{20,}\s*', summary)
+        rows = re.findall(r'^Query (.+) is (true|false)\.$', summary, re.M)
+        assert [normalize(q) for q, _ in rows] == list(map(normalize, expected))
+        assert [value for _, value in rows] == statuses
+        assert re.findall(r'^RESULT (.+) is (true|false)\.$', before, re.M) == rows
+        assert before.count('A trace has been found.') == statuses.count('false')
+        return [int(rows[i][1] == 'true') for i in (3, 4)]
+    root = Path('amber-composition')
+    mono = check(root/'monolithic', ['false', 'false', 'true', 'true', 'true'])
+    comp = check(root/'compositional', ['false', 'true', 'true', 'true', 'true'])
+    metrics = {f'session_key_{party}_forward_secrecy_verified': min(mono[i], comp[i]) for i, party in enumerate(('A', 'B'))}
+    (root/'metrics.json').write_text(json.dumps(metrics, sort_keys=True)+'\n')
+    PY
+  outputs:
+  - amber-composition/version.txt
+  - amber-composition/metrics.json
+  - amber-composition/monolithic/dh_auth.pv
+  - amber-composition/monolithic/run_bench
+  - amber-composition/monolithic/stdout.log
+  - amber-composition/monolithic/stderr.log
+  - amber-composition/compositional/dh_auth.pv
+  - amber-composition/compositional/run_bench
+  - amber-composition/compositional/stdout.log
+  - amber-composition/compositional/stderr.log
+baseline:
+  captured_on: '2026-10-30'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64
+  outputs:
+  - path: amber-composition/version.txt
+    sha256: 46b498c4b3d698a4cbc97efca5fdf6ff4c8d89bbaaa4a234bacb9bef2e1771da
+  - path: amber-composition/metrics.json
+    sha256: 5466b1fe278bc998e859bf37916b22574bb48dcc6c99023c6176efcc1ff81857
+  - path: amber-composition/monolithic/dh_auth.pv
+    sha256: 000125fca564ff775454042de5ab008095609ea0c515094f7c47defe1e5f2402
+  - path: amber-composition/monolithic/run_bench
+    sha256: 3be1e3cc7337744c393d472a1bfa42afb109444c198556e2e9ccb8080032f362
+  - path: amber-composition/monolithic/stdout.log
+    sha256: a423439621b9f1869c5b23f572f309baead238825a3398fe749cb4dd6f7ab99c
+  - path: amber-composition/monolithic/stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-composition/compositional/dh_auth.pv
+    sha256: 1da62af6e968c6828a3d684c853142ae6280ee9fedc3fdcd3371c300c05da7f6
+  - path: amber-composition/compositional/run_bench
+    sha256: 3be1e3cc7337744c393d472a1bfa42afb109444c198556e2e9ccb8080032f362
+  - path: amber-composition/compositional/stdout.log
+    sha256: 64dfc872f6988c33976551b7413801a7b807937300b11443a32d55076a3f69e0
+  - path: amber-composition/compositional/stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  metrics:
+    session_key_A_forward_secrecy_verified: 1
+    session_key_B_forward_secrecy_verified: 1
+  bit_for_bit_expected: false
