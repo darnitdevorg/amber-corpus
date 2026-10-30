@@ -91,6 +91,10 @@ claims:
     it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
     or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
     resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+  measure:
+    file: amber-widevine/metrics.json
+    regex: '"renewal_authenticity_verified": ([0-9]+)'
+
 - metric: renewal_freshness_verified
   threshold: == 1
   unit: boolean
@@ -112,6 +116,10 @@ claims:
     it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
     or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
     resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+  measure:
+    file: amber-widevine/metrics.json
+    regex: '"renewal_freshness_verified": ([0-9]+)'
+
 - metric: renewal_expiration_verified
   threshold: == 1
   unit: boolean
@@ -133,6 +141,10 @@ claims:
     it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
     or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
     resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+  measure:
+    file: amber-widevine/metrics.json
+    regex: '"renewal_expiration_verified": ([0-9]+)'
+
 - metric: renewal_policy_verified
   threshold: == 1
   unit: boolean
@@ -154,6 +166,10 @@ claims:
     it is a sanity check, not an unrestricted execution proof. No datasets, random seeds, repetitions
     or averaging apply. Missing, duplicate, malformed, false or inconclusive results fail validation;
     resource/setup failures are blockers. Timings are resource evidence, not acceptance thresholds.
+  measure:
+    file: amber-widevine/metrics.json
+    regex: '"renewal_policy_verified": ([0-9]+)'
+
 run:
   command: |
     set -eu
@@ -365,3 +381,34 @@ run:
   - amber-widevine/renewal/resources.txt
   - amber-widevine/renewal/metadata.json
   - amber-widevine/metrics.json
+
+baseline:
+  captured_on: '2026-10-26'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64; native Tamarin 1.8.0 / Maude 3.3.1
+  outputs:
+  - path: amber-widevine/versions.json
+    sha256: 70056db55eaa4e0df2a723037ef25b2e26223d25037925584d7be26890c18a5e
+  - path: amber-widevine/executability/stdout.log
+    sha256: 838638babf9bb2ecd4ff5d71cdee3cae50f93b9fa7fe265ceb4506c958cf210c
+  - path: amber-widevine/executability/stderr.log
+    sha256: 16312f829dbecd58b23e88402dd93e360274876cac38e64dbe2c4929def6031a
+  - path: amber-widevine/executability/resources.txt
+    sha256: 5ae60112b2181eab420b90406ed28abbff8f475ffd6ec522d70431108a889f81
+  - path: amber-widevine/executability/metadata.json
+    sha256: f7e6f665f41ffb63f05d4b41541de789746c909e7ebf3c4231d959f94c7482ca
+  - path: amber-widevine/renewal/stdout.log
+    sha256: aaa2d207cb775002828235937c3f73cfcd8974dc4f42a4dc4193d6fc19782153
+  - path: amber-widevine/renewal/stderr.log
+    sha256: b3b00e98f4534172fa9fd7907a2c59d81ee8b70567f75424dc8840b77ca11d0f
+  - path: amber-widevine/renewal/resources.txt
+    sha256: 9516860a14a90096de13a69a2832cac5dcac7a99eb557a72227b790104bb3fbb
+  - path: amber-widevine/renewal/metadata.json
+    sha256: 6e5243bb61b626c0de2ad458cb29eadabeeb45aa365cdc1e219cbb8fa9b19f85
+  - path: amber-widevine/metrics.json
+    sha256: 3a64ba0b92defe5a2f37e8b86a1b3d1c12f56945de8624d023c6ad86d11969a5
+  metrics:
+    renewal_authenticity_verified: 1
+    renewal_expiration_verified: 1
+    renewal_freshness_verified: 1
+    renewal_policy_verified: 1
+  bit_for_bit_expected: false
