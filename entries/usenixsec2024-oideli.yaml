@@ -66,6 +66,10 @@ claims:
       inconclusive results do not satisfy the threshold. Runtime is recorded
       for resource accounting, not compared with the paper's laptop timings.
 
+    measure:
+      file: amber-oideli/metrics.json
+      regex: '"oideli_id_eligibility_verified": ([0-9]+)'
+
   - metric: oideli_zk_id_hiding_verified
     threshold: "== 1"
     unit: boolean
@@ -84,6 +88,10 @@ claims:
       Diff-equivalence is true. This is the OIDEli-zk id-hiding cell of Table 4,
       not a claim about OIDEli-id id-hiding, everlasting privacy of the
       integrated voting system, or the Rust ZKP implementation.
+
+    measure:
+      file: amber-oideli/metrics.json
+      regex: '"oideli_zk_id_hiding_verified": ([0-9]+)'
 
 # Run from a clean pinned artifact checkout with ProVerif 2.05 on PATH.
 # A new amber-oideli directory is required so old outputs cannot be reused.
@@ -154,3 +162,20 @@ run:
     - amber-oideli/eligibility.stdout.log
     - amber-oideli/id-hiding.stdout.log
     - amber-oideli/metrics.json
+
+baseline:
+  captured_on: '2026-10-26'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64; native ProVerif 2.05
+  outputs:
+  - path: amber-oideli/proverif-version.txt
+    sha256: 46b498c4b3d698a4cbc97efca5fdf6ff4c8d89bbaaa4a234bacb9bef2e1771da
+  - path: amber-oideli/eligibility.stdout.log
+    sha256: 665879562b06e798055fce458252334b96442c4ca238a6c52d515874d903da95
+  - path: amber-oideli/id-hiding.stdout.log
+    sha256: 38681df741714a8e2f3f9eee0a08bc3b390bf14878efa3e2af9ef64f5788ffa7
+  - path: amber-oideli/metrics.json
+    sha256: 2d45c087d2abfe2913e7353c2ed54415b7d78ae2b8400771000da7a682157dc2
+  metrics:
+    oideli_id_eligibility_verified: 1
+    oideli_zk_id_hiding_verified: 1
+  bit_for_bit_expected: false
