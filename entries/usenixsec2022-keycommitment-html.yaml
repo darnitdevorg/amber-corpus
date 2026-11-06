@@ -1,0 +1,166 @@
+id: usenixsec2022-keycommitment-html
+title: How to Abuse and Fix Authenticated Encryption Without Key Commitment
+venue:
+  name: USENIX Security
+  year: 2022
+paper:
+  url: https://www.usenix.org/system/files/sec22-albertini.pdf
+artifact:
+  url: https://github.com/corkami/mitra/tree/Usenix22
+  clone: https://github.com/corkami/mitra.git
+  ref_type: commit
+  ref: b5f15d935a68c521206f56ba671181566036a5e7
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 12
+  docker: false
+  network_required: true
+  notes: |
+    Appendix A.2 lists "6 Mb" and approximately five minutes each for preparation and experiments;
+    those estimates exclude the Python environment. Appendix A.5.2 and pinned htmhtm.md define the
+    selected HTML/HTML example: https://secartifacts.github.io/usenixsec2022/appendix-files/sec22summerae-final14.pdf.
+    The numeric fields are conservative budgets for checkout, isolated environment and generated files.
+    Amber handles limits and input/output digests; local watchdogs and resource diagnostics remain in
+    ignored verification evidence, outside run.command. No root, container, SageMath or browser is needed.
+    Prerequisites: Linux x86_64, Python 3.12 with venv/pip, GCC and Python development headers, Git and
+    public PyPI access for setup. The command installs the artifact-pinned BitVector 3.4.9 and
+    pycryptodome 3.9.7, plus pinned cryptography/html5lib validation dependencies in amber-html/.venv.
+    The scientific stages and independent validation are offline after setup. Initial capture was on
+    2026-10-27, Ryzen 5 6600H / Ubuntu 24.04.4 / Python 3.12.3: author scripts 0.576 s, dependency setup
+    79.480 s; about 71 MB retained. The earlier full command passed a fresh checkout in 52.126 s,
+    including setup; scientific stages took 0.738 s. Largest sampled command-group-plus-runner RSS was
+    276017152 B and largest workspace including build scratch was 171950321 B. Baseline output hashes
+    record a local capture and are not scientific acceptance criteria.
+    On 2026-10-30 the revised literal command passed fresh inputs in 32.968 s; sampled aggregate RSS plus swap peaked at 276078592 B, with no sampled swap or limit event. Independent validation passed. The short checker rejected 34 malformed/incomplete fixtures. Baseline records this actual capture.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: distinct_authenticated_html_payloads
+  threshold: == 2
+  unit: payloads
+  source: Paper Section 4.6, p.3300, supported by Section 3 AES-GCM construction; artifact appendix A.5.2 (Ambiguous
+    HTML file).
+  measurement_protocol: |
+    Use the exact A.5.2 HTML/HTML example, clarified by pinned utils/extra/htmhtm.md: normal.htm is <html>Hello World!</html> followed by CRLF; evil.htm is <html><a href="http://www.evil.com">Click here!</a></html> without a final newline. Run unmodified htmhtm.py to generate the 128-byte (4-26)7.d3f286cd.htm.htm template; run unmodified meringue.py -i 7 to create a new attack.gcm; run unmodified decrypt.py to obtain both plaintexts. Preserve default keys Now? and L4t3r!!!, each zero-padded to 16 bytes, the 12-byte zero nonce, and the 16-byte default associated data MyVoiceIsMyPass!.
+    Independently authenticate the same 128-byte ciphertext and 16-byte tag under both distinct keys using PyCryptodome AES-GCM (the author encryption/decryption uses cryptography), compare bytes against both author-generated plaintext files, and re-encrypt both plaintexts to the same ciphertext/tag. Parse both plaintexts using html5lib: plaintext 1 must expose exactly the documented hyperlink and hide Hello World! in a comment; plaintext 2 must expose Hello World! with no hyperlink or Click here! outside comments. Require exact input/template/field/file coverage, two distinct plaintexts, two successful re-encryptions, and four rejected wrong-key/modified-tag controls. No bundled ciphertext or example plaintext is used.
+  expected_verdict: REPRODUCED
+  notes: |
+    Only this single HTML/HTML AES-GCM example was tested. Reproducing the paper-predicted ambiguity is a positive corpus result; it does not establish full-study reproduction, a live Subscribe with Google exploit, browser execution, other file formats, GCM-SIV/OCB, performance claims or security of proposed fixes. No timing threshold, acceptance tolerance or expected output digest is used. The normal page retains the documented binary prefix; validation checks the HTML payload content rather than pixel-identical browser rendering.
+  measure:
+    file: amber-html/metrics.json
+    regex: '"distinct_authenticated_html_payloads": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = b5f15d935a68c521206f56ba671181566036a5e7
+    git diff --exit-code HEAD -- utils/extra/htmhtm.py utils/gcm
+    mkdir amber-html
+    python3 -m venv --without-pip amber-html/.venv
+    python3 -m pip --python amber-html/.venv/bin/python install --no-cache-dir setuptools==84.2.1 > amber-html/setup.log 2>&1
+    python3 -m pip --python amber-html/.venv/bin/python install --no-cache-dir --no-build-isolation BitVector==3.4.9 pycryptodome==3.9.7 cryptography==44.0.2 cffi==1.17.1 pycparser==2.22 html5lib==1.1 six==1.17.0 webencodings==0.5.1 >> amber-html/setup.log 2>&1
+    printf '<html>Hello World!</html>\r\n' > amber-html/normal.htm
+    printf '<html><a href="http://www.evil.com">Click here!</a></html>' > amber-html/evil.htm
+    (cd amber-html; .venv/bin/python ../utils/extra/htmhtm.py normal.htm evil.htm > template.log 2>&1)
+    (cd amber-html; .venv/bin/python ../utils/gcm/meringue.py -i 7 '(4-26)7.d3f286cd.htm.htm' attack.gcm > encrypt.log 2>&1)
+    (cd amber-html; .venv/bin/python ../utils/gcm/decrypt.py attack.gcm > decrypt.log 2>&1)
+    amber-html/.venv/bin/python -I - <<'PY'
+    import hashlib, json, re
+    from pathlib import Path
+    from Crypto.Cipher import AES
+    import html5lib
+    def visible(e):
+        if not isinstance(e.tag, str) or e.tag.rsplit('}', 1)[-1] in ('script', 'style'): return ''
+        return (e.text or '') + ''.join(visible(c)+(c.tail or '') for c in e)
+    def check(root):
+        normal, evil = b'<html>Hello World!</html>\r\n', b'<html><a href="http://www.evil.com">Click here!</a></html>'
+        origin = '(4-26)7.d3f286cd.htm.htm'
+        assert (root/'normal.htm').read_bytes() == normal and (root/'evil.htm').read_bytes() == evil
+        template = b'<!---->'+normal+b'<!---->'+evil+b'<!--'
+        template += (16-len(template)%16)*b'\0'+16*b'\0'
+        assert (root/origin).read_bytes() == template
+        pairs = [line.split(': ', 1) for line in (root/'attack.gcm').read_text('ascii').splitlines()]
+        fields = dict(pairs)
+        assert len(pairs) == len(fields) == 8 and set(fields) == {'key1','key2','adata','nonce','ciphertext','tag','exts','origin'}
+        assert fields['origin'] == origin and fields['exts'] == 'htm htm'
+        for name, size in [('key1',16),('key2',16),('adata',16),('nonce',12),('ciphertext',128),('tag',16)]:
+            assert re.fullmatch('[0-9a-f]{'+str(size*2)+'}', fields[name])
+        k1, k2, ad, nonce, ct, tag = [bytes.fromhex(fields[n]) for n in ('key1','key2','adata','nonce','ciphertext','tag')]
+        assert (k1,k2,ad,nonce) == (b'Now?'+12*b'\0',b'L4t3r!!!'+8*b'\0',b'MyVoiceIsMyPass!',12*b'\0')
+        digest = hashlib.sha256(ct).hexdigest()[:8]
+        assert sorted(p.name for p in root.glob('attack-*.htm')) == [f'attack-1.{digest}.htm',f'attack-2.{digest}.htm']
+        plaintexts, controls = [], 0
+        for i, key in enumerate((k1, k2), 1):
+            cipher = AES.new(key, AES.MODE_GCM, nonce=nonce); cipher.update(ad)
+            pt = cipher.decrypt_and_verify(ct, tag)
+            assert pt == (root/f'attack-{i}.{digest}.htm').read_bytes() and len(pt) == 128
+            encryptor = AES.new(key, AES.MODE_GCM, nonce=nonce); encryptor.update(ad)
+            assert encryptor.encrypt_and_digest(pt) == (ct, tag)
+            for wrong_key, wrong_tag in [(bytes([6+i])*16,tag),(key,bytes([tag[0]^1])+tag[1:])]:
+                bad = AES.new(wrong_key, AES.MODE_GCM, nonce=nonce); bad.update(ad)
+                try: bad.decrypt_and_verify(ct, wrong_tag)
+                except ValueError: controls += 1
+                else: raise ValueError('Invalid authentication control accepted')
+            plaintexts.append(pt)
+        pages = [html5lib.parse(pt, treebuilder='etree') for pt in plaintexts]
+        texts = list(map(visible, pages))
+        links = [[e for e in page.iter() if isinstance(e.tag,str) and e.tag.rsplit('}',1)[-1] == 'a'] for page in pages]
+        assert len(set(plaintexts)) == 2 and controls == 4 and evil in plaintexts[0] and normal in plaintexts[1]
+        assert len(links[0]) == 1 and links[0][0].get('href') == 'http://www.evil.com' and visible(links[0][0]) == 'Click here!'
+        assert 'Hello World!' not in texts[0] and not links[1] and 'Hello World!' in texts[1] and 'Click here!' not in texts[1]
+        for i, pt in enumerate(plaintexts, 1): (root/f'plaintext-{i}.htm').write_bytes(pt)
+        return {'distinct_authenticated_html_payloads':len(set(plaintexts)), 'negative_controls_rejected':controls, 'reencryption_matches':len(plaintexts), 'ciphertext_bytes':len(ct), 'tag_bytes':len(tag)}
+    root = Path('amber-html')
+    (root/'metrics.json').write_text(json.dumps(check(root), sort_keys=True)+'\n')
+    PY
+  outputs:
+  - amber-html/metrics.json
+  - amber-html/attack.gcm
+  - amber-html/plaintext-1.htm
+  - amber-html/plaintext-2.htm
+  - amber-html/normal.htm
+  - amber-html/evil.htm
+  - amber-html/(4-26)7.d3f286cd.htm.htm
+  - amber-html/setup.log
+  - amber-html/template.log
+  - amber-html/encrypt.log
+  - amber-html/decrypt.log
+baseline:
+  captured_on: '2026-10-30'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64
+  outputs:
+  - path: amber-html/metrics.json
+    sha256: 40be994cb025dc0a02a1a008d1454cafdf7debc52c3370ccc5408f086905b68d
+  - path: amber-html/attack.gcm
+    sha256: e86d10afddd56253444cf159cb7729b5ad06d510a75defec0f1ce11548af1a22
+  - path: amber-html/plaintext-1.htm
+    sha256: aa98cf82bb8b000890585e2bb7ea6655f747929eeb325108b76c46bf83b506de
+  - path: amber-html/plaintext-2.htm
+    sha256: 98a4c2ce300de13e116f8fb4f146cc89dc672cea5da40fa45a5246e99e8cfed2
+  - path: amber-html/normal.htm
+    sha256: bf5382d7371f01036af8db88e097df5ed5967ec9cbedbb99ca8d454622e3b664
+  - path: amber-html/evil.htm
+    sha256: 8ee5955d694a32f1da9832d8015f0d93fd20798376b9b3aba946f2069454bf93
+  - path: amber-html/(4-26)7.d3f286cd.htm.htm
+    sha256: d3f286cd32295cee5293ae8c3a36487fc21c940949a3bf2e55d8bfb983156719
+  - path: amber-html/setup.log
+    sha256: 74db67ea0e341cf69fc76cafd287932566c7a1e3f57824162c98b0ba1bcbadbd
+  - path: amber-html/template.log
+    sha256: 12b00da8a347f1667ff23ed7ea882f68f020391e4a018e7385c529ac0d58cb85
+  - path: amber-html/encrypt.log
+    sha256: eee87e70357519da2a240687a0b77c3bc4da354347811ca666ef99908f074aec
+  - path: amber-html/decrypt.log
+    sha256: b56fc6796ed2a5b90bad1f496c87b1b3a5fc973bdd2cfd7e458ab444267b1c20
+  metrics:
+    ciphertext_bytes: 128
+    distinct_authenticated_html_payloads: 2
+    negative_controls_rejected: 4
+    reencryption_matches: 2
+    tag_bytes: 16
+  bit_for_bit_expected: false
