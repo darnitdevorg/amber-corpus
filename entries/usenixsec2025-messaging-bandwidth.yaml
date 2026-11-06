@@ -1,0 +1,183 @@
+id: usenixsec2025-messaging-bandwidth
+title: 'How to Compare Bandwidth Constrained Two-Party Secure Messaging Protocols: A Quest for A More
+  Efficient and Secure Post-Quantum Protocol'
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity25-auerbach.pdf
+artifact:
+  url: https://zenodo.org/records/15571277
+  clone: Download https://zenodo.org/api/records/15571277/files/ADJKS25_Artifact.zip/content as ADJKS25_Artifact.zip
+    into a fresh working directory; run.command verifies its SHA-256 and extracts it.
+  ref_type: doi
+  ref: 10.5281/zenodo.15571277
+  license: AGPL-3.0-only
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 3
+  disk_gb: 3
+  runtime_minutes: 15
+  docker: false
+  network_required: false
+  notes: 'Only the numerical 32-byte primary-primary UniKEM/Opp-UniKEM subset is tested. Appendix
+    A.2.3 lists hardware dependencies as "None"; A.4.2 E1 estimates one compute-minute and 4 MB generated
+    data for its full chart workflow, excluding setup: https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle2ae-final62.pdf.
+    RAM/disk/runtime fields are conservative local budgets, not author minima. Prerequisites: Linux
+    x86-64, Rust/Cargo 1.93.0, GCC 13.3.0 and Python 3.12.3 tested; unzip and sha256sum. Prepare an
+    isolated CARGO_HOME outside the fresh working directory with `cargo fetch --locked` using this
+    archive''s Cargo.lock, and export CARGO_HOME for the command''s offline build. The archive is
+    342190 B / 703507 B expanded; the earlier fresh build plus dependency cache and captures used
+    364971472 B and peaked at 466673664 B aggregate worker RSS. One Cargo job/codegen unit and one
+    LLD linker thread keep compilation bounded. Amber handles execution limits and input/output digests;
+    run.command only verifies the archive, builds, runs the author''s CLI and extracts numeric measurements.
+    Charts, other bandwidths, offline-device cases and the full study are outside this entry''s evidence.
+    On 2026-10-30 the shortened literal command passed from a fresh archive and new build target in
+    147.19 s, with 453890048 B sampled aggregate RSS, no sampled swap or limit events, and 361868304
+    B workspace plus isolated cache. Independent checks confirmed all 80 original files unchanged
+    and both CLI histogram/statistics CSVs byte-identical to the prior validated run. Baseline digests
+    identify this local capture, not scientific acceptance criteria.'
+role: not_comparable
+expected_verdict: NOT_COMPARABLE
+claims:
+- metric: party_A_mean_ratio
+  threshold: < 1
+  unit: ratio
+  source: Sections 5.1-5.3, pp.6729-6731; Section 5.3 opportunistic versus non-opportunistic sending,
+    Figure 7 right; artifact appendix C4.
+  measurement_protocol: The paper's small-chunk comparison uses T=10^6 primary-primary timesteps with
+    send probability 0.4 per party. Section 5.2 describes one vulnerability sample per party per timestep
+    in which its state changes; Section 5.3 compares party A. The artifact's own charts/run_tests.sh
+    instead selects T=100000, --balance 0.5, 32-byte chunks and message-pattern seed 43; src/main.rs
+    makes each party's send probability 0.4*0.5=0.2. controlled_messaging_healing_test records separate
+    send and nonempty receive-all snapshots, including two within one timestep, and preserves its
+    boundary exclusions. This entry runs the two original CLI cases unchanged. The checker reads the
+    party-A mean and standard deviation from each *_stats.csv, squares standard deviation for population
+    variance, and emits Opp-UniKEM/UniKEM ratios. These event-weighted statistics are not a direct
+    test of the paper's timestep-weighted claim.
+  expected_verdict: NOT_COMPARABLE
+  notes: 'Awarded Available, Functional and Results Reproduced badges: https://secartifacts.github.io/usenixsec2025/results.
+    Prior independent public-API captures established 40123 Opp-UniKEM and 40043 UniKEM retained samples
+    per party; an independent seed-43 message-pattern counter bounds party A at 36107 state-changing
+    timesteps. Thus the sample weighting differs even after boundary exclusions. That audit remains
+    local evidence; the short command adds no Rust observers or original-source edits. The paper''s
+    Section 5.1 footnote 5 says absolute send probabilities matter less for a fixed ratio, which does
+    not resolve the sampling-unit difference. The measured internal directional relationship does
+    not establish a paper reproduction or failure. Ratios use the author''s serialized statistics,
+    with variance recovered by squaring standard deviation, so last-bit rounding can differ from the
+    earlier integer-count calculation.'
+  measure:
+    file: amber-messaging/metrics.json
+    regex: '"party_A_mean_ratio": ([0-9.eE+-]+)'
+    comparable: false
+    reason: Artifact samples send/receive events separately rather than once per state-changing timestep;
+      its horizon and send probability also differ from the paper.
+- metric: party_A_variance_ratio
+  threshold: < 1
+  unit: ratio
+  source: Sections 5.1-5.3, pp.6729-6731; Section 5.3 opportunistic versus non-opportunistic sending,
+    Figure 7 right; artifact appendix C4.
+  measurement_protocol: The paper's small-chunk comparison uses T=10^6 primary-primary timesteps with
+    send probability 0.4 per party. Section 5.2 describes one vulnerability sample per party per timestep
+    in which its state changes; Section 5.3 compares party A. The artifact's own charts/run_tests.sh
+    instead selects T=100000, --balance 0.5, 32-byte chunks and message-pattern seed 43; src/main.rs
+    makes each party's send probability 0.4*0.5=0.2. controlled_messaging_healing_test records separate
+    send and nonempty receive-all snapshots, including two within one timestep, and preserves its
+    boundary exclusions. This entry runs the two original CLI cases unchanged. The checker reads the
+    party-A mean and standard deviation from each *_stats.csv, squares standard deviation for population
+    variance, and emits Opp-UniKEM/UniKEM ratios. These event-weighted statistics are not a direct
+    test of the paper's timestep-weighted claim.
+  expected_verdict: NOT_COMPARABLE
+  notes: 'Awarded Available, Functional and Results Reproduced badges: https://secartifacts.github.io/usenixsec2025/results.
+    Prior independent public-API captures established 40123 Opp-UniKEM and 40043 UniKEM retained samples
+    per party; an independent seed-43 message-pattern counter bounds party A at 36107 state-changing
+    timesteps. Thus the sample weighting differs even after boundary exclusions. That audit remains
+    local evidence; the short command adds no Rust observers or original-source edits. The paper''s
+    Section 5.1 footnote 5 says absolute send probabilities matter less for a fixed ratio, which does
+    not resolve the sampling-unit difference. The measured internal directional relationship does
+    not establish a paper reproduction or failure. Ratios use the author''s serialized statistics,
+    with variance recovered by squaring standard deviation, so last-bit rounding can differ from the
+    earlier integer-count calculation.'
+  measure:
+    file: amber-messaging/metrics.json
+    regex: '"party_A_variance_ratio": ([0-9.eE+-]+)'
+    comparable: false
+    reason: Artifact samples send/receive events separately rather than once per state-changing timestep;
+      its horizon and send probability also differ from the paper.
+run:
+  command: |
+    set -eu
+    printf '%s\n' '6f89f2ed465d2041f2998b656dd481dc774805ccab8ab9ec3643bfaa3449b755  ADJKS25_Artifact.zip' | sha256sum --check -
+    mkdir amber-messaging
+    unzip -q ADJKS25_Artifact.zip -d amber-messaging
+    cd amber-messaging/usenix2025_653
+    test "$(rustc --version)" = 'rustc 1.93.0 (254b59607 2026-01-19)'
+    CARGO_TARGET_DIR=target CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 RUSTFLAGS='-C link-arg=-Wl,--threads=1' \
+      cargo build --release --locked --offline -j1 > ../build.log 2>&1
+    for protocol in opp-uni-kem uni-kem; do
+      target/release/usenix2025sims --fnamebase ../run --numsteps 100000 --balance 0.5 --windowpp 50 --varpp 2 \
+        "$protocol" balanced fs-rkem hist small > "../$protocol.log" 2>&1
+    done
+    python3 -I - <<'PY'
+    import csv, json, math
+    from pathlib import Path
+    values = {}
+    for name in ('oppunikem', 'unikem'):
+        with open(f'../run_bal_{name}_stats.csv', newline='') as f:
+            reader = csv.DictReader(f, skipinitialspace=True, strict=True); rows = list(reader)
+        assert reader.fieldnames == 'compromised party,mean,stddev,min,p10,p20,p30,p40,p50,p60,p70,p80,p90,max'.split(',')
+        assert len(rows) == 2 and [r['compromised party'] for r in rows] == ['A', 'B']
+        for row in rows:
+            assert len(row) == 14; numbers = [float(row[k]) for k in reader.fieldnames[1:]]
+            assert all(math.isfinite(x) and x >= 0 for x in numbers) and numbers[0] > 0 and numbers[1] > 0
+            values[f"{name}_{row['compromised party']}_mean"], values[f"{name}_{row['compromised party']}_variance"] = numbers[0], numbers[1] ** 2
+    for metric in ('mean', 'variance'):
+        values[f'party_A_{metric}_ratio'] = values[f'oppunikem_A_{metric}'] / values[f'unikem_A_{metric}']
+    Path('../metrics.json').write_text(json.dumps(values, indent=2, allow_nan=False) + '\n')
+    PY
+  outputs:
+  - amber-messaging/metrics.json
+  - amber-messaging/run_bal_oppunikem_hist.csv
+  - amber-messaging/run_bal_oppunikem_stats.csv
+  - amber-messaging/run_bal_unikem_hist.csv
+  - amber-messaging/run_bal_unikem_stats.csv
+  - amber-messaging/opp-uni-kem.log
+  - amber-messaging/uni-kem.log
+  - amber-messaging/build.log
+baseline:
+  captured_on: '2026-10-30'
+  machine: AMD Ryzen 5 6600H, 12 logical CPUs; 14 GiB RAM; Linux x86-64; Python 3.12.3; Rust/Cargo
+    1.93.0; GCC 13.3.0
+  outputs:
+  - path: amber-messaging/metrics.json
+    sha256: da48eb620fa4ab46317fd5d5460ab4c846f861f6c10b7731ed15a30ee82cdbe2
+  - path: amber-messaging/run_bal_oppunikem_hist.csv
+    sha256: 39f8049df4b17896439ded0c07f8cc9e01bf5f9e969cc623979e9028c200ef6d
+  - path: amber-messaging/run_bal_oppunikem_stats.csv
+    sha256: 136dd08a8b57be40b2e3704d843b00b26175bac081e56178dc9b19f8ae370917
+  - path: amber-messaging/run_bal_unikem_hist.csv
+    sha256: 6e33fcbf60e7af70ac2d0f70346b789746d0c8105a86c421c68a08fcdb60d511
+  - path: amber-messaging/run_bal_unikem_stats.csv
+    sha256: 8c2d8f4d9b597a5bcf8cb851aa4953a6a49945370a16f3de1bce3a14a156f0fb
+  - path: amber-messaging/opp-uni-kem.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-messaging/uni-kem.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-messaging/build.log
+    sha256: b2a25fbd1428b30a73f33dbb7e591e6f252da1ba2615f2618895a694f7ef1e44
+  metrics:
+    oppunikem_A_mean: 144.91496149340776
+    oppunikem_A_variance: 1065.3604129455814
+    oppunikem_B_mean: 144.71280811504624
+    oppunikem_B_variance: 1063.5629361690192
+    unikem_A_mean: 229.09836925305297
+    unikem_A_variance: 2785.0976581053474
+    unikem_B_mean: 154.99872636915316
+    unikem_B_variance: 2644.924829184747
+    party_A_mean_ratio: 0.632544709793811
+    party_A_variance_ratio: 0.3825217438408703
+  bit_for_bit_expected: false
