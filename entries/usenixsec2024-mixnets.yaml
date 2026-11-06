@@ -71,6 +71,10 @@ claims:
       assumptions. No active reachability/correspondence queries are omitted.
       Proof outcome is the threshold; the paper's three-second timing is not.
 
+    measure:
+      file: amber-mixnets/metrics.json
+      regex: '"exponentiation_anonymous_shuffling_verified": ([0-9]+)'
+
   - metric: reencryption_anonymous_shuffling_verified
     threshold: "== 1"
     unit: boolean
@@ -91,6 +95,10 @@ claims:
       or secrecy-assumption declarations occur in this model.
 
 # New amber-mixnets output directory required; full logs precede validation.
+    measure:
+      file: amber-mixnets/metrics.json
+      regex: '"reencryption_anonymous_shuffling_verified": ([0-9]+)'
+
 run:
   command: |
     set -eu
@@ -248,3 +256,35 @@ run:
     - amber-mixnets/reencryption.resources.txt
     - amber-mixnets/reencryption.json
     - amber-mixnets/metrics.json
+
+baseline:
+  captured_on: '2026-10-26'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64; native ProVerif 2.05
+  outputs:
+  - path: amber-mixnets/proverif-version.txt
+    sha256: 46b498c4b3d698a4cbc97efca5fdf6ff4c8d89bbaaa4a234bacb9bef2e1771da
+  - path: amber-mixnets/provenance.json
+    sha256: cbaded8c047772425beafc260b3c8067a559468129e4e51014c6b64868716ff3
+  - path: amber-mixnets/exponentiation.stdout.log
+    sha256: 3f907701ae7838c87ba66d569e89859c638dbb5b72af77e21b0ddcc86ce94ebd
+  - path: amber-mixnets/exponentiation.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-mixnets/exponentiation.resources.txt
+    sha256: 39c89efc34efba2fba9694a72e57f4e0c5d35f136a12bf90bef3af97a1698343
+  - path: amber-mixnets/exponentiation.json
+    sha256: b4f480d80c1eae2ae71d7152f1d3627740991b3c51408385c8bb26d54800b506
+  - path: amber-mixnets/reencryption.stdout.log
+    sha256: ef3819532ab9fa50f218a2f1555fac5097491768117abd22e46765107412d1db
+  - path: amber-mixnets/reencryption.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-mixnets/reencryption.resources.txt
+    sha256: b733bddef38a16014455a98c329da7bdede8e1e97e9260019aad4d4b2ca5b935
+  - path: amber-mixnets/reencryption.json
+    sha256: fe1badc17fcc151bfc134184999a9f74f98bbb6b4646e4f48ab2dc02183c7d91
+  - path: amber-mixnets/metrics.json
+    sha256: 0cfd0464e6a051589f0e421db038ea5b248823c0601c95f793fa2988fb7cbf40
+  metrics:
+    exponentiation_anonymous_shuffling_verified: 1
+    exponentiation_secrecy_assumptions_verified: 10
+    reencryption_anonymous_shuffling_verified: 1
+  bit_for_bit_expected: false

@@ -79,6 +79,10 @@ claims:
     clause-selection termination warnings in each selected model; they are retained and checked explicitly.
     Its 2.05 manual and selfun.ml describe these as termination diagnostics; successful completion and
     all proof results remain mandatory. No threshold or verifier setting was changed after the first execution.
+  measure:
+    file: amber-anonymity/metrics.json
+    regex: '"pq_wireguard_star_initiator_anonymity_verified": ([0-9]+)'
+
 - metric: pq_wireguard_star_responder_anonymity_verified
   threshold: == 1
   unit: boolean
@@ -100,6 +104,10 @@ claims:
     clause-selection termination warnings in each selected model; they are retained and checked explicitly.
     Its 2.05 manual and selfun.ml describe these as termination diagnostics; successful completion and
     all proof results remain mandatory. No threshold or verifier setting was changed after the first execution.
+  measure:
+    file: amber-anonymity/metrics.json
+    regex: '"pq_wireguard_star_responder_anonymity_verified": ([0-9]+)'
+
 run:
   command: |
     set -eu
@@ -224,6 +232,8 @@ run:
     summary = {'artifact_doi': '10.5281/zenodo.16736982', 'verifier': 'ProVerif 2.05',
                'cases_completed': len(results), 'results': results, 'verdict': 'REPRODUCED'}
     (OUT / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+    metrics = {f"pq_wireguard_star_{r['case']}_anonymity_verified": r['equivalence_verified'] for r in results}
+    (OUT / 'metrics.json').write_text(json.dumps(metrics, sort_keys=True) + '\n')
     print(json.dumps(summary, indent=2))
     PYTHON
   outputs:
@@ -237,21 +247,34 @@ run:
   - amber-anonymity/responder.stderr.log
   - amber-anonymity/responder.capture.json
   - amber-anonymity/summary.json
+  - amber-anonymity/metrics.json
 baseline:
-  captured_on: '2026-10-28'
-  machine: AMD Ryzen 5 6600H / about 15 GiB RAM / Ubuntu 24.04.4 LTS x86-64 / native ProVerif 2.05 built
-    with OCaml 4.14.2
+  captured_on: '2026-10-30'
+  machine: AMD Ryzen 5 6600H / 15166 MiB RAM / Ubuntu 24.04.4 Linux x86_64
   outputs:
+  - path: amber-anonymity/version.stdout.log
+    sha256: 46b498c4b3d698a4cbc97efca5fdf6ff4c8d89bbaaa4a234bacb9bef2e1771da
+  - path: amber-anonymity/version.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-anonymity/version.capture.json
+    sha256: cb2369c8fb9d63bd6ea7ca5fd9f32a6d4aa0f07e4b3159e07ddc173060062740
   - path: amber-anonymity/initiator.stdout.log
     sha256: d5f7553eff25f2e3563d9e9c2003410fbb37b161dffbcccc9a7cd85c736d6291
+  - path: amber-anonymity/initiator.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-anonymity/initiator.capture.json
+    sha256: fc13a50aa910c3237b93b24fc49b0db9837992104154c8d97dbc7032dc009598
   - path: amber-anonymity/responder.stdout.log
     sha256: b892e6f701b759e25540ed889302372f5d68b746839f1b0be66f570330590eca
+  - path: amber-anonymity/responder.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-anonymity/responder.capture.json
+    sha256: b35321a70bcd3f9746b22e0cee8a2479bacd50b1046a5e89e1bd1b81209305fc
+  - path: amber-anonymity/summary.json
+    sha256: ad46bc3c7d4ac8ff30f0722b1a3a6b91eb80b4b69c16e6229a46222587a2b064
+  - path: amber-anonymity/metrics.json
+    sha256: 3fb5a4f0275ee7675064e3cebc3f55881c89a305908a3364e93c88e055cd074e
   metrics:
-    initiator_equivalence_verified: 1
-    responder_equivalence_verified: 1
-    initiator_secrecy_checks: 8
-    responder_secrecy_checks: 4
-    initiator_seconds: 0.3438636080827564
-    responder_seconds: 1.7502531628124416
-    maximum_prover_peak_rss_kib: 49692
+    pq_wireguard_star_initiator_anonymity_verified: 1
+    pq_wireguard_star_responder_anonymity_verified: 1
   bit_for_bit_expected: false
