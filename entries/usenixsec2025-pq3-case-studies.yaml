@@ -1,0 +1,220 @@
+# Verified subset: artifact appendix C2/E4; all three proof-method case studies.
+id: usenixsec2025-pq3-case-studies
+title: A Formal Analysis of Apple's iMessage PQ3 Protocol
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity25/presentation/linker
+artifact:
+  url: https://zenodo.org/records/14710688
+  clone: Download https://zenodo.org/api/records/14710688/files/tamarin-pq3.zip/content as artifact.zip. Require
+    SHA-256 4bf59b9e1d8e28ccd530cec29adbbc1bfdd96fb2628cfd18f4f16edb1c36505d; extract to artifact/ and enter it,
+    leaving ../artifact.zip available.
+  ref_type: doi
+  ref: 10.5281/zenodo.14710688
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 2.2
+  disk_gb: 1.1
+  runtime_minutes: 15
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix C2/E4, all three proof-method case studies, is included. The full PQ3 model and E1–E3 are excluded.
+    Appendix A.4.2: "(E4): [Prove case studies] [5 human-minutes + 1 compute-minute]";
+    https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle1ae-final136.pdf.
+    Its A.2.3 large-memory discussion concerns the main PQ3 proofs and supplies no case-study memory minimum.
+    The numeric fields are conservative local budgets: 2 GiB aggregate process-group RSS plus swap,
+    1 GiB total verification workspace including source/tool archives, extracted tools and all captures,
+    300 seconds wall per proof and CPU per process, 64 MiB per output file. Start with at least
+    3 GiB available RAM and 2 GiB free disk. Limits and sampling belong to the external runner;
+    the submitted command contains only pin checks, original commands and the result checker.
+    Local capture uses GHCRTS="-N1 -M1G" (one worker, 1 GiB heap); symbolic inputs and strategy are unchanged.
+    RSS plus swap is sampled every 0.1 s and workspace storage every second, not a cgroup hard limit.
+    First run on 2026-10-30: three original commands took 0.418, 0.729 and 0.420 s;
+    maximum sampled aggregate RSS 56172544 B, zero sampled swap, no limit events.
+    GNU time largest per-command maximum RSS was 26004 KiB; this differs from aggregate sampled RSS.
+    Sources, tools, archives, captures and helpers occupied approximately 96 MB after first verification.
+    All 11 exact all-traces lemmas and all 28 original input files were independently checked.
+    The original dangling hide_lemma=SeedKnowledge proof hint is retained; no warning was emitted.
+    Stderr contains only ordinary source-saturation progress, retained without filtering.
+
+    Prerequisites: Linux x86_64, POSIX shell, Python 3.9+, sha256sum, unzip, cmp, grep,
+    Tamarin 1.8.0 and Maude 3.3.1 on PATH; Python 3.12.3 was tested. No Docker/compiler/GPU is needed.
+    Maude 3.3.1 meets appendix A.2.4's >=3.1 requirement but differs from the README's 3.1/3.2.1.
+    Install the official tools in a separate local directory before running:
+      curl -fL --max-time 360 --max-filesize 16777216 -o tamarin.tar.gz https://github.com/tamarin-prover/tamarin-prover/releases/download/1.8.0/tamarin-prover-1.8.0-linux64-ubuntu.tar.gz
+      curl -fL --max-time 360 --max-filesize 16777216 -o maude.zip https://github.com/maude-lang/Maude/releases/download/Maude3.3.1/Maude-linux.zip
+      echo '2bed5d3a5b7ad7b39a96fd1892246f4645a87d754498106c2466df5b4b26ce88  tamarin.tar.gz' | sha256sum -c -
+      echo '9837c4bd0be1adea5d2dea0c72837367d173e7e98fe34722a9175e2e044f139c  maude.zip' | sha256sum -c -
+      tar -xzf tamarin.tar.gz
+      unzip -q maude.zip
+      chmod +x Linux64/maude.linux64
+      ln -s maude.linux64 Linux64/maude
+      export PATH="$PWD:$PWD/Linux64:$PATH"
+      export MAUDE_LIB="$PWD/Linux64"
+    Download artifact.zip into a different fresh working directory, verify the SHA-256 below,
+    then `mkdir artifact; unzip -q artifact.zip -d artifact; cd artifact` and execute run.command.
+    Keep ../artifact.zip in place; the command checks it and compares each selected model to its archived bytes.
+    The archive is 659859 B and expands to 29242757 B. The command is offline after setup;
+    network_required describes public artifact/tool acquisition. No random seeds, datasets,
+    repetitions, averaging or hardware timing threshold apply. Baseline hashes record this
+    capture for drift tracking; timing-bearing output is not expected to be bit reproducible.
+
+    The literal 39-line YAML command passed from a fresh extraction on 2026-10-30 in 1.565 s,
+    with 59920384 B sampled aggregate peak RSS, zero sampled swap and no limit events.
+    Independent validation again confirmed all 11 lemmas and all 28 unchanged original files.
+    Total retained sources, isolated tools, two artifact extractions, captures and validation
+    helpers occupied about 126 MB at completion; no system toolchain installation was needed.
+    The checker rejected 72 incomplete/invalid fixtures, including missing files and stderr errors.
+    The baseline below is from this fresh literal-command capture, not the authors' bundled outputs.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: nested_loop_simple_verified
+  threshold: == 3
+  unit: verified lemmas
+  source: Paper Section 5.4 and Appendix A.2 (published pp.5026, 5031–5033); artifact appendix A.4.1 C2 and A.4.2
+    E4. https://www.usenix.org/system/files/usenixsecurity25-linker.pdf
+  measurement_protocol: 'Run Tamarin 1.8.0 / Maude 3.3.1 with --prove on the unmodified case-study/nested-loop-simple.spthy
+    from DOI 10.5281/zenodo.14710688. Preserve all original rules, symbolic functions/equational theories, reveal
+    capabilities and reusable/induction/hide hints; add no axioms, restrictions or bounds on the modeled loops.
+    Require a single complete final summary for this file, successful wellformedness, all-traces quantifiers, positive
+    proof-step counts, and exactly these verified lemma names: OuterLoopStep, SeedSecrecy, KeySecrecy. The count
+    is 3 only after exact coverage succeeds; all three cases (11 lemmas total) must pass. Reject missing, duplicate,
+    unexpected, malformed, admitted or inconclusive outcomes and invalid diagnostics. Setup failures, resource limits
+    and timeouts are blockers, never scientific failures. This is appendix C2/E4, not a timing test or the main
+    PQ3 proof suite.'
+  expected_verdict: REPRODUCED
+  notes: 'KeySecrecy establishes inner-loop key secrecy unless the associated fresh outer-loop seed input was subsequently
+    revealed. The model always adds fresh entropy on the outer step. The AEC row awards available, functional and
+    reproduced: https://secartifacts.github.io/usenixsec2025/results. Only these proof-method examples are tested;
+    no complete PQ3 or deployed iMessage claim.'
+  measure:
+    file: amber-pq3/metrics.json
+    regex: '"nested_loop_simple_verified": ([0-9]+)'
+- metric: nested_loop_verified
+  threshold: == 5
+  unit: verified lemmas
+  source: Paper Section 5.4 and Appendix A.2 (published pp.5026, 5031–5033); artifact appendix A.4.1 C2 and A.4.2
+    E4. https://www.usenix.org/system/files/usenixsecurity25-linker.pdf
+  measurement_protocol: 'Run Tamarin 1.8.0 / Maude 3.3.1 with --prove on the unmodified case-study/nested-loop.spthy
+    from DOI 10.5281/zenodo.14710688. Preserve all original rules, symbolic functions/equational theories, reveal
+    capabilities and reusable/induction/hide hints; add no axioms, restrictions or bounds on the modeled loops.
+    Require a single complete final summary for this file, successful wellformedness, all-traces quantifiers, positive
+    proof-step counts, and exactly these verified lemma names: OuterLoopStep, FreshSeedInstantiate, SeedConstruction,
+    KeyConstruction, KeySecrecy. The count is 5 only after exact coverage succeeds; all three cases (11 lemmas total)
+    must pass. Reject missing, duplicate, unexpected, malformed, admitted or inconclusive outcomes and invalid diagnostics.
+    Setup failures, resource limits and timeouts are blockers, never scientific failures. This is appendix C2/E4,
+    not a timing test or the main PQ3 proof suite.'
+  expected_verdict: REPRODUCED
+  notes: 'KeySecrecy establishes inner-loop key secrecy unless the most recent fresh outer-loop input was subsequently
+    revealed. Outer steps may instead add a public zero value; all four supporting lemmas must be proved. The AEC
+    row awards available, functional and reproduced: https://secartifacts.github.io/usenixsec2025/results. Only
+    these proof-method examples are tested; no complete PQ3 or deployed iMessage claim.'
+  measure:
+    file: amber-pq3/metrics.json
+    regex: '"nested_loop_verified": ([0-9]+)'
+- metric: revealing_loop_verified
+  threshold: == 3
+  unit: verified lemmas
+  source: Paper Section 5.4 and Appendix A.2 (published pp.5026, 5031–5033); artifact appendix A.4.1 C2 and A.4.2
+    E4. https://www.usenix.org/system/files/usenixsecurity25-linker.pdf
+  measurement_protocol: 'Run Tamarin 1.8.0 / Maude 3.3.1 with --prove on the unmodified case-study/revealing-loop.spthy
+    from DOI 10.5281/zenodo.14710688. Preserve all original rules, symbolic functions/equational theories, reveal
+    capabilities and reusable/induction/hide hints; add no axioms, restrictions or bounds on the modeled loops.
+    Require a single complete final summary for this file, successful wellformedness, all-traces quantifiers, positive
+    proof-step counts, and exactly these verified lemma names: LoopStart, SeedsMatch, Secrecy. The count is 3 only
+    after exact coverage succeeds; all three cases (11 lemmas total) must pass. Reject missing, duplicate, unexpected,
+    malformed, admitted or inconclusive outcomes and invalid diagnostics. Setup failures, resource limits and timeouts
+    are blockers, never scientific failures. This is appendix C2/E4, not a timing test or the main PQ3 proof suite.'
+  expected_verdict: REPRODUCED
+  notes: 'Secrecy establishes confidentiality of a derived hash unless its seed or an earlier/equal chain element
+    was revealed; LoopStart and SeedsMatch must also be proved. Preserve the original Diffie-Hellman builtin and
+    hash/subterm modeling. The AEC row awards available, functional and reproduced: https://secartifacts.github.io/usenixsec2025/results.
+    Only these proof-method examples are tested; no complete PQ3 or deployed iMessage claim.'
+  measure:
+    file: amber-pq3/metrics.json
+    regex: '"revealing_loop_verified": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    echo '4bf59b9e1d8e28ccd530cec29adbbc1bfdd96fb2628cfd18f4f16edb1c36505d  ../artifact.zip' | sha256sum -c -
+    mkdir amber-pq3
+    tamarin-prover --version > amber-pq3/versions.log 2>&1
+    grep -F 'Tamarin version 1.8.0' amber-pq3/versions.log
+    test "$(maude --version)" = 3.3.1
+    for case in nested-loop-simple nested-loop revealing-loop; do
+      unzip -p ../artifact.zip "case-study/$case.spthy" | cmp - "case-study/$case.spthy"
+      tamarin-prover --prove "case-study/$case.spthy" > "amber-pq3/$case.stdout.log" 2> "amber-pq3/$case.stderr.log"
+    done
+    python3 -I - amber-pq3 <<'PYTHON' > amber-pq3/metrics.json
+    import json, pathlib, re
+    EXPECTED = {
+        'nested-loop-simple': 'OuterLoopStep SeedSecrecy KeySecrecy'.split(),
+        'nested-loop': 'OuterLoopStep FreshSeedInstantiate SeedConstruction KeyConstruction KeySecrecy'.split(),
+        'revealing-loop': 'LoopStart SeedsMatch Secrecy'.split(),
+    }
+    def check(text, case):
+        assert text.endswith('\n') and text.count('summary of summaries:') == 1, 'Missing/duplicate/truncated summary'
+        assert not re.search(r'(?i)\b(warning|sorry|admitted|falsified|incomplete)\b', text), 'Invalid proof diagnostics'
+        head, tail = text.split('summary of summaries:')
+        assert 'All wellformedness checks were successful.' in head, 'Missing wellformedness success'
+        assert 'Tamarin version 1.8.0' in head and 'Maude version 3.3.1' in head, 'Wrong tools'
+        envelope = re.fullmatch(r'\s*analyzed: (?:case-study/)?' + re.escape(case) + r'\.spthy\s+processing time: [0-9]+(?:\.[0-9]+)?s\s*\n(.*?)\n={20,}\n', tail, re.S)
+        assert envelope, 'Incomplete summary envelope'
+        rows = [line.strip() for line in envelope[1].splitlines() if line.strip()]
+        outcomes = [re.fullmatch(r'(\w+) \(all-traces\): verified \(([1-9][0-9]*) steps\)', line) for line in rows]
+        assert all(outcomes), 'Malformed/non-verified lemma'
+        assert len(outcomes) == len(EXPECTED[case]), 'Missing/duplicate lemma'
+        assert {r[1] for r in outcomes} == set(EXPECTED[case]), 'Wrong/duplicate lemma names'
+        return len(outcomes)
+    if __name__ == '__main__':
+        import sys
+        root=pathlib.Path(sys.argv[1])
+        metrics={case.replace('-', '_')+'_verified':check((root/(case+'.stdout.log')).read_text(),case) for case in EXPECTED}
+        for case in EXPECTED:
+            assert not re.search(r'(?i)\b(warning|error|exception|failed|timeout|incomplete|sorry|admitted|falsified)\b', (root/(case+'.stderr.log')).read_text()), 'Invalid stderr diagnostics'
+        print(json.dumps(metrics,sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-pq3/versions.log
+  - amber-pq3/nested-loop-simple.stdout.log
+  - amber-pq3/nested-loop-simple.stderr.log
+  - amber-pq3/nested-loop.stdout.log
+  - amber-pq3/nested-loop.stderr.log
+  - amber-pq3/revealing-loop.stdout.log
+  - amber-pq3/revealing-loop.stderr.log
+  - amber-pq3/metrics.json
+baseline:
+  captured_on: '2026-10-30'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-38-generic;
+    Tamarin 1.8.0, Maude 3.3.1, Python 3.12.3; GHCRTS=-N1 -M1G
+  outputs:
+  - path: amber-pq3/versions.log
+    sha256: 1d2b20f5d64ab1a40ff67514ede641534d3607ca4e29853c1589c524db5ad87e
+  - path: amber-pq3/nested-loop-simple.stdout.log
+    sha256: 862356bbf3e4b8997d97106b33f5d1875aa8c96049aa0fecacd7af3809e180fc
+  - path: amber-pq3/nested-loop-simple.stderr.log
+    sha256: 8d70530aaf5a09d002b3e54be1583f407e302cd5d073699f738444ace072c87b
+  - path: amber-pq3/nested-loop.stdout.log
+    sha256: 7711d82d60dc011fc07a26fde695b7bbb83e5c5e335dc026f96e59348481e37f
+  - path: amber-pq3/nested-loop.stderr.log
+    sha256: aeb41dc1dfcc727206cc1ab177436ca85dda5e586722b817d76ab982a233621e
+  - path: amber-pq3/revealing-loop.stdout.log
+    sha256: c8cf7554fd5d8f6c50bd3c839d7a4997f937f1ec80c34bd7855de0443664b597
+  - path: amber-pq3/revealing-loop.stderr.log
+    sha256: 5d5eba0dc1fa7873247d277cfcc4ef021c2a0eb20558d9a75897a71a21293fa1
+  - path: amber-pq3/metrics.json
+    sha256: d8c404dc6273500d1ed5bb43db5995cd3493b003032955006327093f8fe89679
+  metrics:
+    nested_loop_simple_verified: 3
+    nested_loop_verified: 5
+    revealing_loop_verified: 3
+  bit_for_bit_expected: false
