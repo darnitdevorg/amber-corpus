@@ -82,8 +82,8 @@ The re-run is itself a new signed bundle in `store/`, signed with B's key. Send
 
 | machine | role | OS / CPU | run id (12) | verdict | verify | rerun drift | notes |
 |---|---|---|---|---|---|---|---|
-| darnit VM | A | RHEL 10 | | | – | – | |
-| sbomit | B | RHEL 10 | | | | | |
+| darnit VM (NYU) | A | RHEL 10.2, x86_64 | `3bef6135c89e` | REPRODUCED | – | – | 2026-11-09; all four output digests equal the entry's `baseline` block (captured 2026-10-26, Ubuntu 24.04) |
+| sbomit (NYU) | B | RHEL 10.2, x86_64 | `2a834edf2dcc` | REPRODUCED | verified | none; 4/4 outputs identical, 2/2 claims same | 2026-11-09; found the consent-prompt-on-stdout bug, fixed in #678 `fbdf9a2` |
 | | B | | | | | | |
 
 If anything in this page did not work exactly as written, that is a finding too —
