@@ -22,6 +22,7 @@ it's a different quantity. A tool that reports NOT_REPRODUCED there is wrong.
     docs/                 appendix excerpts used for screening
     scripts/              the miner that built corpus.csv
     scenarios/            synthetic cases that force each verdict; run_scenarios.py writes RESULTS.md
+    docs/oracle.md        run on one machine, verify and re-run on another; scripts/oracle-setup.sh installs everything under one directory
 
 Candidates are mined from https://github.com/secartifacts/secartifacts.github.io
 (NDSS, USENIX Security, S&P, PETS, ACSAC, CHES, VehicleSec, WOOT) and filtered to
