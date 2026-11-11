@@ -79,6 +79,7 @@ class Runner:
         self.key = work / "researcher.key"
         self.pub = work / "researcher.pub"
         self.stranger_pub = work / "stranger.pub"
+        self.repos: dict[str, Path] = {}
         self.git_env = {
             **os.environ,
             "GIT_AUTHOR_NAME": "Amber Scenarios",
@@ -96,6 +97,7 @@ class Runner:
 
     def artifact(self, case: Case) -> Path:
         repo = self.work / "artifacts" / case.name
+        self.repos[case.name] = repo
         repo.mkdir(parents=True)
         (repo / "experiment.sh").write_text("#!/bin/sh\nset -eu\n" + case.experiment.strip() + "\n")
         (repo / "README.md").write_text(f"# {case.name}\n\nSynthetic Amber scenario: {case.shows}\n")
@@ -136,9 +138,13 @@ class Runner:
     def verify(self, bundle_id: str, pub: Path | None = None) -> tuple[int, dict[str, Any], str]:
         return self.amber_json("verify", bundle_id, "--out", str(self.store), "--pubkey", str(pub or self.pub))
 
-    def rerun(self, bundle_id: str) -> tuple[int, dict[str, Any], str]:
+    def rerun(self, bundle_id: str, artifact: Path | None = None) -> tuple[int, dict[str, Any], str]:
+        # A bundle made from a local path records no path (its subject is local/<name>), so rerun is told
+        # where the clone is; a bundle made from a URL needs nothing.
+        where = ["--artifact", str(artifact)] if artifact else []
         return self.amber_json(
-            "rerun", bundle_id, "--out", str(self.store), "--pubkey", str(self.pub), "--key", str(self.key), "--yes", *self.ts
+            "rerun", bundle_id, "--out", str(self.store), "--pubkey", str(self.pub), "--key", str(self.key), "--yes",
+            *where, *self.ts
         )
 
     def stored_output(self, bundle_id: str, rel: str) -> Path:
@@ -170,9 +176,10 @@ def after_s1(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
     checks = [
         Check("verdict", "REPRODUCED", str(s.get("verdict"))),
         Check("claim.measured", "0.95", str(claim(s).get("measured"))),
+        Check("subject records no path", "local/s1", str((s.get("subject") or {}).get("name"))),
         *verify_ok(r, s["id"]),
     ]
-    rc, rep, _ = r.rerun(s["id"])
+    rc, rep, _ = r.rerun(s["id"], r.repos[c.name])
     checks += [
         Check("rerun exit", "0", str(rc)),
         Check("rerun.drift", "False", str(rep.get("drift"))),
@@ -201,7 +208,7 @@ def after_s3(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
 
 def after_s4(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
     checks = [Check("verdict", "REPRODUCED", str(s.get("verdict")))]
-    rc, rep, _ = r.rerun(s["id"])
+    rc, rep, _ = r.rerun(s["id"], r.repos[c.name])
     changed = any(o["result"] == "changed" for o in rep.get("outputs") or [])
     same = all(x["result"] == "same" for x in rep.get("claims") or [])
     checks += [
@@ -257,7 +264,7 @@ def after_s8(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
 def after_s9(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
     # ``s`` is the summary of the --allow-dirty run; the refused run is checked in run_case.
     digest = (s.get("subject") or {}).get("digest") or {}
-    rc, _, err = r.rerun(s["id"])
+    rc, _, err = r.rerun(s["id"], r.repos[c.name])
     return [
         Check("allow-dirty: bundle written", "True", str(bool(s.get("id")))),
         Check("allow-dirty: no commit recorded", "True", str("gitCommit" not in digest)),
