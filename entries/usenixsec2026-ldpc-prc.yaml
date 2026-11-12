@@ -1,0 +1,264 @@
+# Verified subset: artifact appendix C1 / E1 only, the concrete attack-complexity
+# estimates for both LDPC-PRC watermarking schemes (paper Tables 6 and 7, Fig. 4).
+# E2-E5 (attacks on pre-generated text/images, quality analysis, watermark removal)
+# are excluded; see resources.notes.
+id: usenixsec2026-ldpc-prc
+title: Cryptanalysis of LDPC-Based Pseudorandom Error-Correcting Codes
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity26-wang-tianrui.pdf
+artifact:
+  url: https://zenodo.org/records/21771706
+  clone: Download https://zenodo.org/api/records/21771706/files/PRC_estimator-0.3.zip/content as artifact.zip.
+    Require SHA-256 eff2db1b0cb80d7a474b0f4a88c36a8e8fedf9b00e40967beb74e63b3240d579; `unzip -q artifact.zip`,
+    enter PRC_estimator-0.3/ and run run.command there, leaving ../artifact.zip in place.
+  ref_type: doi
+  ref: 10.5281/zenodo.21771706
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix C1 / E1 is included: "(E1): Concrete Time Complexity Analysis
+    [1 human-minute + 1 CPU minute]", running llm/security_estim/main.py and
+    gim/security_estim/main.py, whose CSVs correspond to Tables 6 and 7.
+    Appendix A.2.3: "the main claims can be verified on a CPU-only machine with
+    5 GB of free disk space, given pre-generated data."
+    https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle2ae-final16.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2026/results (cycle 2, id 16).
+
+    Excluded: E2/E4 (Attacks I/II on the bundled watermarked text/images). For
+    t = 3, part_key_recovery materialises list(combinations(range(n), 2)) with
+    n = 18432 / 16384, about 1.3-1.7e8 tuples and well over 10 GB of RAM
+    (appendix A.2.3 lists 16 GB). E3 is a figure with no numeric threshold; E5 and
+    content generation need a GPU. This entry makes no claim about those.
+
+    Native, no conda: a Python 3 venv with hash-pinned wheels. numpy==1.26.0 is
+    the artifact's own pin (llm/requirements.txt); pandas, matplotlib and seaborn
+    are unpinned there and pinned here. Neither script imports torch. Python
+    3.12.3 was tested; the appendix used 3.11. The estimators are pure integer and
+    float arithmetic, so results are deterministic. The command checks both
+    scripts against the archive, deletes the authors' bundled security_estim.csv/.pdf
+    before running so only regenerated tables are judged, and sets MPLBACKEND=Agg
+    and a local MPLCONFIGDIR. network_required covers the Zenodo archive and PyPI
+    wheels; the experiment itself is offline.
+
+    First capture on 2026-11-12 in a fresh extraction: exit 0, 28.4 s wall including
+    venv setup, 132472 KiB peak RSS (GNU time), under a 1 GiB memory cap with swap
+    disabled. Both regenerated CSVs are byte-identical to the authors' bundled
+    ones and every cell matches Tables 6 and 7. An independent validator
+    re-derived all 17 table rows from the paper's equations (1)-(5) and Configs
+    1/2 using exact binomials instead of the artifact code: 16 rows match exactly,
+    and Table 7 t=5 T_partial gives 33.78 against the printed 33.79 because the
+    artifact truncates r*q to an integer (33.785132 vs 33.784998 bits, a rounding
+    boundary that changes no claim). The validator reproduced all six metrics.
+    The checker rejected 22 incomplete or invalid fixtures (missing files, dropped,
+    extra, duplicated or reordered rows, altered cells, NaN/inf, renamed or missing
+    columns, values pushed past 128, 64 or lambda, tracebacks) and accepted only
+    the genuine output.
+
+    The literal run.command passed from a second, fresh Zenodo download and
+    extraction on 2026-11-12: exit 0, 26.2 s wall including venv setup, 132404 KiB
+    peak RSS, about 474 MB workspace (archive, extraction, venv, captures). Same six
+    metrics; validator and all 22 fixtures re-confirmed. A tampered estimator
+    script and a corrupted archive each stopped the command before any metric
+    was written. Baseline hashes below are from this fresh run. versions.log,
+    both stdout logs, both CSVs and metrics.json were byte-identical to the first
+    capture. The two stderr logs differ only because the plt.show() UserWarning
+    embeds the absolute checkout path.
+
+    Prerequisites: Linux x86_64, POSIX shell, Python 3 (3.12 for the pinned cp312
+    wheels) with venv, sha256sum, unzip, cmp, and network access to Zenodo and PyPI.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: llm_table6_rows_matched
+  threshold: == 12
+  unit: table rows
+  source: Paper Section 5.2 and Appendix C Table 6 (published pp.4296, 4304); artifact appendix C1/E1.
+  measurement_protocol: 'Run the unmodified llm/security_estim/main.py (Config 1: n = 2^17, r = floor(0.99n),
+    g = lambda = log C(n,t), 3 <= t <= 14) after deleting the bundled llm/data/security_estim.csv. Parse the
+    regenerated CSV: the header must be exactly t,eps,rho,T_partial,P_weak,T_dis,T_overlay,lambda and the rows
+    exactly t = 3..14 in order, all finite. Count rows whose every column equals Table 6 at the paper''s printed
+    precision (eps/rho 3 dp, complexities and log2 P_weak 2 dp, lambda integer). No tolerance beyond the
+    paper''s own rounding. A traceback or Error in either log fails the checker.'
+  expected_verdict: REPRODUCED
+  notes: Establishes that E1 regenerates the full Table 6, not a sample.
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"llm_table6_rows_matched": ([0-9]+)'
+- metric: llm_best_below_lambda_rows
+  threshold: == 12
+  unit: table rows
+  source: 'Paper Section 5.2, "Performance on Pi_LLM": "the best complexities of the three attacks are lower
+    than the claimed security level lambda across all parameters" (p.4296); Table 6.'
+  measurement_protocol: 'From the regenerated Table 6 CSV, count rows t = 3..14 where min(T_partial, T_dis,
+    T_overlay) < lambda. All 12 must hold.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"llm_best_below_lambda_rows": ([0-9]+)'
+- metric: llm_max_best_attack_bits
+  threshold: < 128
+  unit: log2 operations
+  source: 'Paper Section 5.2: Attack-I/II complexity "consistently remains below 128 bits", and T_overlay
+    "consistently stays around 73 bits" (p.4296); appendix C1 "failed to achieve 128-bit security under
+    realistic parameters".'
+  measurement_protocol: 'From the regenerated Table 6 CSV, take the best attack per t, min(T_partial, T_dis,
+    T_overlay), and report the maximum over t = 3..14 (the hardest parameter choice for the attacker).
+    Table 6 gives 73.56 at t = 12.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"llm_max_best_attack_bits": ([0-9.]+)'
+- metric: gim_table7_rows_matched
+  threshold: == 5
+  unit: table rows
+  source: Paper Section 5.2 and Appendix C Table 7 (published pp.4296, 4304); artifact appendix C1/E1.
+  measurement_protocol: 'Run the unmodified gim/security_estim/main.py (Config 2: n = 2^14, g = lambda =
+    log C(n,t), k = lambda + 512 + 17, 3 <= t <= 7) after deleting the bundled gim/data/security_estim.csv. The
+    header must be exactly t,eps,rho,noise_rate,T_partial,P_weak,T_dis,T_overlay,T_prime_overlay,lambda and the
+    rows exactly t = 3..7, all finite. Count rows whose every column equals Table 7 at printed precision
+    (eps/rho/eta 3 dp, complexities and log2 P_weak 2 dp, lambda integer).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"gim_table7_rows_matched": ([0-9]+)'
+- metric: gim_best_below_lambda_rows
+  threshold: == 5
+  unit: table rows
+  source: 'Paper Section 5.2, "Performance on Pi_GIM": "the best complexities of our three attacks remain below
+    the claimed security level lambda for all parameter settings" (p.4296); Table 7.'
+  measurement_protocol: 'From the regenerated Table 7 CSV, count rows t = 3..7 where min(T_partial, T_dis,
+    T_overlay, T_prime_overlay) < lambda. All 5 must hold.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"gim_best_below_lambda_rows": ([0-9]+)'
+- metric: gim_max_complexity_bits
+  threshold: < 64
+  unit: log2 operations
+  source: 'Paper Section 5.2: "Taking into account T''overlay instead of Toverlay, all complexities are below
+    64 bits, indicating practical threats under the parameter choices of Pi_GIM" (p.4296); Table 7.'
+  measurement_protocol: 'From the regenerated Table 7 CSV, report the maximum over t = 3..7 of max(T_partial,
+    T_dis, T_prime_overlay), i.e. every attack complexity with T''overlay in place of T_overlay. Table 7 gives
+    56.56 (T''overlay at t = 3).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-prc/metrics.json
+    regex: '"gim_max_complexity_bits": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    echo 'eff2db1b0cb80d7a474b0f4a88c36a8e8fedf9b00e40967beb74e63b3240d579  ../artifact.zip' | sha256sum -c -
+    mkdir amber-prc
+    python3 -m venv amber-prc/venv
+    cat > amber-prc/requirements.txt <<'REQ'
+    contourpy==1.3.3 --hash=sha256:4d00e655fcef08aba35ec9610536bfe90267d7ab5ba944f7032549c55a146da1
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.68.0 --hash=sha256:3edce69ecdefa73ab1041901ca22eefed6ebb93a77bc77e889d940479f25bf7d
+    kiwisolver==1.5.1 --hash=sha256:34633ecf50d16187ab8e5528b7a2530f2feb4e23f300db4672538b51cfc5cd38
+    matplotlib==3.8.0 --hash=sha256:dae97fdd6996b3a25da8ee43e3fc734fff502f396801063c6b76c20b56683196
+    numpy==1.26.0 --hash=sha256:7f6bad22a791226d0a5c7c27a80a20e11cfe09ad5ef9084d4d3fc4a299cca505
+    packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    pandas==2.1.1 --hash=sha256:29deb61de5a8a93bdd033df328441a79fcf8dd3c12d5ed0b41a395eef9cd76f0
+    pillow==13.0.0 --hash=sha256:42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
+    pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+    python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+    pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+    seaborn==0.13.0 --hash=sha256:70d740828c48de0f402bb17234e475eda687e3c65f4383ea25d0cc4728f7772e
+    tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+    REQ
+    amber-prc/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-prc/requirements.txt
+    amber-prc/venv/bin/python -c "import sys, numpy, pandas, matplotlib, seaborn; print(sys.version.split()[0], numpy.__version__, pandas.__version__, matplotlib.__version__, seaborn.__version__)" > amber-prc/versions.log
+    for m in llm gim; do
+      unzip -p ../artifact.zip "PRC_estimator-0.3/$m/security_estim/main.py" | cmp - "$m/security_estim/main.py"
+      rm "$m/data/security_estim.csv" "$m/data/security_estim.pdf"
+      MPLBACKEND=Agg MPLCONFIGDIR="$PWD/amber-prc/mpl" amber-prc/venv/bin/python "$m/security_estim/main.py" > "amber-prc/$m.stdout.log" 2> "amber-prc/$m.stderr.log"
+      cp "$m/data/security_estim.csv" "amber-prc/$m-security_estim.csv"
+    done
+    python3 -I - amber-prc <<'PYTHON' > amber-prc/metrics.json
+    import csv, json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    TABLE6 = """3 .236 .264 21.30 0.00 22.58 72.21 48|4 .285 .215 29.19 -0.00 22.98 73.02 63|5 .319 .181 36.84 -3.91 27.20 73.50 78
+    6 .344 .156 44.28 -11.89 35.42 73.57 93|7 .363 .137 51.59 -19.66 43.39 73.61 107|8 .377 .123 58.76 -27.20 51.11 73.64 121
+    9 .389 .111 65.84 -34.55 58.62 73.66 135|10 .399 .101 72.82 -41.73 65.94 73.67 148|11 .408 .092 79.71 -48.75 73.08 73.54 162
+    12 .415 .085 86.54 -55.64 80.09 73.56 175|13 .421 .079 93.29 -62.40 86.95 73.46 188|14 .426 .074 99.99 -69.04 93.69 73.37 202"""
+    TABLE7 = """3 .281 .219 .018 21.88 -0.01 23.16 244.03 56.56 39|4 .325 .175 .013 27.92 -7.83 31.01 202.96 53.37 51
+    5 .354 .146 .011 33.79 -16.71 39.92 176.52 51.40 63|6 .375 .125 .009 39.52 -24.87 48.11 157.93 50.15 75
+    7 .391 .109 .008 45.14 -32.61 55.87 144.27 49.22 86"""
+    def load(name, table, cols):
+        for s in ('stdout', 'stderr'):
+            assert not re.search(r'Traceback|Error', (root/f'{name}.{s}.log').read_text()), f'{name} {s} reports an error'
+        with open(root/f'{name}-security_estim.csv', newline='') as f:
+            reader = csv.DictReader(f)
+            assert reader.fieldnames == ['t'] + cols, f'{name} columns'
+            got = [{k: float(v) for k, v in row.items()} for row in reader]
+        want = [dict(zip(['t'] + cols, map(float, row.split()))) for row in re.split(r'[|\n]', table)]
+        assert [g['t'] for g in got] == [w['t'] for w in want], f'{name} rows'
+        assert all(math.isfinite(v) for g in got for v in g.values()), f'{name} non-finite value'
+        digits = {'eps': 3, 'rho': 3, 'noise_rate': 3, 'lambda': 0}
+        matched = sum(all(round(g[c], digits.get(c, 2)) == w[c] for c in cols) for g, w in zip(got, want))
+        return got, matched
+    llm, llm_matched = load('llm', TABLE6, 'eps rho T_partial P_weak T_dis T_overlay lambda'.split())
+    gim, gim_matched = load('gim', TABLE7, 'eps rho noise_rate T_partial P_weak T_dis T_overlay T_prime_overlay lambda'.split())
+    llm_best = [min(r['T_partial'], r['T_dis'], r['T_overlay']) for r in llm]
+    gim_best = [min(r['T_partial'], r['T_dis'], r['T_overlay'], r['T_prime_overlay']) for r in gim]
+    print(json.dumps({
+        'llm_table6_rows_matched': llm_matched,
+        'llm_best_below_lambda_rows': sum(b < r['lambda'] for b, r in zip(llm_best, llm)),
+        'llm_max_best_attack_bits': max(llm_best),
+        'gim_table7_rows_matched': gim_matched,
+        'gim_best_below_lambda_rows': sum(b < r['lambda'] for b, r in zip(gim_best, gim)),
+        'gim_max_complexity_bits': max(max(r['T_partial'], r['T_dis'], r['T_prime_overlay']) for r in gim),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-prc/versions.log
+  - amber-prc/llm.stdout.log
+  - amber-prc/llm.stderr.log
+  - amber-prc/llm-security_estim.csv
+  - amber-prc/gim.stdout.log
+  - amber-prc/gim.stderr.log
+  - amber-prc/gim-security_estim.csv
+  - amber-prc/metrics.json
+baseline:
+  captured_on: '2026-11-12'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Python 3.12.3, numpy 1.26.0, pandas 2.1.1, matplotlib 3.8.0, seaborn 0.13.0
+  outputs:
+  - path: amber-prc/versions.log
+    sha256: 3cc755299aeff56109fcf1714671d1f63006ba70caf09a047ceb20b5f5452151
+  - path: amber-prc/llm.stdout.log
+    sha256: 0a0cdc37b14485ca6b23eef718c5fb86faa67eefd2f5504c69d365fe054fbe58
+  - path: amber-prc/llm.stderr.log
+    sha256: fac5823ba24fa84aac2eb34ab26516a465543b055cf864ed7068c2f0b8cd99ec
+  - path: amber-prc/llm-security_estim.csv
+    sha256: 873e41b839067e611cb04797dd0d010a06f130df13c3abd43fe993c1f3ab068f
+  - path: amber-prc/gim.stdout.log
+    sha256: 7e2f2f1f6954a1af729247fb1bc1b118e4240b453cc2366662fc3cfc0cfd3376
+  - path: amber-prc/gim.stderr.log
+    sha256: 56ef6ae1de7f99639b8d22ff23c09e045bd5787695d4f415b96f9c73f5bb7056
+  - path: amber-prc/gim-security_estim.csv
+    sha256: d2dbf34d6cfead3fccee5b1bb5a4b3cc3c01df1c410f926a0a1bc7785ccc0bf4
+  - path: amber-prc/metrics.json
+    sha256: b4c6af577e93700fae9abe32d4ed735313827d88b722946a51c3912b5f8d7efb
+  metrics:
+    llm_table6_rows_matched: 12
+    llm_best_below_lambda_rows: 12
+    llm_max_best_attack_bits: 73.56
+    gim_table7_rows_matched: 5
+    gim_best_below_lambda_rows: 5
+    gim_max_complexity_bits: 56.56
+  bit_for_bit_expected: false
