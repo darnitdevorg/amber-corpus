@@ -84,6 +84,8 @@ The re-run is itself a new signed bundle in `store/`, signed with B's key. Send
 |---|---|---|---|---|---|---|---|
 | darnit VM (NYU) | A | RHEL 10.2, x86_64 | `3bef6135c89e` | REPRODUCED | – | – | 2026-11-09; all four output digests equal the entry's `baseline` block (captured 2026-10-26, Ubuntu 24.04) |
 | sbomit (NYU) | B | RHEL 10.2, x86_64 | `2a834edf2dcc` | REPRODUCED | verified | none; 4/4 outputs identical, 2/2 claims same | 2026-11-09; found the consent-prompt-on-stdout bug, fixed in #678 `fbdf9a2` |
+| sbomit (NYU) | B | RHEL 10.2, x86_64 | `2a834edf2dcc` → `eab209068cf5` | REPRODUCED | verified | none; 4/4 identical, 2/2 same | 2026-11-12, repeated with #678 `5e5b5e1` after the Nov 11 review round; the old bundle still verifies |
+| sbomit (NYU) via S3 | B | RHEL 10.2, x86_64 | `4f98c67243fc` | REPRODUCED | verified from the bucket | none; 4/4 identical, 2/2 same | 2026-11-12, `--store s3` against a moto endpoint on the VM, rerun bundle written back to the bucket |
 | | B | | | | | | |
 
 If anything in this page did not work exactly as written, that is a finding too —
