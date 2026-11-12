@@ -1,0 +1,252 @@
+# Verified subset: artifact appendix A.4.2 E1, the statistical analysis behind
+# paper Tables 3-7 (all 53 H1-H9 measures). Table 2's grade tests are not
+# claims (their raw data is not released). The participant-drawn ADT images,
+# their manual coding and the qualitative rubric grading are not re-done.
+id: usenixsec2025-adt-acceptability
+title: A limited technical background is sufficient for attack-defense tree acceptability
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity25/presentation/schiele
+artifact:
+  url: https://zenodo.org/records/14717343
+  clone: |
+    Download two files of Zenodo record 14717343 (the version the AEC results
+    page links; concept DOI 10.5281/zenodo.14717342) into a fresh directory and
+    run run.command there:
+      https://zenodo.org/api/records/14717343/files/Statistics.ipynb/content -> Statistics.ipynb
+      https://zenodo.org/api/records/14717343/files/Survey%20Data.csv/content -> "Survey Data.csv"
+    run.command checks both SHA-256 digests. The record's other eight files
+    (lecture slides/plan, study PDFs, rubric, ADT image zips) are not used.
+  ref_type: doi
+  ref: 10.5281/zenodo.14717343
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Only artifact appendix A.4.2 E1 is included. Appendix "A.2.3 Hardware
+    dependencies: None."; A.2.4 "Python version 3.12.1 ... any version at
+    least this version should [be] sufficient"; A.4.2 E1 "Results: The
+    corrected p-values should align with the results in the original paper
+    presented in Tables 2-7. These results are used to justify claims C1
+    and C2." https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle1ae-final82.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2025/results.
+
+    What runs: the artifact's own Statistics.ipynb on its own Survey Data.csv.
+    The command execs every notebook code cell verbatim and in order, except
+    the first (`%pip install pingouin` / `%pip install pandas`), which is
+    replaced by a hash-pinned install of the versions the authors' own pip
+    output shows (pingouin 0.5.5, numpy 2.2.1, scipy 1.15.1, pandas 2.2.3,
+    statsmodels 0.14.4, scikit-learn 1.6.1, matplotlib 3.10.0, seaborn 0.13.2,
+    pandas-flavor 0.6.0, tabulate 0.9.0; transitive pins resolved as of
+    2025-01-24, the artifact date). That is the only adaptation. The notebook's
+    printed results table goes to run.log; afterwards its own test_df and
+    hypotheses objects are written to tests.csv and hypotheses.json. No
+    Jupyter, Docker, compiler or GPU is needed.
+
+    Prerequisites: Linux x86_64, POSIX shell, sha256sum, Python 3.12 with the
+    venv module (the cp312 wheel hashes are pinned) and network access to
+    Zenodo and PyPI; Python 3.12.3 was tested. network_required covers only
+    input and wheel acquisition; the analysis itself is offline. No seeds,
+    sampling or timing are involved; the analysis is deterministic.
+
+    First run on 2026-11-11: exit 0 in 37.5 s wall including venv creation and
+    the PyPI install; GNU time largest single-process maximum RSS 178056 KiB;
+    amber-adt/ including the venv occupied 533 MB. The notebook ran 113 tests
+    (53 BM + 10 hard-coded grade rows + 50 TOST); metrics 3 / 35 / 53.
+    An independent validator recomputed everything from Survey Data.csv without
+    pingouin and without the notebook: its own preprocessing, a rank-formula
+    Brunner-Munzel, a pooled-variance TOST (bound 1) and its own iterative
+    Holm-Bonferroni loop. It found the same 113 tests, raw p-values within a
+    relative 1.5e-14, and the same decisions for all 53 measures, also under
+    textbook (monotone) Holm. It also parsed the printed run.log table
+    separately, and confirmed the 49 LT / 53 HT participants, Table 3's group
+    sizes and three Table 6 Likert distributions. Exact p-values are not
+    claims: the paper's numbers differ slightly from the artifact's own
+    bundled output in a few rows (e.g. ADT2 OR p*m .969 vs 0.940; the Table 3
+    Defense-nodes row, % correct 51.19/61.13 in the paper vs 51.87/61.32 from
+    the data). No paper decision changes.
+    The literal run.command passed from a fresh download directory on
+    2026-11-11 (inputs fetched again from Zenodo) in 37.34 s wall, venv and
+    PyPI install included, under a 1536 MiB memory cap with no swap and no
+    limit event; GNU time largest single-process maximum RSS 176012 KiB.
+    Metrics again 3 / 35 / 53; the independent validator passed again and both
+    inputs were unchanged afterwards. tests.csv, run.log, hypotheses.json,
+    versions.log and metrics.json were byte-identical to the first run;
+    run.stderr.log differs only by the venv's absolute path inside two scipy
+    "Precision loss" RuntimeWarnings, which the authors' bundled output also
+    shows. The checker rejected 32 incomplete or invalid fixtures (missing or
+    empty files, truncated run.log, traceback/error in stderr, wrong header,
+    dropped/duplicated/extra rows or measures, missing grade rows, BM/TOST
+    coverage breaks, out-of-range/NaN/non-numeric p, corrected < raw p, and four
+    flipped decisions) and accepted only the genuine outputs. The numeric
+    resource fields are conservative budgets; limits belong to the runner.
+    The baseline below is from that fresh literal-command capture.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: bm_significant_measures
+  threshold: == 3
+  unit: measures with a significant LT/HT difference
+  source: Paper Section 4.4 and Tables 3, 5, 6 (published pp.2232-2237), https://www.usenix.org/system/files/usenixsecurity25-schiele.pdf;
+    artifact appendix A.4.1 C1/C2 and A.4.2 E1
+  measurement_protocol: 'Run the unmodified Statistics.ipynb on the unmodified Survey Data.csv (Zenodo 14717343).
+    Over the notebook''s 53 H1-H9 measures, count those whose Brunner-Munzel p-value after the notebook''s
+    Holm-Bonferroni correction (p*m, over all 113 tests incl. the 10 hard-coded grade rows) is < 0.05, the
+    paper''s alpha. The paper reports exactly three: Leaf nodes (Table 3, p*m 0.025), ADT1 single child (Table 5,
+    8.66e-04) and LS-ADT2-L2 (Table 6, 0.041). Incomplete output (missing measures, rows, grade tests or the final
+    printed block, any traceback) is a blocker, never a scientific result. E1 only; no Table 2 claim.'
+  expected_verdict: REPRODUCED
+  notes: 'C1: no significant difference between limited-technical (LT) and highly-technical (HT) students in
+    actual effectiveness, perceived ease of use, usefulness and intention to use, with the three exceptions the
+    paper itself reports and discusses (leaf-node understanding, single-child errors, ADTs as a means of analysis).'
+  measure:
+    file: amber-adt/metrics.json
+    regex: '"bm_significant_measures": ([0-9]+)'
+- metric: tost_equivalent_measures
+  threshold: == 35
+  unit: measures with significant LT/HT equivalence
+  source: Paper Section 4.4 and Tables 3-7 (published pp.2232-2237), https://www.usenix.org/system/files/usenixsecurity25-schiele.pdf;
+    artifact appendix A.4.2 E1
+  measurement_protocol: 'Same run. Count the measures whose TOST (pingouin, bound 1) p-value after the same
+    Holm-Bonferroni correction is < 0.05. TOST is run only where BM finds no significant difference, as in the
+    paper. The paper''s tables give 35: Table 3 four, Table 4 four, Table 5 sixteen (H2-1 seven, H3 eight, H9 one),
+    Table 6 seven, Table 7 four.'
+  expected_verdict: REPRODUCED
+  notes: 'Supports C1/C2: most components are not merely "not different" but statistically equivalent. Values
+    near 0.05 in the paper (ADT3 multi countermeasure 0.035, SS-Q11 0.034, LS-ADT1-L5 0.013) must also land on
+    the same side.'
+  measure:
+    file: amber-adt/metrics.json
+    regex: '"tost_equivalent_measures": ([0-9]+)'
+- metric: decisions_matching_paper
+  threshold: == 53
+  unit: measures whose (difference, equivalence) decision equals the paper's
+  source: Paper Tables 3-7 (published pp.2232-2237), https://www.usenix.org/system/files/usenixsecurity25-schiele.pdf;
+    artifact appendix A.4.2 E1
+  measurement_protocol: 'Same run. For each of the 53 measures, compare the pair (BM p*m < 0.05, TOST p*m < 0.05)
+    with the paper''s tables: the three BM-significant measures above; fifteen neither different nor equivalent
+    (ADT3 single child; the seven H9 ADT3 metrics except and:or ratio; SS-Q15, SS-Q19; LS-ADT3-L1; LS-ADT2-L1, SS-Q6,
+    SS-Q16, SS-Q20); the other 35 equivalent. The value is the number of agreeing measures. This pins the
+    identities, not just the two counts.'
+  expected_verdict: REPRODUCED
+  notes: 'Includes C2 (H9, creative elements of self-drawn ADTs): no BM difference on any of the eight metrics,
+    equivalence only for the and:or ratio.'
+  measure:
+    file: amber-adt/metrics.json
+    regex: '"decisions_matching_paper": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    sha256sum -c - <<'SUMS'
+    95ec431ebf1c75433113fd32fe01860e915d3e5e6a0c458fa45907aed8ce2937  Statistics.ipynb
+    6f44ec6dcde541f63106c80b30dd39b3dcc8be8e761f1b0a2b890dd224c1e9d7  Survey Data.csv
+    SUMS
+    mkdir amber-adt
+    python3 -m venv amber-adt/venv
+    cat > amber-adt/requirements.txt <<'REQ'
+    contourpy==1.3.1 --hash=sha256:efa874e87e4a647fd2e4f514d5e91c7d493697127beb95e77d2f7561f6905bd9
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.55.5 --hash=sha256:e1a06e77f956a5857a4444f689f0ca4a1c4bdbcb38c812805f54a1b21380cc24
+    joblib==1.4.2 --hash=sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6
+    kiwisolver==1.4.8 --hash=sha256:cc978a80a0db3a66d25767b03688f1147a69e6237175c0f4ffffaaedf744055a
+    matplotlib==3.10.0 --hash=sha256:9b0558bae37f154fffda54d779a592bc97ca8b4701f1c710055b609a3bac44c8
+    numpy==2.2.1 --hash=sha256:5062dc1a4e32a10dc2b8b13cedd58988261416e811c1dc4dbdea4f57eea61b0d
+    packaging==24.2 --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759
+    pandas==2.2.3 --hash=sha256:fffb8ae78d8af97f849404f21411c95062db1496aeb3e56f146f0355c9989319
+    pandas-flavor==0.6.0 --hash=sha256:a32c9e2e0da702579320cf2bd0078cee91807713bc9c65ff522f6b0289899893
+    patsy==1.0.1 --hash=sha256:751fb38f9e97e62312e921a1954b81e1bb2bcda4f5eeabaf94db251ee791509c
+    pillow==11.1.0 --hash=sha256:7fdadc077553621911f27ce206ffcbec7d3f8d7b50e0da39f10997e8e2bb7f6a
+    pingouin==0.5.5 --hash=sha256:3156afe44ee5541131200848ee905937930757b615aca8eed8438ad4d4e20ef1
+    pyparsing==3.2.1 --hash=sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2024.2 --hash=sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725
+    scikit-learn==1.6.1 --hash=sha256:2e69fab4ebfc9c9b580a7a80111b43d214ab06250f8a7ef590a4edf72464dd86
+    scipy==1.15.1 --hash=sha256:0fb57b30f0017d4afa5fe5f5b150b8f807618819287c21cbe51130de7ccdaed2
+    seaborn==0.13.2 --hash=sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    statsmodels==0.14.4 --hash=sha256:4bbb150620b53133d6cd1c5d14c28a4f85701e6c781d9b689b53681effaa655f
+    tabulate==0.9.0 --hash=sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f
+    threadpoolctl==3.5.0 --hash=sha256:56c1e26c150397e58c4926da8eeee87533b1e32bef131bd4bf6a2f45f3185467
+    tzdata==2025.1 --hash=sha256:7e127113816800496f027041c570f50bcd464a020098a3b6b199517772303639
+    xarray==2025.1.1 --hash=sha256:8a69d17c1e4ad09664fd0bc2dbb398e7368eda25bd19456fb919a6eb6490fb72
+    REQ
+    amber-adt/venv/bin/pip install --quiet --no-input --only-binary=:all: --require-hashes -r amber-adt/requirements.txt
+    amber-adt/venv/bin/python -c "import numpy, scipy, pandas, pingouin; print('numpy', numpy.__version__, 'scipy', scipy.__version__, 'pandas', pandas.__version__, 'pingouin', pingouin.__version__)" > amber-adt/versions.log
+    grep -Fx 'numpy 2.2.1 scipy 1.15.1 pandas 2.2.3 pingouin 0.5.5' amber-adt/versions.log
+    MPLBACKEND=Agg MPLCONFIGDIR=amber-adt/mpl amber-adt/venv/bin/python - > amber-adt/run.log 2> amber-adt/run.stderr.log <<'RUN'
+    import json
+    nb = json.load(open('Statistics.ipynb'))
+    code = [''.join(c['source']) for c in nb['cells'] if c['cell_type'] == 'code']
+    assert code[0] == '%pip install pingouin\n%pip install pandas', 'unexpected setup cell'
+    ns = {'__name__': '__main__'}
+    for i, src in enumerate(code[1:], 1):  # every notebook cell after the %pip cell, verbatim and in order
+        exec(compile(src, 'Statistics.ipynb code cell %d' % i, 'exec'), ns)
+    ns['test_df'].to_csv('amber-adt/tests.csv', index=False)
+    json.dump(ns['hypotheses'], open('amber-adt/hypotheses.json', 'w'), indent=1)
+    RUN
+    python3 -I - <<'CHECK' > amber-adt/metrics.json
+    import csv, json, re
+    H = json.load(open('amber-adt/hypotheses.json')); grades = H.pop('G')
+    measures = [m for v in H.values() for m in v]
+    assert len(set(measures)) == len(measures) == 53 and len(grades) == 5, 'expected 53 H1-H9 measures and 5 grade rows'
+    log, err = open('amber-adt/run.log').read(), open('amber-adt/run.stderr.log').read()
+    assert re.search(r'----- Hypothesis: G -----\n.*Grade: All', log, re.S) and not re.search(r'Traceback|Error', err), 'incomplete run'
+    rows = list(csv.DictReader(open('amber-adt/tests.csv'))); q = {}
+    assert rows and list(rows[0]) == ['hypothesis', 'test', 'original p-value', 'corrected p-value'], 'bad tests.csv'
+    for r in rows:
+        p, c = float(r['original p-value']), float(r['corrected p-value'])
+        assert 0 <= p <= c <= 1 and (r['hypothesis'], r['test']) not in q and r['test'] in ('BM', 'TOST'), 'bad row'
+        q[r['hypothesis'], r['test']] = c
+    assert {h for h, _ in q} == set(measures) | set(grades), 'missing or unexpected measures'
+    assert all((g, t) in q for g in grades for t in ('BM', 'TOST')), 'all 10 grade rows enter the correction'
+    assert all((m, 'BM') in q and ((m, 'TOST') in q) == (q[m, 'BM'] > 0.05) for m in measures), 'BM/TOST coverage'
+    SIG = {'leaf_node_avg', 'ADT1 single child (atk)', 'LS-ADT2-L2'}  # paper Tables 3, 5, 6
+    NOT_EQ = {'ADT3 single child (atk)', 'ADT3 # def leaf nodes', 'ADT3 # def nodes', 'ADT3 # atk leaf nodes', 'ADT3 # atk nodes',
+              'ADT3 # and (atk)', 'ADT3 #or (atk)', 'ADT3 LoA', 'SS-Q15', 'SS-Q19', 'LS-ADT3-L1', 'LS-ADT2-L1', 'SS-Q6', 'SS-Q16', 'SS-Q20'}
+    assert SIG | NOT_EQ <= set(measures)
+    sig = {m for m in measures if q[m, 'BM'] < 0.05}
+    eq = {m for m in measures if q.get((m, 'TOST'), 1) < 0.05}
+    match = sum(((m in sig), (m in eq)) == ((m in SIG), m not in SIG | NOT_EQ) for m in measures)
+    print(json.dumps({'bm_significant_measures': len(sig), 'tost_equivalent_measures': len(eq), 'decisions_matching_paper': match}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-adt/versions.log
+  - amber-adt/run.log
+  - amber-adt/run.stderr.log
+  - amber-adt/tests.csv
+  - amber-adt/hypotheses.json
+  - amber-adt/metrics.json
+baseline:
+  captured_on: '2026-11-11'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; pingouin 0.5.5, scipy 1.15.1, pandas 2.2.3, numpy 2.2.1 in a local venv
+  outputs:
+  - path: amber-adt/versions.log
+    sha256: 0c38fcf8f517c1d33501d45712fac272a3894952816e17e3a42338f0bcb60932
+  - path: amber-adt/run.log
+    sha256: 9c223730e0ff1b05f5d7bea0ff1cff39b7b34fb2517d3615d820ece6b0b934d8
+  - path: amber-adt/run.stderr.log
+    sha256: 418d548ed237878d55f5e522e4e6377fdc95fb0b46b09a245290754d004715cd
+  - path: amber-adt/tests.csv
+    sha256: 61b09bba0c16ba02bc1c0d824e5a741714b47ebd61b057236c01c11e3e601c78
+  - path: amber-adt/hypotheses.json
+    sha256: b574ab0ce9c3d61b52adc8a4432aa6289dbf999bb621c7438b37b672df067f45
+  - path: amber-adt/metrics.json
+    sha256: 72f3c424680f78469a6d0e48fd7dafc3992bc77bbac13ebc07ea91d709959a26
+  metrics:
+    bm_significant_measures: 3
+    tost_equivalent_measures: 35
+    decisions_matching_paper: 53
+  bit_for_bit_expected: false
