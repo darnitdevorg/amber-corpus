@@ -1,0 +1,271 @@
+# Verified subset: artifact appendix E1-E4, the four Tamarin models of the paper
+# (single-session Double Ratchet, Sesame PCS attack, Sesame with sequential
+# sessions, Sesame with clone detection). No claim about the Signal implementation.
+id: usenixsec2023-sesame
+title: 'Formal Analysis of Session-Handling in Secure Messaging: Lifting Security from Sessions to Conversations'
+venue:
+  name: USENIX Security
+  year: 2023
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity23/presentation/cremers-sessionhandling
+artifact:
+  url: https://github.com/sesame-symbolic-model/sesame-model
+  clone: |
+    git clone https://github.com/sesame-symbolic-model/sesame-model.git artifact, then
+    `git -C artifact checkout 3e7eb287dfc522ca7fa3c81b5fae40a44b19a218` and run run.command
+    from inside artifact/. This is the commit of the appendix tag “sesame-model-v1”
+    (the curly quotes are part of the tag name).
+  ref_type: commit
+  ref: 3e7eb287dfc522ca7fa3c81b5fae40a44b19a218
+  license: none stated (the repository has no LICENSE file)
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 3
+  disk_gb: 6
+  runtime_minutes: 15
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix E1-E4 (the four models in Sesame/) is included.
+    Appendix A.2.3: "We have run our experiments on a Intel(R) Xeon(R) CPU E5-4650L
+    2.60GHz server with 756GB of RAM, and 4 threads per Tamarin call."
+    A.2.4: "you need the Tamarin prover tool version v1.7.1"; A.3.1 offers Docker or
+    "Compiling Tamarin from source", using the tamarin-prover.zip shipped in the repository.
+    A.4.2: E1 "~1 compute-minute", E2 "2.4 compute-seconds", E3 "~2 compute-minutes",
+    E4 "~1 compute-minute".
+    https://secartifacts.github.io/usenixsec2023/appendix-files/sec23fallae-final31.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2023/results
+
+    Toolchain (native, no Docker). Tamarin 1.7.1 was never released as a binary, so it
+    is built from the artifact's own tamarin-prover.zip (cabal version 1.7.1, stack
+    resolver lts-19.2, GHC 9.0.2) with no source changes. Tamarin 1.7.1 accepts only
+    Maude 2.7.1, 3.0 or 3.1 (src/Main/Environment.hs), so Maude 3.1 is used. The
+    official Maude 3.1 Linux binary links libtinfo.so.5, which Ubuntu 24.04 no longer
+    ships; a wrapper gives it Ubuntu's libtinfo5 package, extracted locally. Run these
+    steps in an empty directory OUTSIDE any git checkout (otherwise the Tamarin version
+    banner embeds that checkout's revision); they need gcc, zlib and gmp headers, curl,
+    unzip and dpkg-deb, and need no root:
+      curl -fL -o stack.tar.gz https://github.com/commercialhaskell/stack/releases/download/v3.9.3/stack-3.9.3-linux-x86_64.tar.gz
+      curl -fL -o tamarin-prover.zip https://raw.githubusercontent.com/sesame-symbolic-model/sesame-model/3e7eb287dfc522ca7fa3c81b5fae40a44b19a218/tamarin-prover.zip
+      curl -fL -o maude.zip https://github.com/maude-lang/Maude/releases/download/Maude3.1/Maude-3.1-linux.zip
+      curl -fL -o libtinfo5.deb http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.3_amd64.deb
+      sha256sum -c - <<'SUMS'
+      bc45cf6e1d00910348dcceb510a469056f6d9c63997230f901c22cf997598b05  stack.tar.gz
+      9d828642603ca819154db583ba485b63e3d5ebe45b1996a4839381851e06a695  tamarin-prover.zip
+      6070989855b7262b1ad3f460895bc34b97310320e985bf6615d1f3aa25a577af  maude.zip
+      4df4288404108f1a156d014e8764a064e977e34e6d44931ab60451694c03c90d  libtinfo5.deb
+      SUMS
+      tar -xzf stack.tar.gz
+      unzip -q tamarin-prover.zip -d tamarin-src
+      unzip -q maude.zip 'maude-3.1/*'
+      dpkg-deb -x libtinfo5.deb libtinfo5
+      mkdir -p bin
+      STACK_ROOT="$PWD/stack-root" stack-3.9.3-linux-x86_64/stack --stack-yaml tamarin-src/stack.yaml install --install-ghc -j4 --local-bin-path bin
+      printf '#!/bin/sh\nLD_LIBRARY_PATH="%s/libtinfo5/lib/x86_64-linux-gnu" exec "%s/maude-3.1/maude.linux64" "$@"\n' "$PWD" "$PWD" > bin/maude
+      chmod +x maude-3.1/maude.linux64 bin/maude
+      export PATH="$PWD/bin:$PATH" MAUDE_LIB="$PWD/maude-3.1"
+    The stack, archive, Maude and libtinfo5 hashes are the published ones (stack's
+    .sha256 file, the git blob at the pinned commit, Ubuntu's signed jammy-security
+    index). The built binary embeds its compile time, so it is not bit reproducible;
+    run.command checks the version strings instead. `tamarin-prover test` (appendix
+    A.3.2) passes the Maude check and all 55 unification tests, but reports one failure
+    because GraphViz `dot` is absent; dot only draws graphs in the interactive GUI and is
+    not listed in the appendix's dependencies.
+    The steps above were tested verbatim on 2026-11-11 from an empty directory with an
+    empty STACK_ROOT: 21 min 59 s wall (GHC 9.0.2 download and full dependency build
+    included), 1100684 KiB GNU time maximum RSS, about 3.5 GB on disk afterwards.
+
+    Prerequisites for run.command: Linux x86_64, POSIX shell, git, Python 3.9+ and the
+    toolchain above on PATH. It is offline; network_required covers the clone and the
+    toolchain downloads. Local captures ran with GHCRTS="-N4 -M2G" (4 threads as in the
+    appendix, 2 GiB heap cap). The models, oracle.py, the heuristic and the stored
+    proof are unchanged; no -D flag is passed, exactly as in the appendix, so the five
+    sanity lemmas inside `#ifdef Sanity` in Sesame_CloneDetection.spthy are not
+    analysed (the authors' stored result header lists the same 24 lemmas). Python 3.12
+    prints "oracle.py:N: SyntaxWarning: invalid escape sequence" whenever Tamarin starts
+    the oracle; unknown escapes are kept literally, so the oracle behaves as written, and
+    the checker allows exactly that warning. No repetitions, averaging, seeds or timing
+    threshold apply; step counts are recorded, not judged.
+
+    First run on 2026-11-11 (the four original commands, GHCRTS="-N4 -M2G"): E1 60.1 s,
+    E2 1.6 s, E3 113.7 s, E4 27.5 s wall; GNU time maximum RSS 1714872, 64020, 1888956
+    and 1400568 KiB. Results: E1 35/35 verified, E2 attack_pcs verified, E3 36/36, E4
+    24/24 (cd_soundness verified). Every lemma name, quantifier, status and step count
+    equals the result header the authors stored at the top of each model. An independent
+    validator (expected names from a plan written before the run, rows found by a
+    different parser, model and oracle bytes compared with `git show HEAD:`) agreed.
+
+    Correction recorded before publication: the pre-run plan listed 29 lemmas for E4
+    because its static count missed the `#ifdef Sanity` block; 24 is the paper-backed
+    value (stored header, appendix command, and the threshold in the plan as first
+    approved), and the run produced exactly that set. No other threshold changed.
+
+    The literal run.command passed from a second fresh clone on 2026-11-11 with a
+    toolchain built from the steps above: 3 min 49.6 s wall, 1886120 KiB GNU time maximum
+    RSS, the same four metrics; independent validation agreed again and git reported no
+    change to the checkout outside amber-sesame/. The checker accepted the genuine outputs
+    and rejected 64 incomplete or tampered fixtures (missing or empty logs, truncated or
+    duplicated summaries, wrong tool versions, falsified, incomplete, zero-step, extra,
+    duplicate, reordered or re-kinded lemmas, a commented-out lemma reported, E4 run with
+    the sanity lemmas, a refuted or missing E2 attack, Tamarin WARNING, and traceback,
+    error, timeout or other warnings in stderr). Baseline hashes below are from that
+    fresh capture. The four stdout logs and metrics.json were byte-identical to the first
+    run; versions.log differs only in the build time, and the stderr logs (prover trace
+    interleaved with oracle warnings that carry absolute paths) are not bit reproducible.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: double_ratchet_verified
+  threshold: == 35
+  unit: verified lemmas
+  source: Paper Section 5.3 and Table 2 (published pp.1246-1247), https://www.usenix.org/system/files/usenixsecurity23-cremers-session-handling.pdf;
+    artifact appendix A.4.1 "PCS in single-session" and A.4.2 E1
+  measurement_protocol: 'Run `tamarin-prover --prove Sesame/DoubleRatchet.spthy` with Tamarin 1.7.1 and Maude 3.1
+    on the unmodified model. Require exactly one complete "summary of summaries" for this file, no Tamarin WARNING
+    or wellformedness failure, and one row per live lemma declaration (comments removed), in order, each
+    "verified" with a positive step count. The value is the number of such rows, so 35 means all 35 lemmas
+    (5 exists-trace sanity, 30 all-traces including PCS and PCS_Conversation) verified. Reject missing, extra,
+    duplicate, falsified or incomplete rows and any stderr diagnostic other than the oracle SyntaxWarning.
+    Setup failures, resource limits and timeouts are blockers, never scientific failures.'
+  expected_verdict: REPRODUCED
+  notes: 'Single-session Signal (Double Ratchet) achieves PCS; session- and conversation-based PCS coincide here.
+    Table 2 row "Double Ratchet (Sesame with single session)": PCS ✓.'
+  measure:
+    file: amber-sesame/metrics.json
+    regex: '"double_ratchet_verified": ([0-9]+)'
+- metric: pcs_attack_found
+  threshold: == 1
+  unit: attack trace found (boolean)
+  source: Paper Section 5.4 and Table 2 (published pp.1247-1248), https://www.usenix.org/system/files/usenixsecurity23-cremers-session-handling.pdf;
+    artifact appendix A.4.1 "PCS violation in Sesame" and A.4.2 E2
+  measurement_protocol: 'Run `tamarin-prover Sesame/Sesame_PCSAttack.spthy` (no --prove, as the appendix says: the
+    file holds the authors'' stored attack proof, which Tamarin checks). Require one complete summary whose rows are
+    exactly the six live lemmas in order: attack_pcs (exists-trace) "verified" with a positive step count, and the
+    five can_* sanity lemmas "analysis incomplete (1 steps)" because they are not proved without --prove. The value
+    is 1 only then: Tamarin confirms a trace in which a clone uses a compromised session after the parties healed in
+    another session.'
+  expected_verdict: REPRODUCED
+  notes: 'Table 2 row "Sesame (currently deployed)": PCS ✗. A verified exists-trace lemma is the attack.'
+  measure:
+    file: amber-sesame/metrics.json
+    regex: '"pcs_attack_found": ([0-9]+)'
+- metric: restored_pcs_verified
+  threshold: == 36
+  unit: verified lemmas
+  source: Paper Section 5.4 and Table 2 (published pp.1247-1248), https://www.usenix.org/system/files/usenixsecurity23-cremers-session-handling.pdf;
+    artifact appendix A.4.1 "Restored PCS" and A.4.2 E3
+  measurement_protocol: 'Run `tamarin-prover --prove Sesame/Sesame_Solution_RestoredPCS.spthy` on the unmodified
+    model with the same checks as double_ratchet_verified. 36 means all 36 live lemmas verified, including PCS and
+    PCS_Conversation; singleInitKE and SameTidKey sit inside comments in this file and are not analysed.'
+  expected_verdict: REPRODUCED
+  notes: 'Sesame with sequential sessions (the paper''s fix) restores conversation-based PCS.
+    Table 2 row "Sesame with sequential sessions": PCS ✓.'
+  measure:
+    file: amber-sesame/metrics.json
+    regex: '"restored_pcs_verified": ([0-9]+)'
+- metric: clone_detection_verified
+  threshold: == 24
+  unit: verified lemmas
+  source: Paper Section 5.5 and Table 2 (published pp.1247-1248), https://www.usenix.org/system/files/usenixsecurity23-cremers-session-handling.pdf;
+    artifact appendix A.4.1 "Sound Clone Detection" and A.4.2 E4
+  measurement_protocol: 'Run `tamarin-prover --prove Sesame/Sesame_CloneDetection.spthy` on the unmodified model
+    with the same checks as double_ratchet_verified, with no -D flag as in the appendix. 24 means all 24 live lemmas
+    verified, including cd_soundness; the five can_* sanity lemmas inside `#ifdef Sanity` are not analysed, matching
+    the authors'' stored result header.'
+  expected_verdict: REPRODUCED
+  notes: 'A clone that starts new sessions with a compromised key is detected with no false positives.
+    Table 2 row "Sesame, sequential sessions + warning message": Clone Detection ✓.'
+  measure:
+    file: amber-sesame/metrics.json
+    regex: '"clone_detection_verified": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 3e7eb287dfc522ca7fa3c81b5fae40a44b19a218
+    git diff --quiet HEAD -- Sesame
+    mkdir amber-sesame
+    { tamarin-prover --version; maude --version; } > amber-sesame/versions.log 2>&1
+    tamarin-prover --prove Sesame/DoubleRatchet.spthy > amber-sesame/DoubleRatchet.stdout.log 2> amber-sesame/DoubleRatchet.stderr.log
+    tamarin-prover Sesame/Sesame_PCSAttack.spthy > amber-sesame/Sesame_PCSAttack.stdout.log 2> amber-sesame/Sesame_PCSAttack.stderr.log
+    tamarin-prover --prove Sesame/Sesame_Solution_RestoredPCS.spthy > amber-sesame/Sesame_Solution_RestoredPCS.stdout.log 2> amber-sesame/Sesame_Solution_RestoredPCS.stderr.log
+    tamarin-prover --prove Sesame/Sesame_CloneDetection.spthy > amber-sesame/Sesame_CloneDetection.stdout.log 2> amber-sesame/Sesame_CloneDetection.stderr.log
+    python3 -I - amber-sesame <<'PYTHON' > amber-sesame/metrics.json
+    import json, pathlib, re, sys
+    out = pathlib.Path(sys.argv[1])
+    CASES = {'DoubleRatchet': 'double_ratchet_verified', 'Sesame_PCSAttack': 'pcs_attack_found',
+             'Sesame_Solution_RestoredPCS': 'restored_pcs_verified', 'Sesame_CloneDetection': 'clone_detection_verified'}
+    v = (out/'versions.log').read_text()
+    assert v.startswith('tamarin-prover 1.7.1,') and v.endswith('\n3.1\n'), 'Wrong tool versions'
+    metrics = {}
+    for name, key in CASES.items():
+        src = pathlib.Path('Sesame/%s.spthy' % name).read_text()
+        src = re.sub(r'/\*.*?\*/|//[^\n]*|^#ifdef\b.*?^#endif\b', '', src, flags=re.S | re.M)  # appendix passes no -D
+        live = [(n, k or 'all-traces') for n, k in re.findall(r'(?m)^\s*lemma\s+(\w+)\s*(?:\[[^\]]*\])?\s*:\s*(exists-trace|all-traces)?', src)]
+        text = (out/(name+'.stdout.log')).read_text()
+        assert text.count('summary of summaries:') == 1 and text.endswith('=\n'), 'Missing/duplicate/truncated summary'
+        assert not re.search(r'WARNING|wellformedness check', text), 'Tamarin warning'
+        m = re.search(r'summary of summaries:\s+analyzed: Sesame/%s\.spthy\s*\n(.*?)\n\s*={20,}\n$' % name, text, re.S)
+        assert m, 'Incomplete summary envelope'
+        rows = [re.fullmatch(r'\s*(\w+) \((all-traces|exists-trace)\): (verified|analysis incomplete) \(([1-9][0-9]*) steps\)', l)
+                for l in m[1].splitlines() if l.strip()]
+        assert all(rows) and [(r[1], r[2]) for r in rows] == live, 'Malformed, falsified, missing, extra or duplicate lemma'
+        if name == 'Sesame_PCSAttack':  # stored attack proof replayed without --prove
+            assert [(r[1], r[2], r[3]) for r in rows if r[3] == 'verified'] == [('attack_pcs', 'exists-trace', 'verified')]
+            assert all(r[1].startswith('can_') and r[4] == '1' for r in rows if r[3] != 'verified'), 'Unexpected incomplete lemma'
+            metrics[key] = 1
+        else:
+            assert all(r[3] == 'verified' for r in rows), 'Unverified lemma'
+            metrics[key] = len(rows)
+        err = (out/(name+'.stderr.log')).read_bytes().decode('utf-8', 'replace')  # oracle and prover share stderr
+        err = re.sub(r"\S*/Sesame/oracle\.py:\d+: SyntaxWarning: invalid escape sequence '\\.'|'s?warning'", '', err)  # model constants
+        assert not re.search(r'(?i)warning|error|exception|failed|timeout|sorry|traceback', err), 'Invalid stderr diagnostics'
+    print(json.dumps(metrics, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-sesame/versions.log
+  - amber-sesame/DoubleRatchet.stdout.log
+  - amber-sesame/DoubleRatchet.stderr.log
+  - amber-sesame/Sesame_PCSAttack.stdout.log
+  - amber-sesame/Sesame_PCSAttack.stderr.log
+  - amber-sesame/Sesame_Solution_RestoredPCS.stdout.log
+  - amber-sesame/Sesame_Solution_RestoredPCS.stderr.log
+  - amber-sesame/Sesame_CloneDetection.stdout.log
+  - amber-sesame/Sesame_CloneDetection.stderr.log
+  - amber-sesame/metrics.json
+baseline:
+  captured_on: '2026-11-11'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Tamarin 1.7.1 built from the artifact source (GHC 9.0.2), Maude 3.1,
+    Python 3.12.3; GHCRTS=-N4 -M2G
+  outputs:
+  - path: amber-sesame/versions.log
+    sha256: c3552bb9f95ad74216c7a8c04d9f517322787db31089214d1c4034e1c21b2494
+  - path: amber-sesame/DoubleRatchet.stdout.log
+    sha256: c912c02d53bbf1a20b798b76b60e2ae12fbd052ab0020379504ce20af20bac2e
+  - path: amber-sesame/DoubleRatchet.stderr.log
+    sha256: 050d60b83286df712a4a87253e0b02625553e718a6645266937090204e5293ae
+  - path: amber-sesame/Sesame_PCSAttack.stdout.log
+    sha256: 8fd281339ab95505865367f502fbd50073793de2d66a9ca428e0e279dac24c33
+  - path: amber-sesame/Sesame_PCSAttack.stderr.log
+    sha256: a471aaf01c47dae41d47d3004c47f4b29d22b117cdfcebccff619c1d2751e2fe
+  - path: amber-sesame/Sesame_Solution_RestoredPCS.stdout.log
+    sha256: 0a1416e22a4a2477945ffede131632ae46aab7c7894223dfb46d16a7c5f0eeb0
+  - path: amber-sesame/Sesame_Solution_RestoredPCS.stderr.log
+    sha256: 57deecbb5fc82d97242299dd04cee5f9e47e1b2ef27b8d5abe30cd33fcad21c4
+  - path: amber-sesame/Sesame_CloneDetection.stdout.log
+    sha256: d199dd2507b23ad58bd9bbe3cf83b0030b91971cd8796ee07f61a6a5e43a1e1d
+  - path: amber-sesame/Sesame_CloneDetection.stderr.log
+    sha256: a9baef06f06168dd6018b869adf5404c66dc47cc5babd827d90a41cf71b6b7ca
+  - path: amber-sesame/metrics.json
+    sha256: 0e4fc485293c19c98ef4bddd4c4196e191b41fe572a2457a00c50b5eeb4236ef
+  metrics:
+    double_ratchet_verified: 35
+    pcs_attack_found: 1
+    restored_pcs_verified: 36
+    clone_detection_verified: 24
+  bit_for_bit_expected: false
