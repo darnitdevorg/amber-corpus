@@ -18,6 +18,7 @@ research code*; the scenarios ask *does Amber tell the cases apart at all*.
 | s7 | stored output edited after the run | `verify` exits 2, `stored_outputs_match: false`, signatures still verify |
 | s8 | verify with a key that did not sign | `verify` exits 2, `signatures_verified: false` |
 | s9 | uncommitted change in the checkout | run refused; `--allow-dirty` records no commit and cannot be rerun |
+| s10 | observe first, judge later: `run` with no claims, then a reviewer's `claim` signed by a second key | `NOT_COMPARABLE` with outputs inferred; the derived bundle is `REPRODUCED`; `verify` passes with both keys, fails with the researcher's alone (and says `--claimer-pubkey`), fails with the keys swapped |
 
 s4 is the one that matters most: a reproducibility check that compares bytes calls
 every timing log a failure, one that compares claims does not. Amber records both and

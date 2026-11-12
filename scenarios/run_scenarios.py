@@ -79,6 +79,7 @@ class Runner:
         self.key = work / "researcher.key"
         self.pub = work / "researcher.pub"
         self.stranger_pub = work / "stranger.pub"
+        self.stranger_key = work / "stranger.key"
         self.repos: dict[str, Path] = {}
         self.git_env = {
             **os.environ,
@@ -135,8 +136,16 @@ class Runner:
             "run", str(repo), "--claims", str(entry), "--key", str(self.key), "--out", str(self.store), *self.ts, *extra
         )
 
-    def verify(self, bundle_id: str, pub: Path | None = None) -> tuple[int, dict[str, Any], str]:
-        return self.amber_json("verify", bundle_id, "--out", str(self.store), "--pubkey", str(pub or self.pub))
+    def verify(self, bundle_id: str, pub: Path | None = None, *extra: str) -> tuple[int, dict[str, Any], str]:
+        return self.amber_json("verify", bundle_id, "--out", str(self.store), "--pubkey", str(pub or self.pub), *extra)
+
+    def observe(self, repo: Path, *argv: str) -> tuple[int, dict[str, Any], str]:
+        """``run`` with no entry: the command's argv after ``--`` (one element each, as a shell would split
+        it; a single string would be quoted into one program name), outputs inferred, nothing judged."""
+        return self.amber_json("run", str(repo), "--key", str(self.key), "--out", str(self.store), *self.ts, "--", *argv)
+
+    def claim(self, bundle_id: str, key: Path, *spec: str) -> tuple[int, dict[str, Any], str]:
+        return self.amber_json("claim", bundle_id, "--out", str(self.store), "--key", str(key), *self.ts, *spec)
 
     def rerun(self, bundle_id: str, artifact: Path | None = None) -> tuple[int, dict[str, Any], str]:
         # A bundle made from a local path records no path (its subject is local/<name>), so rerun is told
@@ -149,6 +158,9 @@ class Runner:
 
     def stored_output(self, bundle_id: str, rel: str) -> Path:
         return self.store / bundle_id / "outputs" / rel
+
+    def bundle(self, bundle_id: str) -> dict[str, Any]:
+        return json.loads((self.store / f"{bundle_id}.intoto.json").read_text())
 
 
 # -- shared assertions ----------------------------------------------------------
@@ -272,6 +284,43 @@ def after_s9(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
     ]
 
 
+def after_s10(r: Runner, c: Case, s: dict[str, Any]) -> list[Check]:
+    """``s`` is the observe-mode run (no claims). A reviewer, holding a different key, attaches the claim later."""
+    checks = [
+        Check("observe: exit_code", "0", str((s.get("experiment") or {}).get("exit_code"))),
+        Check("observe: verdict", "NOT_COMPARABLE", str(s.get("verdict"))),
+        Check("observe: no claims", "0", str(len(s.get("claims") or []))),
+        Check("observe: outputs inferred", "True", str(any("metrics.json" in o["path"] for o in s["experiment"]["outputs"]))),
+    ]
+    rc, d, err = r.claim(
+        s["id"], r.stranger_key, "--id", "accuracy", "--file", f"{c.out_dir}/metrics.json",
+        "--regex", METRIC_REGEX, "--threshold", "== 0.95", "--source", "reviewer, after the run",
+    )
+    checks.append(Check("claim exit", "0", str(rc)))
+    if rc != 0 or not d.get("id"):
+        checks.append(Check("claim produced a bundle", "True", f"False ({err.strip().splitlines()[-1] if err.strip() else ''})"))
+        return checks
+    checks += [
+        Check("claim.verdict", "REPRODUCED", str(d.get("verdict"))),
+        Check("claim.derived_from", s["id"][:12], str(d.get("derived_from"))[:12]),
+    ]
+    both = r.verify(d["id"], r.pub, "--claimer-pubkey", str(r.stranger_pub))
+    one = r.verify(d["id"], r.pub)
+    swapped = r.verify(d["id"], r.stranger_pub, "--claimer-pubkey", str(r.pub))
+    checks += [
+        Check("both keys: verified", "True", str(both[1].get("verified"))),
+        Check("researcher key only: verified", "False", str(one[1].get("verified"))),
+        Check("researcher key only: hint names --claimer-pubkey", "True",
+              str("--claimer-pubkey" in str(one[1].get("signatures", {}).get("statement", {}).get("signature")))),
+        Check("keys swapped: verified", "False", str(swapped[1].get("verified"))),
+        # verify reports checks, not claims; the signer mark is in the stored derived bundle itself.
+        Check("claim signed_by", "claim_signer",
+              str(next((x.get("signed_by") for x in r.bundle(d["id"])["statement"]["predicate"].get("claims", [])
+                        if x.get("id") == "accuracy"), None))),
+    ]
+    return checks
+
+
 # -- the matrix ---------------------------------------------------------------
 def _claim(threshold: str, tolerance: float = 0, expected: str = "REPRODUCED", file: str = "metrics.json") -> dict[str, Any]:
     return {
@@ -357,6 +406,14 @@ CASES: list[Case] = [
         after_s8,
     ),
     Case(
+        "s10",
+        "observe first, judge later: a run with no claims, a reviewer's claim signed by a second key, both signers verified",
+        _write("amber-s10", 'printf \'{"accuracy": 0.95}\\n\' > amber-s10/metrics.json'),
+        [],
+        [],
+        after_s10,
+    ),
+    Case(
         "s9",
         "uncommitted change in the checkout: run refused; --allow-dirty records no commit and cannot be rerun",
         _write("amber-s9", 'printf \'{"accuracy": 0.95}\\n\' > amber-s9/metrics.json'),
@@ -378,7 +435,9 @@ def run_case(r: Runner, c: Case) -> tuple[list[Check], str | None]:
     repo = r.artifact(c)
     entry = r.entry(c)
     checks: list[Check] = []
-    if c.name == "s9":
+    if c.name == "s10":
+        rc, s, err = r.observe(repo, "sh", "./experiment.sh")
+    elif c.name == "s9":
         (repo / "README.md").write_text("edited, not committed\n")
         rc, _, err = r.run(c, repo, entry)
         checks += [
