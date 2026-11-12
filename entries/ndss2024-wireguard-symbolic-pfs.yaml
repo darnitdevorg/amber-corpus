@@ -1,0 +1,258 @@
+# Verified subset: paper Appendix A experiment E1 only, perfect forward secrecy
+# of the session key before derivation (k6) from the Initiator's view, WireGuard
+# without cookie. E2 (agreement/secrecy), E3/E4 (anonymity fixes) and all other
+# properties and model variants are excluded (they need a 256-core, 512 GB server).
+id: ndss2024-wireguard-symbolic-pfs
+title: A Unified Symbolic Analysis of WireGuard
+venue:
+  name: NDSS
+  year: 2024
+paper:
+  url: https://www.ndss-symposium.org/ndss-paper/a-unified-symbolic-analysis-of-wireguard/
+  doi: 10.14722/ndss.2024.24364
+artifact:
+  url: https://doi.org/10.5281/zenodo.10126619
+  clone: |
+    Download https://zenodo.org/api/records/10126619/files/wireguard_analysis.zip/content
+    as wireguard_analysis.zip (6012681 B, md5 f4c8049d9e1f2e43bb1ddb75d7482a34 as listed
+    by Zenodo). Require SHA-256
+    e7100b7adbca34ac2c8ce901c0e61799dd0a937f8733fb065a70c2a87b3da382, run
+    `unzip -q wireguard_analysis.zip`, enter wireguard_analysis/ and run run.command,
+    leaving ../wireguard_analysis.zip in place.
+  ref_type: doi
+  ref: 10.5281/zenodo.10126619
+  license: GPL-3.0 (readme.md; the Zenodo record lists CC-BY-4.0)
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1.5
+  disk_gb: 0.5
+  runtime_minutes: 10
+  docker: false
+  network_required: true
+  notes: |
+    Only paper Appendix A experiment E1 is included. Appendix A.A.3: "Configuration (C1)
+    A standard laptop with 8 cores of CPU 1.8 GHz and 16 Go of RAM. This architecture can
+    be used to run experiment E1 but shall not be used to run experiments E2, E3, E4."
+    Appendix A.C.1: "(E1): [PFS of session key before derivation from Initiator's view for
+    WireGuard without cookie] [5 human-minutes + 15 compute-minutes on configuration C1]".
+    Paper: https://www.ndss-symposium.org/wp-content/uploads/2024-364-paper.pdf (pp.16-17).
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/ndss2024/results.
+
+    Provenance. The appendix cites Gitlab commit cefa5c14103badcf895495dff048919065cfb6a4
+    and this Zenodo DOI. The zip carries the repository's .git (HEAD 2d46e33e, a
+    descendant of cefa5c14). Its working tree equals cefa5c14 except readme.md (3 lines)
+    and three files absent from the zip (Dockerfile and two paper PDFs). The E1 inputs
+    (process_complete_mininal_tests/, process_empty/, queries/) are byte-identical to
+    cefa5c14. The directory really is spelled "mininal"; the appendix writes "minimal".
+
+    What runs. The artifact's own `sh run_all.sh` in process_complete_mininal_tests/,
+    unmodified: Tamarin/Sapic+ exports the WireGuard process to ProVerif, 64 single-query
+    ProVerif files are generated and evaluated, sympy computes CNF/DNF from the queries
+    that hold, and Tamarin proves the hand-written lemma Secrecy_IK6_PFS. The only
+    adaptation is environmental: compute_proof.py hard-codes ~/.local/bin/tamarin-prover,
+    so HOME points at amber-wgsym/home, where that path is a symlink to the tamarin-prover
+    on PATH. No script, model, query, JOBS or +RTS value is changed. run_evaluate-pv.sh
+    calls `eval $(opam env)`; without opam this prints "opam: not found" on stderr and has
+    no effect, because ProVerif is taken from PATH.
+
+    Prerequisites: Linux x86_64, POSIX sh, Python 3.9+ with venv, sha256sum, unzip, perl,
+    GNU time at /usr/bin/time (the scripts call `time -p -f`), and on PATH: Tamarin 1.8.0,
+    Maude 3.3.1, ProVerif 2.04 and GNU parallel. Python 3.12.3 was tested (the artifact
+    tested 3.11.4). sympy 1.12 and mpmath 1.3.0 are installed hash-pinned in a venv
+    by the command. Tool setup in a separate directory:
+      curl -fL -o tamarin.tar.gz https://github.com/tamarin-prover/tamarin-prover/releases/download/1.8.0/tamarin-prover-1.8.0-linux64-ubuntu.tar.gz
+      curl -fL -o maude.zip https://github.com/maude-lang/Maude/releases/download/Maude3.3.1/Maude-linux.zip
+      curl -fL -o proverif2.04.tar.gz https://bblanche.gitlabpages.inria.fr/proverif/proverif2.04.tar.gz
+      curl -fL -o parallel-20230322.tar.bz2 https://ftp.gnu.org/gnu/parallel/parallel-20230322.tar.bz2
+      2bed5d3a5b7ad7b39a96fd1892246f4645a87d754498106c2466df5b4b26ce88  tamarin.tar.gz
+      9837c4bd0be1adea5d2dea0c72837367d173e7e98fe34722a9175e2e044f139c  maude.zip
+      a96e5ec13f35c9ead7a0e960df69bc4018eb6a46939da501613d9d93cab5fc75  proverif2.04.tar.gz
+      e5c7b1ba6d0cbc9d4dc58aa3e21c8970c5ae49b0fd0faf4eaf8bdbd6002b7bca  parallel-20230322.tar.bz2
+    (check with sha256sum -c), then: extract all four; `chmod +x Linux64/maude.linux64;
+    ln -s maude.linux64 Linux64/maude`; build ProVerif with `./build -nointeract` in
+    proverif2.04/ (needs OCaml; 4.14.2 built from source was used, no GUI); use
+    parallel-20230322/src/parallel; put tamarin-prover, Linux64/, proverif2.04/ and the
+    parallel script on PATH and export MAUDE_LIB to Linux64/. No Docker, opam, root,
+    GPU or compiler beyond OCaml is needed. network_required covers the public artifact,
+    tool and PyPI downloads; the experiment itself is offline.
+
+    Measured (first run, 2026-11-12, under a 2400 MiB / no-swap user cgroup): 252.5 s
+    wall for the whole command including venv setup; ProVerif stage 1:32, Tamarin
+    lemma 2:20 (140.18 s processing time); cgroup peak memory 952918016 B. Sources,
+    built tools and one complete run occupy about 245 MB. The numeric fields above are
+    conservative budgets from these measurements, not the appendix's laptop figures.
+    Stderr also carries Tamarin's ordinary "[Saturating Sources] Saturation aborted, more
+    than 5 iterations" notice, which the appendix shows as expected output.
+
+    Verification. The first run gave 64/64 evaluated queries (49 true, 15 false), the
+    paper's DNF clauses and "Secrecy_IK6_PFS (all-traces): verified (268 steps)", the same
+    step count the appendix prints. An independent validator, which uses neither sympy nor
+    the artifact's DNF code, re-enumerated the 64 key subsets in generator order, checked
+    each .pv query names exactly its subset of reveal events, read every RESULT line and
+    brute-forced the minimal attack sets over all 2^6 reveal assignments. It got exactly
+    {Rs,Ru,Rx}, {Rs,Rv,Ry}, {Rc,Rs,Rx,Ry}, which equals the artifact's DNF*, the paper and
+    the clauses parsed from the shipped Secrecy_IK6_PFS lemma. All 302 non-.git archive
+    files were byte-identical after the run.
+
+    The literal run.command, taken from this YAML, passed from a second fresh extraction
+    on 2026-11-12 in 280.7 s wall (venv setup included; ProVerif 1:46, Tamarin 2:35),
+    cgroup peak memory 926318592 B, no swap, with the same three values and 268 steps.
+    The independent validator passed again and all archive files were unchanged. The
+    embedded checker accepted the genuine outputs and rejected all 33 corrupted fixtures:
+    missing, extra, duplicated, truncated or empty query logs; missing, duplicated, extra,
+    missing or altered DNF* clauses; a falsified, incomplete, renamed, extra, exists-trace
+    or zero-step lemma; missing or duplicated summary or wellformedness; and Traceback,
+    Killed, out-of-memory, segfault or GNU parallel errors on stderr. Known scope limit:
+    the checker counts ProVerif outcomes but does not recompute the DNF from them. That
+    consistency (logs to DNF*) is what the independent validator checks.
+    Baseline hashes are from that fresh capture. versions.log, run_all.stdout.log, the
+    aggregated RESULT log, the .cnfdnf and metrics.json were byte-identical across both
+    runs. run_all.stderr.log (timings) and the .tamarin log (processing time) are not.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: proverif_queries_evaluated
+  threshold: == 64
+  unit: ProVerif query files with exactly one result
+  source: 'Paper Appendix A, experiment E1 ("For this evaluated property, there are 64 files"),
+    p.17; https://www.ndss-symposium.org/wp-content/uploads/2024-364-paper.pdf'
+  measurement_protocol: 'Run the unmodified run_all.sh of process_complete_mininal_tests with
+    Tamarin 1.8.0 (Sapic+ export), ProVerif 2.04 and sympy 1.12. The generator writes one
+    ProVerif file per key-compromise query: the unconditional query plus one per non-empty
+    subset of the six reveal keys {ltki, ltkr, eki, ekr, precomp_i, psk}, 1 + 63 = 64. The
+    value counts indices 0-63 that have both wireguard_secrecy_isk6_pfs_all_trusted_<i>.pv and
+    its .pv.log, where the log holds exactly one RESULT line ending in "is true.", "is false."
+    or "cannot be proved.". Any index outside 0-63 fails the checker. Setup failures, resource
+    limits and timeouts are blockers, not scientific results. E1 only.'
+  expected_verdict: REPRODUCED
+  notes: 'This shows the generate-and-evaluate stage covered the whole query space E1 defines;
+    the DNF below is only meaningful over all 64 outcomes. The run gave 49 true and 15 false.'
+  measure:
+    file: amber-wgsym/metrics.json
+    regex: '"proverif_queries_evaluated": ([0-9]+)'
+- metric: pfs_dnf_star_matches_paper
+  threshold: == 1
+  unit: boolean (computed DNF* equals the paper's)
+  source: 'Paper Table II, DNF3⋆ PFS terms, p.12, and Appendix A experiment E1 ("Content of .cnfdnf
+    file corresponds to the content of Table 2 of research paper, for a part of DNF3⋆, which is
+    (Rs∗ ∧ Ru∗ ∧ Rx) ∨ (Rs∗ ∧ Rv∗ ∧ Ry) ∨ (Rc∗ ∧ Rs∗ ∧ Rx ∧ Ry)"), p.17'
+  measurement_protocol: 'Read the single "DNF* for secrecy isk6 pfs=" line that the artifact''s
+    sympy step writes to results/wireguard_secrecy_isk6_pfs.cnfdnf. Split it on "|" into clauses
+    and each clause into symbol tokens ([A-Za-z]+, a trailing * marker stripped, since the paper''s
+    star only marks post-execution compromise). The value is 1 only when the set of clauses is exactly
+    {Rs,Ru,Rx}, {Rs,Rv,Ry}, {Rc,Rs,Rx,Ry}. A missing or duplicate line, or an extra or missing
+    clause, gives 0. Symbols (paper Sect. VI-A): Rs psk, Ru/Rv Initiator/Responder static key,
+    Rx/Ry Initiator/Responder ephemeral key, Rc ecdh precomputation.'
+  expected_verdict: REPRODUCED
+  notes: 'Meaning: from the Initiator''s view, k6 stays secret unless the psk is revealed after the
+    session together with (the Initiator''s static key after the session and its ephemeral) or (the
+    Responder''s static key after the session and its ephemeral) or (the precomputed ecdh after the
+    session and both ephemerals). An independent brute-force recomputation from the raw ProVerif
+    logs agreed.'
+  measure:
+    file: amber-wgsym/metrics.json
+    regex: '"pfs_dnf_star_matches_paper": ([0-9]+)'
+- metric: secrecy_ik6_pfs_verified
+  threshold: == 1
+  unit: boolean (Tamarin lemma verified)
+  source: 'Paper Appendix A, experiment E1 ("Output should be: Secrecy_IK6_PFS (all-traces): verified
+    (268 steps)"), p.17; lemma file __tamarin__/Secrecy_K6_PFS_Initiator_View_all_trusted.spthy'
+  measurement_protocol: 'The last stage of run_all.sh runs tamarin-prover --derivcheck-timeout=0
+    --prove +RTS -N6 on the shipped Secrecy_K6_PFS_Initiator_View_all_trusted.spthy and writes
+    results/Secrecy_K6_PFS_Initiator_View_all_trusted.tamarin. The value is 1 only when that log
+    has exactly one summary of summaries, "All wellformedness checks were successful.", exactly one
+    lemma row, and that row is "Secrecy_IK6_PFS (all-traces): verified (N steps)" with N > 0, with
+    no "falsified" or "analysis incomplete" anywhere. N is recorded as secrecy_ik6_pfs_steps for
+    drift tracking but not judged.'
+  expected_verdict: REPRODUCED
+  notes: 'The lemma states the same three conditions as the DNF* (checked by parsing its conclusion),
+    so Tamarin independently confirms what ProVerif plus sympy derived. This run proved it in 268
+    steps, the appendix''s number.'
+  measure:
+    file: amber-wgsym/metrics.json
+    regex: '"secrecy_ik6_pfs_verified": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    echo 'e7100b7adbca34ac2c8ce901c0e61799dd0a937f8733fb065a70c2a87b3da382  ../wireguard_analysis.zip' | sha256sum -c -
+    mkdir amber-wgsym
+    mkdir -p amber-wgsym/home/.local/bin
+    python3 -m venv amber-wgsym/venv
+    cat > amber-wgsym/requirements.txt <<'REQ'
+    sympy==1.12 --hash=sha256:c3588cd4295d0c0f603d0f2ae780587e64e2efeedb3521e46b9bb1d08d184fa5
+    mpmath==1.3.0 --hash=sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c
+    REQ
+    amber-wgsym/venv/bin/pip install --quiet --no-input --require-hashes -r amber-wgsym/requirements.txt
+    ln -s "$(command -v tamarin-prover)" amber-wgsym/home/.local/bin/tamarin-prover
+    { tamarin-prover --version | head -1; maude --version; proverif -help | head -1; parallel --version | head -1
+      amber-wgsym/venv/bin/python -c 'import sympy; print("sympy", sympy.__version__)'; } > amber-wgsym/versions.log 2>&1
+    grep -F 'tamarin-prover 1.8.0,' amber-wgsym/versions.log && grep -Fx '3.3.1' amber-wgsym/versions.log
+    grep -F 'Proverif 2.04.' amber-wgsym/versions.log && grep -Fx 'sympy 1.12' amber-wgsym/versions.log
+    cd process_complete_mininal_tests
+    HOME="$PWD/../amber-wgsym/home" PATH="$PWD/../amber-wgsym/venv/bin:$PATH" sh run_all.sh > ../amber-wgsym/run_all.stdout.log 2> ../amber-wgsym/run_all.stderr.log
+    cd ..
+    python3 -I - process_complete_mininal_tests amber-wgsym/run_all.stderr.log <<'PYTHON' > amber-wgsym/metrics.json
+    import json, pathlib, re, sys
+    root, stderr = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).read_text()
+    assert not re.search(r'Traceback|Killed|[Oo]ut of memory|Segmentation fault|parallel: Error', stderr), 'run stderr shows a failure'
+    pat = re.compile(r'wireguard_secrecy_isk6_pfs_all_trusted_([0-9]+)\.pv(\.log)?$')
+    found = {}
+    for f in (root/'secrecy_isk6_pfs').iterdir():
+        m = pat.fullmatch(f.name)
+        if m: found.setdefault(int(m[1]), {})[bool(m[2])] = f
+    assert set(found) <= set(range(64)), 'unexpected query index'
+    ok = 0
+    for i, fs in sorted(found.items()):
+        if set(fs) != {False, True}: continue
+        res = [l for l in fs[True].read_text().splitlines() if l.startswith('RESULT ')]
+        ok += len(res) == 1 and bool(re.search(r'(is true|is false|cannot be proved)\.$', res[0]))
+    dnf = [l for l in (root/'results/wireguard_secrecy_isk6_pfs.cnfdnf').read_text().splitlines() if l.startswith('DNF* for secrecy isk6 pfs=')]
+    clauses = {frozenset(t.rstrip('*') for t in re.findall(r'[A-Za-z]+\*?', c)) for c in dnf[0].split('=', 1)[1].split('|')} if len(dnf) == 1 else None
+    paper = {frozenset('Rs Ru Rx'.split()), frozenset('Rs Rv Ry'.split()), frozenset('Rc Rs Rx Ry'.split())}
+    tam = (root/'results/Secrecy_K6_PFS_Initiator_View_all_trusted.tamarin').read_text()
+    assert tam.count('summary of summaries:') == 1 and 'All wellformedness checks were successful.' in tam, 'incomplete Tamarin log'
+    rows = [l.strip() for l in tam.split('summary of summaries:')[1].splitlines() if '(all-traces)' in l or '(exists-trace)' in l]
+    v = re.fullmatch(r'Secrecy_IK6_PFS \(all-traces\): verified \(([1-9][0-9]*) steps\)', rows[0]) if len(rows) == 1 else None
+    print(json.dumps({'proverif_queries_evaluated': ok, 'pfs_dnf_star_matches_paper': int(clauses == paper),
+                      'secrecy_ik6_pfs_verified': int(bool(v) and not re.search(r'falsified|analysis incomplete', tam)),
+                      'secrecy_ik6_pfs_steps': int(v[1]) if v else 0}, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-wgsym/versions.log
+  - amber-wgsym/run_all.stdout.log
+  - amber-wgsym/run_all.stderr.log
+  - process_complete_mininal_tests/secrecy_isk6_pfs/wireguard_secrecy_isk6_pfs_all_trusted.pv.log
+  - process_complete_mininal_tests/results/wireguard_secrecy_isk6_pfs.cnfdnf
+  - process_complete_mininal_tests/results/Secrecy_K6_PFS_Initiator_View_all_trusted.tamarin
+  - amber-wgsym/metrics.json
+baseline:
+  captured_on: '2026-11-12'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Tamarin 1.8.0, Maude 3.3.1, ProVerif 2.04 (OCaml 4.14.2), GNU parallel 20230322, Python 3.12.3, sympy 1.12;
+    user cgroup MemoryMax=2400M, MemorySwapMax=0
+  outputs:
+  - path: amber-wgsym/versions.log
+    sha256: 8a7c1bf928305f1c94d4207b931b7a2227c791909da7f991774937f880e1a635
+  - path: amber-wgsym/run_all.stdout.log
+    sha256: 5f16b80099b82a54db21f0328f9f4c80235140832d54a09413317a6a1ed241f8
+  - path: amber-wgsym/run_all.stderr.log
+    sha256: 1fd8a4a9c7def5b46cd587a72ff6e587a88eb2945707a7ab0e12d73f2b9b5ec7
+  - path: process_complete_mininal_tests/secrecy_isk6_pfs/wireguard_secrecy_isk6_pfs_all_trusted.pv.log
+    sha256: 40885a891b9732bdaff66aa2b0247abca5dd5ba5fcfcee755991d04448d2a1d5
+  - path: process_complete_mininal_tests/results/wireguard_secrecy_isk6_pfs.cnfdnf
+    sha256: 118772d4e208dba6bbb855dda18e5883a559451cd47123bf5ab3e881efbb7531
+  - path: process_complete_mininal_tests/results/Secrecy_K6_PFS_Initiator_View_all_trusted.tamarin
+    sha256: 6684a3a68959892c3a296f88d35477717ae2bc139691cd9d65e4a465101a5b1c
+  - path: amber-wgsym/metrics.json
+    sha256: 435265c5fa6046dfd3efa2c600f2de44f6af7208b43612f41301cfec440a106d
+  metrics:
+    proverif_queries_evaluated: 64
+    pfs_dnf_star_matches_paper: 1
+    secrecy_ik6_pfs_verified: 1
+    secrecy_ik6_pfs_steps: 268
+  bit_for_bit_expected: false
