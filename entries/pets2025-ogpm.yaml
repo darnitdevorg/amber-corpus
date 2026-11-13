@@ -1,0 +1,289 @@
+# Verified subset: the expected-error comparisons of Section 7.1.1 that the artifact's
+# unmodified theoretical scripts regenerate (Fig. 8a, 9b, 10a, 11a, 11b: ten of the
+# fourteen printed "OGPM's average error is X% of PM-C / SW-C" figures). The eps = 4
+# variants, Fig. 9a and Sections 7.1.2-7.2 are excluded; see resources.notes.
+id: pets2025-ogpm
+title: Optimal Piecewise-based Mechanism for Collecting Bounded Numerical Data under Local Differential Privacy
+venue:
+  name: PETS
+  year: 2025
+paper:
+  url: https://petsymposium.org/popets/2025/popets-2025-0124.pdf
+  doi: 10.56553/popets-2025-0124
+artifact:
+  url: https://github.com/ZhengYeah/Optimal-GPM/releases/tag/v1.0.0
+  clone: git clone https://github.com/ZhengYeah/Optimal-GPM.git && cd Optimal-GPM && git checkout
+    6868f4a1455a83228a0abd102a9d74f62ccfc186 (tag v1.0.0), then run run.command in the checkout root.
+  ref_type: commit
+  ref: 6868f4a1455a83228a0abd102a9d74f62ccfc186
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-EVALUATION.md in the repository: "Standard hardware
+    with a typical CPU and 16GB of memory should be sufficient"; "Once dependencies are
+    installed, reproducing the results takes about 10 minutes"; "The full installation
+    (including dependencies) occupies approximately 350MB." The AEC row awards available,
+    functional and reproduced: https://secartifacts.github.io/pets2025/results.
+
+    Tested: the five unmodified scripts under experiments/theoretical/ that produce Fig. 8a,
+    9b, 10a, 11a and 11b, run from their own directory with PYTHONPATH set to the checkout
+    root (the source-root setup the README gets from PyCharm). The bundled copies of the two
+    classical CSVs are deleted first so only regenerated files are judged. Excluded: the
+    eps = 4 panels of Fig. 8/10 (the scripts hard-code eps = 2, so they would need editing),
+    Fig. 9a (the paper itself says OGPM has "almost the same" worst-case L1 error as PM-C),
+    Fig. 12-17 and Appendix B.7. No claim is made about those.
+
+    Native, no uv: a Python 3 venv with hash-pinned wheels for exactly what the scripts
+    import. pyproject.toml asks for gurobipy>=12.0.2, numpy>=2.0.2, scipy>=1.13.1 (pandas and
+    matplotlib are only used for plotting). gurobipy ships a size-limited restricted license
+    inside the wheel, with no license file or account. That license is time-limited: 13.0.3
+    prints "Restricted license - for non-production use only - expires 2027-11-29". After
+    that date the pinned wheel stops solving. That is a setup blocker, not a scientific
+    result; re-pin to a newer gurobipy then.
+
+    Measurement. "Average error is X% of" is the ratio of means over the script's grid:
+    100 * mean(Optimal) / mean(PM or SW). On the authors' bundled CSVs this gives
+    94.24 / 92.34 and 89.93 / 61.69, against printed 94.2 / 92.3 and 89.9 / 61.7; the mean of
+    ratios does not (76.66 / 46.07 for Fig. 9b). The thresholds are the paper's direction
+    claims ("lowest"), not the printed percentages. The paper's own rounding is not
+    consistent: its bundled eps = 4 file gives 74.77 against a printed 74.7. Matching to
+    0.1 would therefore need a tolerance the paper does not state. All ten ratios are still
+    written to metrics.json, and all ten agree with the printed values to the printed digit
+    (some by truncation, e.g. 43.08 -> 43.0, 22.48 -> 22.4). Whole-domain "lowest at every x" is
+    not counted: at x = 0 OGPM ties PM-C to solver precision (about 1.6e-9).
+
+    First capture on 2026-11-14 (run1): all five scripts exit 0, 12.8 s wall in total,
+    at most 111684 KiB peak RSS (GNU time) under a 2 GiB memory cap with swap disabled.
+    Regenerated classical CSVs agree with the authors' bundled copies to 1.1e-4 (Fig. 8a)
+    and 1.2e-3 (Fig. 9b) relative, in the OGPM column (different Gurobi version); the PM and
+    SW columns agree to 2e-16. An independent validator re-derived all five tables without
+    Gurobi or the artifact's src/: PM (Wang et al.) and SW (Li et al.) from their published
+    definitions, compressed onto D, with errors as exact integrals; OGPM by golden-section
+    search of the paper's min-max problem over the 3-piece family. PM/SW agree to 1e-14, OGPM
+    to 1.3e-3 relative, all ten ratios to within 0.004 percentage points and all three counts
+    exactly. For L1 the search recovers Theorem 3.7's p = exp(eps/2) at all 29 eps, and
+    Theorem 4.4's closed-form MSE matches the integral. One observation, no claim depends on
+    it: for squared error the Theorem 3.7 closed form is not the solver's worst-case optimum
+    (0.1379 vs 0.1311 at eps = 2), so the printed L2 percentages come from the solver, as the
+    scripts compute them. The checker rejected 20 of 27 incomplete or invalid fixtures and
+    failed the claims on the other 7, accepting only the genuine output. The 20: missing,
+    empty or truncated files, renamed or reordered headers, dropped, extra, duplicated or
+    reordered rows, NaN/inf/zero/negative/non-numeric values, an off-grid x or eps, a short
+    row, and tracebacks or errors in a log. The 7: OGPM scaled above a baseline, or a single
+    eps where OGPM is not lowest.
+
+    The literal run.command passed from a second, fresh clone on 2026-11-14: exit 0, 22.9 s
+    wall including venv setup, 111344 KiB peak RSS, 301 MB workspace (checkout, venv,
+    captures). All five CSVs were byte-identical to run1, the metrics identical; the validator
+    and all 27 fixtures were re-confirmed. A wrong commit, an edited script and an edited src/
+    file each stopped the command before any metric was written. Baseline hashes below are
+    from this fresh run.
+
+    Prerequisites: Linux x86_64, git, Python 3.12 with venv (the pinned wheels are cp312),
+    and network access to GitHub and PyPI. The experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: fig8a_max_ratio_pct
+  threshold: < 100
+  unit: percent
+  source: 'Paper Section 7.1.1 and Fig. 8a (PoPETs 2025(4) pp.155-156): "OGPM consistently has the lowest error
+    across all x values ... under L = |y - x| with eps = 2, OGPM''s average error is 94.2% of PM-C and 92.3% of
+    SW-C across the whole domain."'
+  measurement_protocol: 'Run the unmodified experiments/theoretical/classical_domain/whole_domain_L1.py (D = [0,1),
+    3 pieces, eps = 2, x = linspace(0, 1, 49, endpoint=False), absolute error). The CSV must have header
+    x,SW-C,PM-C,Optimal, exactly that x grid, 49 rows, every error finite and > 0. Report
+    max(100 * mean(Optimal) / mean(PM-C), 100 * mean(Optimal) / mean(SW-C)). Below 100 means OGPM has the
+    lower average error than both baselines.'
+  expected_verdict: REPRODUCED
+  notes: Printed 94.2 / 92.3; the paper's eps = 4 panel is not tested.
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig8a_max_ratio_pct": ([0-9.]+)'
+- metric: fig9b_max_ratio_pct
+  threshold: < 100
+  unit: percent
+  source: 'Paper Section 7.1.1 and Fig. 9b (p.156): "For both metrics, OGPM''s worst-case error is the lowest across
+    all eps values. Statistically, under L = |y - x|^2, OGPM''s average error is 89.9% of PM-C and 61.7% of SW-C."'
+  measurement_protocol: 'Run the unmodified classical_domain/worst_case_L2.py (worst-case squared error on [0,1),
+    eps = linspace(1, 8, 29)). Header Epsilon,SW-C,PM-C,Optimal, exactly that grid, 29 finite positive rows.
+    Report the larger of the two ratios of means, as for Fig. 8a.'
+  expected_verdict: REPRODUCED
+  notes: Printed 89.9 / 61.7.
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig9b_max_ratio_pct": ([0-9.]+)'
+- metric: fig9b_lowest_eps_points
+  threshold: == 29
+  unit: eps values
+  source: 'Paper Section 7.1.1 and Fig. 9b (p.156): "OGPM''s worst-case error is the lowest across all eps values."'
+  measurement_protocol: From the Fig. 9b CSV, count the eps values where Optimal < min(PM-C, SW-C), using strict
+    inequality. All 29 must hold.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig9b_lowest_eps_points": ([0-9]+)'
+- metric: fig10a_max_ratio_pct
+  threshold: < 100
+  unit: percent
+  source: 'Paper Section 7.1.1 and Fig. 10a (p.156): in the circular domain "OGPM consistently has the lowest error
+    across all x values ... under L = |y - x|^2 with eps = 2, OGPM''s average error is 47.5% of PM-C and 43.0% of
+    SW-C across the whole domain."'
+  measurement_protocol: 'Run the unmodified circular_domain/whole_domain_circular_L2.py (domain [0, 6.28), eps = 2,
+    x = linspace(0, 6.28, 49, endpoint=False); PM and SW applied to the flattened domain). Header x,SW,PM,Optimal,
+    exactly that grid, 49 finite positive rows. Report the larger of the two ratios of means.'
+  expected_verdict: REPRODUCED
+  notes: Printed 47.5 / 43.0; the eps = 4 panel is not tested.
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig10a_max_ratio_pct": ([0-9.]+)'
+- metric: fig11_max_ratio_pct
+  threshold: < 100
+  unit: percent
+  source: 'Paper Section 7.1.1 and Fig. 11 (p.156): "OGPM has the lowest worst-case error across all eps values
+    ... under L = |y - x|, OGPM''s average error is 50.0% of PM-C and 41.6% of SW-C ... Under L = |y - x|^2,
+    OGPM''s average error is 22.4% of PM-C and 15.4% of SW-C."'
+  measurement_protocol: 'Run the unmodified circular_domain/worst_case_circular_L1.py and worst_case_circular_L2.py
+    (eps = linspace(1, 8, 29)). Each CSV has header Epsilon,SW,PM,Optimal, exactly that grid, and 29 finite
+    positive rows. Report the largest of the four ratios of means.'
+  expected_verdict: REPRODUCED
+  notes: Printed 50.0 / 41.6 (L1) and 22.4 / 15.4 (L2).
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig11_max_ratio_pct": ([0-9.]+)'
+- metric: fig11a_lowest_eps_points
+  threshold: == 29
+  unit: eps values
+  source: 'Paper Section 7.1.1 and Fig. 11a (p.156): "OGPM has the lowest worst-case error across all eps values."'
+  measurement_protocol: From the Fig. 11a (circular, absolute error) CSV, count the eps values where
+    Optimal < min(PM, SW), using strict inequality. All 29 must hold.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig11a_lowest_eps_points": ([0-9]+)'
+- metric: fig11b_lowest_eps_points
+  threshold: == 29
+  unit: eps values
+  source: 'Paper Section 7.1.1 and Fig. 11b (p.156): "OGPM has the lowest worst-case error across all eps values."'
+  measurement_protocol: From the Fig. 11b (circular, squared error) CSV, count the eps values where
+    Optimal < min(PM, SW), using strict inequality. All 29 must hold.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-ogpm/metrics.json
+    regex: '"fig11b_lowest_eps_points": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 6868f4a1455a83228a0abd102a9d74f62ccfc186
+    git diff --quiet HEAD -- src experiments/theoretical
+    mkdir amber-ogpm
+    python3 -m venv amber-ogpm/venv
+    cat > amber-ogpm/requirements.txt <<'REQ'
+    gurobipy==13.0.3 --hash=sha256:34f0b9528edfbf29e96a74e0b69b8cc832375d43342d6376754fd436c570bb2a
+    numpy==2.3.3 --hash=sha256:d9192da52b9745f7f0766531dcfa978b7763916f158bb63bdb8a1eca0068ab20
+    scipy==1.16.2 --hash=sha256:f66bd07ba6f84cd4a380b41d1bf3c59ea488b590a2ff96744845163309ee8e2f
+    REQ
+    amber-ogpm/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-ogpm/requirements.txt
+    amber-ogpm/venv/bin/python -c "import sys, numpy, scipy, gurobipy; print(sys.version.split()[0], numpy.__version__, scipy.__version__, gurobipy.gurobi.version())" > amber-ogpm/versions.log
+    R=$PWD; T=experiments/theoretical
+    rm $T/classical_domain/whole_domain_L1_2.csv $T/classical_domain/worst_case_L2.csv
+    for s in classical_domain/whole_domain_L1 classical_domain/worst_case_L2 circular_domain/whole_domain_circular_L2 circular_domain/worst_case_circular_L1 circular_domain/worst_case_circular_L2; do
+      (cd "$T/${s%/*}" && PYTHONPATH="$R" "$R/amber-ogpm/venv/bin/python" "${s#*/}.py") > "amber-ogpm/${s#*/}.log" 2>&1
+    done
+    cp $T/classical_domain/whole_domain_L1_2.csv $T/classical_domain/worst_case_L2.csv amber-ogpm/
+    cp $T/circular_domain/whole_domain_circular_L2_epsilon_2.csv $T/circular_domain/worst_case_circular_L1.csv $T/circular_domain/worst_case_circular_L2.csv amber-ogpm/
+    python3 -I - amber-ogpm <<'PYTHON' > amber-ogpm/metrics.json
+    import csv, json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    X49 = [i / 49 for i in range(49)]
+    EPS = [1 + 0.25 * i for i in range(29)]
+    FILES = {  # name: (csv, header, grid, scale)
+        'fig8a': ('whole_domain_L1_2.csv', ['x', 'SW-C', 'PM-C', 'Optimal'], X49, 1),
+        'fig9b': ('worst_case_L2.csv', ['Epsilon', 'SW-C', 'PM-C', 'Optimal'], EPS, 1),
+        'fig10a': ('whole_domain_circular_L2_epsilon_2.csv', ['x', 'SW', 'PM', 'Optimal'], X49, 6.28),
+        'fig11a': ('worst_case_circular_L1.csv', ['Epsilon', 'SW', 'PM', 'Optimal'], EPS, 1),
+        'fig11b': ('worst_case_circular_L2.csv', ['Epsilon', 'SW', 'PM', 'Optimal'], EPS, 1),
+    }
+    for log in sorted(root.glob('*.log')):
+        assert not re.search(r'Traceback|Error|error', log.read_text()), f'{log.name} reports an error'
+    data, m = {}, {}
+    for fig, (name, header, grid, scale) in FILES.items():
+        with open(root / name, newline='') as f:
+            rows = list(csv.reader(f))
+        assert rows[0] == header, f'{name} header'
+        vals = [[float(v) for v in r] for r in rows[1:]]
+        assert len(vals) == len(grid) and all(len(r) == 4 for r in vals), f'{name} rows'
+        assert all(math.isclose(r[0], g * scale, abs_tol=1e-9) for r, g in zip(vals, grid)), f'{name} grid'
+        assert all(math.isfinite(v) and v > 0 for r in vals for v in r[1:]), f'{name} non-finite or non-positive error'
+        sw, pm, opt = ([r[i] for r in vals] for i in (1, 2, 3))
+        m[f'{fig}_ratio_pm_pct'] = round(100 * sum(opt) / sum(pm), 4)
+        m[f'{fig}_ratio_sw_pct'] = round(100 * sum(opt) / sum(sw), 4)
+        data[fig] = sum(o < min(p, s) for o, p, s in zip(opt, pm, sw))
+    for fig in ('fig8a', 'fig9b', 'fig10a'):
+        m[f'{fig}_max_ratio_pct'] = max(m[f'{fig}_ratio_pm_pct'], m[f'{fig}_ratio_sw_pct'])
+    m['fig11_max_ratio_pct'] = max(m[f'fig11{s}_ratio_{b}_pct'] for s in 'ab' for b in ('pm', 'sw'))
+    for fig in ('fig9b', 'fig11a', 'fig11b'):
+        m[f'{fig}_lowest_eps_points'] = data[fig]
+    print(json.dumps(m, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-ogpm/versions.log
+  - amber-ogpm/whole_domain_L1.log
+  - amber-ogpm/worst_case_L2.log
+  - amber-ogpm/whole_domain_circular_L2.log
+  - amber-ogpm/worst_case_circular_L1.log
+  - amber-ogpm/worst_case_circular_L2.log
+  - amber-ogpm/whole_domain_L1_2.csv
+  - amber-ogpm/worst_case_L2.csv
+  - amber-ogpm/whole_domain_circular_L2_epsilon_2.csv
+  - amber-ogpm/worst_case_circular_L1.csv
+  - amber-ogpm/worst_case_circular_L2.csv
+  - amber-ogpm/metrics.json
+baseline:
+  captured_on: '2026-11-14'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Python 3.12.3, gurobipy 13.0.3, numpy 2.3.3, scipy 1.16.2
+  outputs:
+  - path: amber-ogpm/versions.log
+    sha256: fc5c8102d362ea4cb2383a8c470fc13b6b3d00c212be01b45f6c9eae9ae9a952
+  - path: amber-ogpm/whole_domain_L1.log
+    sha256: a760a6c4e41680f528dd3398fa7b9f3a042dba5b643be5b652810f7e62b5cc27
+  - path: amber-ogpm/worst_case_L2.log
+    sha256: a760a6c4e41680f528dd3398fa7b9f3a042dba5b643be5b652810f7e62b5cc27
+  - path: amber-ogpm/whole_domain_circular_L2.log
+    sha256: a760a6c4e41680f528dd3398fa7b9f3a042dba5b643be5b652810f7e62b5cc27
+  - path: amber-ogpm/worst_case_circular_L1.log
+    sha256: a760a6c4e41680f528dd3398fa7b9f3a042dba5b643be5b652810f7e62b5cc27
+  - path: amber-ogpm/worst_case_circular_L2.log
+    sha256: a760a6c4e41680f528dd3398fa7b9f3a042dba5b643be5b652810f7e62b5cc27
+  - path: amber-ogpm/whole_domain_L1_2.csv
+    sha256: 0a3f27b48dace9fc02bd0ae14dbca6b82bd2fbbe1d9b3d880b359779965bac9c
+  - path: amber-ogpm/worst_case_L2.csv
+    sha256: e10360e515cfe79b0a5bb3d09078aa813963875520a06f82b2ead0f2ba6c81ca
+  - path: amber-ogpm/whole_domain_circular_L2_epsilon_2.csv
+    sha256: 94cfb638e552998b9e1274792faa3a235f9ddc23ec0ccc7baedea7a183fd2c3e
+  - path: amber-ogpm/worst_case_circular_L1.csv
+    sha256: 9796f25e7d58af364090fabc23ff868fb9b8f08efe4a6985165d71747db08afc
+  - path: amber-ogpm/worst_case_circular_L2.csv
+    sha256: c9885bba05c1931801ab2f44b43230450ce745f39438abe807b289ecb9a9d3ff
+  - path: amber-ogpm/metrics.json
+    sha256: 4a87cfefdef5a42003d116b8f8e3ad2f6cf5d9816b22e5025c9e6f83288997a3
+  metrics:
+    fig8a_max_ratio_pct: 94.2466
+    fig9b_max_ratio_pct: 89.9341
+    fig9b_lowest_eps_points: 29
+    fig10a_max_ratio_pct: 47.5314
+    fig11_max_ratio_pct: 50.0
+    fig11a_lowest_eps_points: 29
+    fig11b_lowest_eps_points: 29
+  bit_for_bit_expected: false
