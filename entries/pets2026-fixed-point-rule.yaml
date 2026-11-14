@@ -1,0 +1,333 @@
+# Verified subset: artifact Experiment 3 only (epsilon_split_experiment.ipynb), the rule of thumb
+# for splitting the privacy budget in Appendix F: Table 3, the fitted A/B/K, the crime-dataset
+# optimality gaps of Figure 8 and the worst gap over all three canonical datasets.
+# Experiments 1, 2, 4 and 5 are excluded; see resources.notes.
+id: pets2026-fixed-point-rule
+title: Preserving Target Distributions With Differentially Private Count Mechanisms
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0063.pdf
+  doi: 10.56553/popets-2026-0063
+artifact:
+  url: https://github.com/nitinkohli/fixed_point_privacy/tree/dbbf3ce302142f56c3740e052c0216eb6af6917b
+  clone: git clone https://github.com/nitinkohli/fixed_point_privacy.git && cd fixed_point_privacy && git checkout
+    dbbf3ce302142f56c3740e052c0216eb6af6917b, then run run.command in the checkout root.
+  ref_type: commit
+  ref: dbbf3ce302142f56c3740e052c0216eb6af6917b
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 15
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository. Experiment 3
+    (epsilon_split_experiment.ipynb) "generates the values in Table 3 and Figure 8 ... The
+    compute time of this is 20 minutes". Hardware: "an Apple M2 laptop with 8 GB of memory";
+    "The space consumed by the artifact is 476 MB." The AEC row (issue 2026.2) awards
+    available, functional and reproduced and pins this commit:
+    https://secartifacts.github.io/pets2026/results.
+
+    Tested: the unmodified notebook, every code cell run in order in one namespace (what
+    Jupyter's "Run All Cells" does), skipping only the `%matplotlib inline` magic line, with
+    MPLBACKEND=Agg. The notebook seeds numpy's global RNG (np.random.seed(42)) before each
+    simulation block, and the Table 3 path (cyclic Laplace plus Algorithm 1 with the sandwich
+    selector) draws only from that RNG, so the run is deterministic. After the cells finish,
+    the runner writes optimal_f.unstack(0) to table3.csv (the authors' own commented-out export
+    in the notebook), the notebook's fitted A/B/K to fit.json, and the four raw result frames.
+    The checker reads the "measured optimality gap" lines the notebook prints.
+
+    Excluded: Experiment 1 (dataset figures), Experiment 2 (Figure 3, no numeric threshold),
+    Experiment 4 (Figures 5/6, 75 compute-minutes; the 94% / 74% / 87% Wasserstein decreases in
+    Section 6.1 are read off that run and are not tested here) and Experiment 5 (wall-clock
+    runtimes, hardware dependent). This entry makes no claim about those.
+
+    Protocol note: Appendix F says "we perform 100 simulations" per combination for Table 3,
+    but the notebook uses replications=20 for that block (100 for the Figure 8 blocks). The
+    notebook's stored output, produced with 20, is exactly the printed Table 3, so the entry
+    tests the artifact's protocol as shipped.
+
+    Native, no uv or Jupyter: a Python 3 venv with hash-pinned wheels. Versions and sha256 are
+    taken from the artifact's own uv.lock (cp312 manylinux x86_64) for the 20 packages the
+    notebook imports, directly or transitively; ipykernel and its dependencies are left out
+    because nothing runs through a kernel. The authors ran Python 3.11.5 (notebook metadata) on
+    macOS; Python 3.12.3 on Linux was tested here. The command refuses a different commit or
+    any edit to tracked files (git diff --quiet).
+
+    First capture on 2026-11-14 in a fresh clone: exit 0, 9 min 57 s wall including venv
+    setup, 311172 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled, nothing
+    on stderr. All 66 Table 3 cells, A/B/K, the four crime gaps and the worst gap match the paper.
+    The 12 printed gaps, the A/B/K line and Table 3 are also identical to the outputs stored in
+    the authors' notebook. The notebook's fit gives A = 0.63902690, B = 0.10612209,
+    K = 2.86916462, equal to the constants hard-coded in pets_utilities.rule_of_thumb to 1e-9.
+
+    An independent validator re-derived everything another way, without the checker's parsing.
+    It rebuilt Table 3 from the raw per-split results (594 rows, argmin of the combined objective
+    in plain Python: 66/66) and refitted A/B/K with scipy least_squares from 27 starting points
+    plus a grid. That gave A = 0.63904, B = 0.10612, K = 2.86928; the objective is flat there
+    (SSE 0.6343100058 vs 0.6343100060 for the authors' constants), so the two optima differ by
+    1.1e-4 and agree at printed precision. It recomputed all 12 gaps from the raw binomial, crime
+    and schools frames (crime 0.023945, 0.046360, 0.016878, 0; binomial eps 0.1 = 0.41632, the
+    maximum) and checked the six synthetic datasets against Appendix F (sizes 3000, 10000, 10000,
+    20000, 10000, 10000; supports 30, 70, 70, 40, 80, 80). All 32 checks passed and its 10 values
+    equal the checker's. The checker rejected or failed 24 incomplete or invalid fixtures (missing
+    or empty files, dropped, duplicated or shifted rows, renamed or dropped datasets, altered,
+    out-of-range or NaN cells, perturbed or NaN A/B/K, altered, dropped, duplicated or unlabelled
+    gap lines, a lowered binomial gap, tracebacks) and accepted only the genuine output.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-14:
+    exit 0, 9 min 44 s wall, 313656 KiB peak RSS, 651 MB workspace (checkout, venv, captures).
+    Same ten metrics; validator, all 24 fixtures and a replay of every measure block re-confirmed.
+    A wrong commit, an edited pets_utilities.py and an edited notebook each stopped the command
+    before amber-fixedpoint/ was created. Baseline hashes below are from this fresh run.
+    versions.log, run.log, run.stderr.log (empty), table3.csv, fit.json and metrics.json were
+    byte-identical to the first capture. The four raw result CSVs differ only in their
+    wall-clock runtime column; every simulated value is identical.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access
+    to GitHub and PyPI. The experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: table3_cells_matched
+  threshold: == 66
+  unit: table cells
+  source: Paper Appendix F, Table 3 "Optimal values of f for each of our synthetic datasets" (p.640); artifact
+    Experiment 3.
+  measurement_protocol: 'Run the notebook unmodified. For each of the six synthetic datasets and 11 total budgets
+    eps_t (log-spaced 0.1..5), the notebook simulates the two-stage framework for f = 0.1..0.9 and picks the f
+    minimising log(mean L1 noise) + log(mean Wasserstein). Parse table3.csv (optimal_f.unstack(0)): it must have
+    exactly the six dataset columns, exactly the 11 eps_t rows of Table 3 (compared at 2 dp) and every value in
+    [0.1, 0.9]. Count cells equal to Table 3 at its printed 1 dp. No tolerance.'
+  expected_verdict: REPRODUCED
+  notes: Covers the whole table, not a sample.
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"table3_cells_matched": ([0-9]+)'
+- metric: fit_A
+  threshold: == 0.639
+  unit: f (fraction of budget)
+  source: 'Paper Appendix F (p.641): "We fit these parameters to the data in Table 3, yielding values A = 0.639,
+    B = 0.106, and K = 2.87."'
+  measurement_protocol: The notebook's own fit_exp_decay_multiindex (scipy curve_fit of f = B + (A - B) exp(-K
+    eps_t), 0 <= A, B <= 1, K > 0) on the regenerated Table 3; A rounded to the paper's 3 dp.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"fit_A": ([0-9.]+)'
+- metric: fit_B
+  threshold: == 0.106
+  unit: f (fraction of budget)
+  source: Paper Appendix F (p.641), "B = 0.106".
+  measurement_protocol: As fit_A; B rounded to 3 dp.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"fit_B": ([0-9.]+)'
+- metric: fit_K
+  threshold: == 2.87
+  unit: 1 / eps_t
+  source: Paper Appendix F (p.641), "K = 2.87".
+  measurement_protocol: As fit_A; K rounded to the paper's 2 dp.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"fit_K": ([0-9.]+)'
+- metric: crime_gap_eps_0_1
+  threshold: == 0.024
+  unit: log-objective difference
+  source: 'Paper Appendix F and Figure 8 (p.641): "as eps_t increases from 0.1 to 0.5, 1.0, and 5.0, the
+    corresponding optimality gap changes from 0.024 to 0.046, 0.017, and 0".'
+  measurement_protocol: 'Crime dataset block of the notebook (100 simulations per f, f in 0.1..0.9 plus the
+    rule-of-thumb f). Gap = objective at the rule-of-thumb f minus the minimum objective over all f tested, as
+    the notebook prints it ("At total epsilon of X the measured optimality gap is Y", 3 dp). The checker
+    attributes each printed gap to the dataset named by the preceding "testing <dataset>" line and requires
+    exactly one gap per (dataset, eps_t) for binomial, crime and schools at eps_t = 0.1, 0.5, 1, 5.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"crime_gap_eps_0_1": ([0-9.]+)'
+- metric: crime_gap_eps_0_5
+  threshold: == 0.046
+  unit: log-objective difference
+  source: Paper Appendix F and Figure 8 (p.641), as crime_gap_eps_0_1.
+  measurement_protocol: As crime_gap_eps_0_1, at eps_t = 0.5.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"crime_gap_eps_0_5": ([0-9.]+)'
+- metric: crime_gap_eps_1
+  threshold: == 0.017
+  unit: log-objective difference
+  source: Paper Appendix F and Figure 8 (p.641), as crime_gap_eps_0_1.
+  measurement_protocol: As crime_gap_eps_0_1, at eps_t = 1.0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"crime_gap_eps_1": ([0-9.]+)'
+- metric: crime_gap_eps_5
+  threshold: == 0.0
+  unit: log-objective difference
+  source: Paper Appendix F and Figure 8 (p.641), as crime_gap_eps_0_1 ("... and 0").
+  measurement_protocol: As crime_gap_eps_0_1, at eps_t = 5.0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"crime_gap_eps_5": ([0-9.]+)'
+- metric: max_optimality_gap
+  threshold: == 0.42
+  unit: log-objective difference
+  source: 'Paper Appendix F (p.641): "The worst optimality gap we observe across all experiments is for the
+    binomial data at eps_t = 0.1, with a value of 0.42."'
+  measurement_protocol: Maximum of the 12 printed gaps (binomial, crime, schools at eps_t = 0.1, 0.5, 1, 5),
+    rounded to the paper's 2 dp.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"max_optimality_gap": ([0-9.]+)'
+- metric: max_gap_is_binomial_eps_0_1
+  threshold: == 1
+  unit: boolean
+  source: Paper Appendix F (p.641), as max_optimality_gap.
+  measurement_protocol: 1 if the largest of the 12 printed gaps is the binomial dataset at eps_t = 0.1, else 0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fixedpoint/metrics.json
+    regex: '"max_gap_is_binomial_eps_0_1": ([01])'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = dbbf3ce302142f56c3740e052c0216eb6af6917b
+    git diff --quiet HEAD --
+    mkdir amber-fixedpoint
+    python3 -m venv amber-fixedpoint/venv
+    cat > amber-fixedpoint/requirements.txt <<'REQ'
+    contourpy==1.3.3 --hash=sha256:4d00e655fcef08aba35ec9610536bfe90267d7ab5ba944f7032549c55a146da1
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    deprecated==1.3.1 --hash=sha256:597bfef186b6f60181535a29fbe44865ce137a5079f295b479886c82729d5f3f
+    fonttools==4.61.0 --hash=sha256:0bdcf2e29d65c26299cc3d502f4612365e8b90a939f46cd92d037b6cb7bb544a
+    kiwisolver==1.4.9 --hash=sha256:f6008a4919fdbc0b0097089f67a1eb55d950ed7e90ce2cc3e640abadd2757a04
+    matplotlib==3.10.7 --hash=sha256:d5f256d49fea31f40f166a5e3131235a5d2f4b7f44520b1cf0baf1ce568ccff0
+    numpy==2.3.5 --hash=sha256:0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28
+    opendp==0.14.1 --hash=sha256:68313b168ff3621d7eea7c7c1116825cb2c12a195b23191dd182068ba9fa791e
+    packaging==25.0 --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484
+    pandas==2.3.3 --hash=sha256:b3d11d2fda7eb164ef27ffc14b4fcab16a80e1ce67e9f57e19ec0afaf715ba89
+    pillow==12.0.0 --hash=sha256:82240051c6ca513c616f7f9da06e871f61bfd7805f566275841af15015b8f98d
+    pyparsing==3.2.5 --hash=sha256:e38a4f02064cf41fe6593d328d0512495ad1f3d8a91c4f73fc401b3079a59a5e
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    pywavelets==1.9.0 --hash=sha256:573b650805d2f3c981a0e5ae95191c781a722022c37a0f6eba3fa7eae8e0ee17
+    scipy==1.16.3 --hash=sha256:72d1717fd3b5e6ec747327ce9bda32d5463f472c9dce9f54499e81fbd50245a1
+    seaborn==0.13.2 --hash=sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    wrapt==2.0.1 --hash=sha256:7b219cb2182f230676308cdcacd428fa837987b89e4b7c5c9025088b8a6c9faf
+    REQ
+    amber-fixedpoint/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-fixedpoint/requirements.txt
+    amber-fixedpoint/venv/bin/python -c "import sys; from importlib.metadata import version as v; print(sys.version.split()[0], *(p + '==' + v(p) for p in ('numpy', 'scipy', 'pandas', 'opendp')))" > amber-fixedpoint/versions.log
+    MPLBACKEND=Agg MPLCONFIGDIR="$PWD/amber-fixedpoint/mpl" amber-fixedpoint/venv/bin/python - epsilon_split_experiment.ipynb amber-fixedpoint <<'RUN' > amber-fixedpoint/run.log 2> amber-fixedpoint/run.stderr.log
+    import json, sys
+    nb, out = json.load(open(sys.argv[1])), sys.argv[2]
+    ns = {'__name__': '__main__'}
+    for cell in nb['cells']:  # Jupyter "Run All Cells"; only the %matplotlib magic is skipped
+        if cell['cell_type'] == 'code':
+            exec(''.join(l for l in cell['source'] if not l.startswith('%')), ns)
+    ns['optimal_f'].unstack(0).to_csv(f'{out}/table3.csv')
+    json.dump({k: float(ns['res'][k]) for k in 'ABK'}, open(f'{out}/fit.json', 'w'))
+    for name in ['epsilon_split_res', 'binom_epsilon_split_res', 'crime_epsilon_split_res', 'schools_epsilon_split_res']:
+        ns[name].to_csv(f'{out}/{name}.csv', index=False)
+    RUN
+    python3 -I - amber-fixedpoint <<'PYTHON' > amber-fixedpoint/metrics.json
+    import csv, json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    log = (root/'run.log').read_text()
+    assert not re.search(r'Traceback|Error', log + (root/'run.stderr.log').read_text()), 'run reports an error'
+    TABLE3 = {'uniform': '.8 .8 .4 .3 .3 .2 .2 .1 .1 .1 .1', 'left-skewed': '.4 .3 .3 .3 .2 .2 .1 .1 .1 .1 .1',
+              'right-skewed': '.5 .4 .3 .2 .2 .2 .2 .1 .1 .1 .1', 'bimodal': '.7 .8 .5 .4 .3 .3 .1 .1 .1 .1 .1',
+              'zero-inflated': '.3 .3 .3 .2 .2 .2 .1 .1 .1 .1 .1', 'top-inflated': '.4 .3 .3 .3 .3 .2 .2 .1 .1 .1 .1'}
+    EPS = [0.10, 0.15, 0.22, 0.32, 0.48, 0.71, 1.05, 1.55, 2.29, 3.38, 5.00]
+    rows = list(csv.reader(open(root/'table3.csv', newline='')))
+    assert rows[1][0] == 'dataset' and rows[2][0] == 'total_epsilon' and len(rows) == 3 + len(EPS), 'table3 shape'
+    names = rows[1][1:]
+    assert sorted(names) == sorted(TABLE3) and len(names) == 6, 'table3 datasets'
+    assert [round(float(r[0]), 2) for r in rows[3:]] == EPS, 'table3 epsilons'
+    got = {n: [float(r[1 + j]) for r in rows[3:]] for j, n in enumerate(names)}
+    assert all(math.isfinite(v) and 0.1 <= v <= 0.9 for c in got.values() for v in c), 'table3 values'
+    matched = sum(round(v, 1) == float(w) for n in TABLE3 for v, w in zip(got[n], TABLE3[n].split()))
+    fit = json.loads((root/'fit.json').read_text())
+    assert all(math.isfinite(fit[k]) for k in 'ABK'), 'fit values'
+    gaps, dataset = {}, None
+    for m in re.finditer(r'testing (\S+)|At total epsilon of (\S+) the measured optimality gap is (\S+)', log):
+        if m.group(1):
+            dataset = m.group(1)
+        else:
+            assert (dataset, float(m.group(2))) not in gaps, 'duplicate gap'
+            gaps[dataset, float(m.group(2))] = float(m.group(3))
+    assert set(gaps) == {(d, e) for d in ('binomial', 'crime', 'schools') for e in (0.1, 0.5, 1.0, 5.0)}, 'gap lines'
+    assert all(math.isfinite(g) and g >= 0 for g in gaps.values()), 'gap values'
+    worst = max(gaps, key=gaps.get)
+    print(json.dumps({
+        'table3_cells_matched': matched,
+        'fit_A': round(fit['A'], 3), 'fit_B': round(fit['B'], 3), 'fit_K': round(fit['K'], 2),
+        'crime_gap_eps_0_1': gaps['crime', 0.1], 'crime_gap_eps_0_5': gaps['crime', 0.5],
+        'crime_gap_eps_1': gaps['crime', 1.0], 'crime_gap_eps_5': gaps['crime', 5.0],
+        'max_optimality_gap': round(gaps[worst], 2),
+        'max_gap_is_binomial_eps_0_1': int(worst == ('binomial', 0.1)),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-fixedpoint/versions.log
+  - amber-fixedpoint/run.log
+  - amber-fixedpoint/run.stderr.log
+  - amber-fixedpoint/table3.csv
+  - amber-fixedpoint/fit.json
+  - amber-fixedpoint/epsilon_split_res.csv
+  - amber-fixedpoint/binom_epsilon_split_res.csv
+  - amber-fixedpoint/crime_epsilon_split_res.csv
+  - amber-fixedpoint/schools_epsilon_split_res.csv
+  - amber-fixedpoint/metrics.json
+baseline:
+  captured_on: '2026-11-14'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Python 3.12.3 numpy 2.3.5 scipy 1.16.3 pandas 2.3.3 opendp 0.14.1
+  outputs:
+  - path: amber-fixedpoint/versions.log
+    sha256: 524b75b0bd728c0c313df107b4162da7d1ba598a5acf3ca558bdfbbe17b378c4
+  - path: amber-fixedpoint/run.log
+    sha256: eb4b1fb01930d77b0cbffe648385f7641a1bc574cb02e85d09b72b433c5006e0
+  - path: amber-fixedpoint/run.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-fixedpoint/table3.csv
+    sha256: 8ebb598d1c10e5fd3920f4d62490302c2698724e0e7f330693bd90f364422e55
+  - path: amber-fixedpoint/fit.json
+    sha256: 29eedae88dbb42af7f7b53684b04212b0ac04b01d8c01bd16173dc02484972b3
+  - path: amber-fixedpoint/epsilon_split_res.csv
+    sha256: 8d623b3dcac8bbaf17bb4aee984ebc3a44000d63932b26562fbb113b3563b2f8
+  - path: amber-fixedpoint/binom_epsilon_split_res.csv
+    sha256: f34107f0b9918666e05054ee60183e1cf50b9022fcbbb2b44e40786007d74990
+  - path: amber-fixedpoint/crime_epsilon_split_res.csv
+    sha256: e503905f87a379927847799e2f13ca6094216dc7c38aa1197fe53ab0119f0d55
+  - path: amber-fixedpoint/schools_epsilon_split_res.csv
+    sha256: 08bfb8bd51e324d727cea106682442afc2496018db39b8d7501fb5c21968c603
+  - path: amber-fixedpoint/metrics.json
+    sha256: 5b5de4ba9d0be3d39e8e8a3ef68e6a98df9b6748c1289406ab04ab0625954d41
+  metrics:
+    table3_cells_matched: 66
+    fit_A: 0.639
+    fit_B: 0.106
+    fit_K: 2.87
+    crime_gap_eps_0_1: 0.024
+    crime_gap_eps_0_5: 0.046
+    crime_gap_eps_1: 0.017
+    crime_gap_eps_5: 0.0
+    max_optimality_gap: 0.42
+    max_gap_is_binomial_eps_0_1: 1
+  bit_for_bit_expected: false
