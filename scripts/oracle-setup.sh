@@ -24,7 +24,7 @@ PROVERIF_SHA256="4871f53c32ab4a04669a060c4886ba5d9080496963fb980a9a62d2c429ceabc
 PROVERIF_BANNER="Proverif 2.05. Cryptographic protocol verifier, by Bruno Blanchet, Vincent Cheval, and Marc Sylvestre"
 DARNIT_REPO="https://github.com/darnitdevorg/darnit.git"
 DARNIT_PR=678
-DARNIT_COMMIT="0987ddb"   # head of PR #678 on 2026-11-14 (core only, after the split)
+DARNIT_COMMIT="9129968"   # head of PR #678 on 2026-11-14 (verify accepts earlier wrapper shapes)
 
 step() { printf '\n==> %s\n' "$*"; }
 have() { [ -x "$ORACLE/bin/$1" ]; }
