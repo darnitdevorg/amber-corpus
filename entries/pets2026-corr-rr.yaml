@@ -1,0 +1,332 @@
+# Verified subset: artifact scripts table_2, table_3, table_4, table_5, table_7 and table_8. Table 2 (synthetic
+# data correlations), Table 3 (real-world dataset characteristics) and the Phase I orderings that Section 4.3.4
+# states for Tables 4, 5, 7 and 8. Tables 6 and 9, all figures and the exact MSE cells are excluded; see
+# resources.notes.
+id: pets2026-corr-rr
+title: Frequency Estimation of Correlated Multi-attribute Data under Local Differential Privacy
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  doi: 10.56553/popets-2026-0034
+artifact:
+  url: https://github.com/shafizurRseeam/Corr-RR/tree/cc6c059fcc073ab55feeb230ce66d78929e042c1
+  clone: git clone https://github.com/shafizurRseeam/Corr-RR.git && cd Corr-RR && git checkout
+    cc6c059fcc073ab55feeb230ce66d78929e042c1, then run run.command in the checkout root.
+  ref_type: commit
+  ref: cc6c059fcc073ab55feeb230ce66d78929e042c1
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 60
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-EVALUATION.md in the repository. Hardware: "Standard hardware
+    with a typical CPU and 16GB of memory should be sufficient." Runtimes on the authors' Xeon W-2145:
+    Table 2 "~1 sec", Table 3 "~1 sec", "Tables 4 & 7 ~3 min each", "Tables 5 & 8 ~13 min each",
+    "Tables 6 & 9 ~75 min each". "Storage: The complete environment (including dependencies and
+    preprocessed datasets) requires approximately 520 MB." The scripts "are expected to produce the same
+    results for all the figures and tables (with minor variation due to the randomness)". The AEC row
+    (issue 2026.1) awards available, functional and reproduced and pins this commit:
+    https://secartifacts.github.io/pets2026/results.
+
+    Tested: the artifact's own reproduction/table_2.py, table_3.py, table_4.py, table_5.py, table_7.py
+    and table_8.py, unmodified, run from the checkout root with MPLBACKEND=Agg and FIG_OUT_DIR set to
+    the work directory. That is what the appendix's all_experiments.py does for each script. The
+    checker reads each script's CSV/TXT output and its stdout. It requires that the two agree cell by
+    cell, that all 42 Table 2 cells, all 3 datasets and all 60 MSE cells per table are present, and
+    that there is no Traceback.
+
+    Determinism. Table 2 is exact: table_2.py and the SynA/SynB generators seed numpy's global RNG
+    with 42. Table 3 is exact: it only reads the bundled preprocessed_data/*.csv. Tables 4-9 are not
+    exact: corr_rr_phase1_spl and corr_rr_phase2_perturb (utils/corr_rr_fixed_new.py lines 153 and
+    191) fall back to an unseeded np.random.default_rng() for the Phase I split and the Corr-RR pivot.
+    The MSE cells therefore change from run to run. They are kept in the outputs and are not judged.
+    What is judged is the ordering of the two methods that Section 4.3.4 states in words. In the
+    paper's printed tables, every one of those 14 orderings holds with a margin of at least 1.65x.
+
+    Excluded: Tables 6 and 9 (n = 20,000, about 150 compute-minutes together) and with them the claim
+    that Corr-RR is "uniformly the best-performing mechanism" at n = 20,000; n = 200 at eps = 0.5,
+    where the paper only says Corr-RR becomes "competitive"; every figure (2-14, including the
+    real-world comparison in Figure 11); and the exact MSE values. This entry makes no claim about
+    any of these.
+
+    Table 3 is carried with comparable: false, a decision made after the first run. The pre-run
+    freeze compared the Adult correlation range at 2 decimals and expected 13 matches. The artifact's
+    own table_3.py gives 0.432 to 0.957: the maximum absolute Pearson correlation is 0.95689, which
+    rounds to 0.96, but the paper prints "0.43-0.95". The paper rounds elsewhere (Mushroom 0.20871 is
+    printed as 0.209), so this is a one-digit print slip in the paper, not a different dataset. The
+    other 12 values (d, |D|, users and the Clave and Mushroom correlations) match. The threshold was
+    left at the frozen == 13. The measured 12 is recorded for drift but not judged. Because one claim
+    is NOT_COMPARABLE, the entry-level verdict is NOT_COMPARABLE, as in
+    usenixsec2025-messaging-bandwidth. The other five claims are expected to be REPRODUCED.
+
+    Native, no uv or Jupyter: a Python 3 venv with hash-pinned wheels. Versions and sha256 come from
+    the artifact's own uv.lock (the Python 3.12 resolution, cp312 manylinux x86_64) for the 14
+    packages these six scripts import, directly or transitively. scipy, jupyter and ipykernel are
+    left out because nothing here imports them. The authors used Python 3.13.7; Python 3.12.3 on Linux
+    was tested here. The command refuses a different commit or any edit to tracked files
+    (git diff --quiet).
+
+    First capture on 2026-11-15 in a fresh clone: the six scripts ran in 32 min 59 s wall including
+    venv setup, 132992 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled, with
+    nothing on stderr. On that first run the checker itself stopped on an unescaped "+" in its
+    log-matching regex. The fix (re.escape) changed no claim, threshold or protocol, and the fixed
+    checker was re-run on the same outputs. Table 2 matched the paper in all 42 cells. All 14 frozen
+    orderings held, with every Corr-RR minimum at n1 = 100 for n = 2,000 and eps >= 0.3. The two
+    unjudged n = 200, eps = 0.5 cases also came out as the paper describes them.
+
+    An independent validator re-derived every value another way, without the checker's parsing.
+    Table 2: it called the artifact's generators with seed 42 and computed Pearson correlations with
+    plain-Python sums, which equalled table_2.csv to 1e-12. Table 3: it read the raw CSVs with the csv
+    module, rebuilt pandas' sorted category codes by hand and computed Pearson itself. The orderings
+    came from the per-table CSVs through pandas groupby/idxmin, with n1 = int(n * pct / 100) checked.
+    It also parsed Tables 2, 4, 5, 7 and 8 out of the paper's text, confirming the 42 frozen Table 2
+    values and that the paper's own numbers satisfy all 14 orderings. It agreed with the checker on
+    all six values. Its 49 checks all passed except the frozen Table 3 count (12 against 13).
+    The checker rejected all 30 incomplete or invalid fixtures: missing or empty files; dropped,
+    duplicated or renamed Table 2 rows and columns; altered or NaN cells; a renamed or dropped
+    dataset; perturbed user counts and correlations; TXT and log or CSV and log that disagree; a
+    truncated MSE table; altered n1 or model; swapped methods; flipped orderings; a moved best split;
+    a missing log block; a Traceback on stderr. It accepted only the genuine output.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-15: exit 0,
+    20 min 24 s wall, 133332 KiB peak RSS, under the same 3 GiB / no-swap cap; 264 MB workspace (checkout,
+    venv, outputs); empty stderr from all six scripts. It produced the same six metrics. The validator
+    (same 48/49), all 30 fixtures and a replay of every measure block gave five claims REPRODUCED and
+    table3_values_matched NOT_COMPARABLE, overall NOT_COMPARABLE as expected. A wrong commit, an edited
+    utils/grr.py and an edited reproduction/table_4.py each stopped the command before amber-corrrr/ was
+    created. The baseline hashes below are from this fresh run. versions.log, table_2.*, table_3.* and
+    metrics.json were byte-identical to the first capture. The table_4/5/7/8 CSVs and logs differ, as the
+    unseeded RNG predicts, and every ordering held in both runs. table_3.log lists datasets in
+    os.listdir order, so its hash can differ on another filesystem; the checker does not depend on the
+    order.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access to
+    GitHub and PyPI. The experiment itself is offline.
+role: not_comparable
+expected_verdict: NOT_COMPARABLE
+claims:
+- metric: table2_cells_matched
+  threshold: == 42
+  unit: Table 2 cells equal to the paper at 3 decimals
+  source: Table 2, p.27, https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Run reproduction/table_2.py (SynA and SynB, n = 20,000, d = 4, |D| = 4, rho in {0.1, 0.5,
+    0.9}, seed 42). It writes table_2.csv: 6 attribute pairs plus Average, times 6 columns. A cell counts when the
+    CSV value formatted with 3 decimals equals the paper''s printed cell. The stdout table must equal the CSV
+    cell for cell.'
+  expected_verdict: REPRODUCED
+  notes: Deterministic. Checks that the artifact's synthetic generators produce the dependency structure the
+    paper evaluates on.
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"table2_cells_matched": ([0-9]+)'
+- metric: table3_values_matched
+  threshold: == 13
+  unit: Table 3 values equal to the paper
+  source: Table 3, p.27, https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Run reproduction/table_3.py on the bundled preprocessed_data. For Clave, Mushroom and
+    Adult, compare d and |D| exactly, # Users rounded to thousands (10k, 8k, 10k), the Clave and Mushroom
+    correlation (one pair, so min = max) at 3 decimals (0.298, 0.209), and the Adult min and max at 2 decimals
+    (0.43, 0.95). 4 + 4 + 5 = 13 values. table_3.txt must equal the stdout.'
+  expected_verdict: NOT_COMPARABLE
+  notes: The run gives 12. The artifact's Adult maximum is 0.95689 (printed 0.957), but the paper prints 0.95; see
+    resources.notes.
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"table3_values_matched": ([0-9]+)'
+    comparable: false
+    reason: The paper prints the Adult correlation maximum as 0.95, but the artifact's own table_3.py gives
+      0.957 (0.95689), which rounds to 0.96 at the paper's 2 decimals. The paper rounds elsewhere (Mushroom
+      0.20871 is printed as 0.209), so this is a print slip; the other 12 values match.
+- metric: small_n_rsrfd_wins
+  threshold: == 4
+  unit: (table, eps) cases where RS+RFD has the lowest MSE
+  source: Section 4.3.4, p.31, and Appendix 7.4.3, p.35; Tables 4 and 7, p.37,
+    https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Run reproduction/table_4.py (SynA) and table_7.py (SynB): n = 200, d = 2, |D| = 4, rho
+    = 0.1, Phase I share 5-50% in 5% steps, R = 100 repetitions per cell. For Tables 4 and 7 at eps in {0.1,
+    0.3}, count the cases where the minimum over n1 of RS+RFD''s MSE is below the minimum over n1 of
+    Corr-RR''s. The paper: "the privatized marginals remain too noisy under eps in {0.1, 0.3} for Corr-RR to
+    estimate p_y reliably". n = 200 at eps = 0.5 is not judged. Each CSV must have 30 rows and agree with
+    stdout at 4 significant digits.'
+  expected_verdict: REPRODUCED
+  notes: The MSE cells vary run to run (unseeded default_rng); the ordering is what the paper claims.
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"small_n_rsrfd_wins": ([0-9]+)'
+- metric: moderate_n_corrrr_wins
+  threshold: == 4
+  unit: (table, eps) cases where Corr-RR has the lowest MSE
+  source: Section 4.3.4, p.31, and Appendix 7.4.3, p.35; Table 5, p.37, and Table 8, p.38,
+    https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Run reproduction/table_5.py (SynA) and table_8.py (SynB): n = 2,000, otherwise as
+    Tables 4 and 7. For Tables 5 and 8 at eps in {0.3, 0.5}, count the cases where the minimum over n1 of
+    Corr-RR''s MSE is below RS+RFD''s minimum (the bold cell). The paper: "At intermediate scale (n = 2,000;
+    Table 5 and Tables 8), Corr-RR again performs strongly when the privacy budget is moderate or high (eps >=
+    0.3)".'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"moderate_n_corrrr_wins": ([0-9]+)'
+- metric: moderate_n_corrrr_best_split
+  threshold: == 4
+  unit: (table, eps) cases with Corr-RR's lowest MSE at n1 = 100 or 200
+  source: Section 4.3.4, p.31; Table 5, p.37, and Table 8, p.38, https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Same runs and cases as moderate_n_corrrr_wins. Count the cases where the n1 at which
+    Corr-RR''s MSE is lowest is 100 or 200 (5-10% of n = 2,000). The paper: "achieving its lowest error also
+    with 5-10% Phase I users (100-200 users)".'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"moderate_n_corrrr_best_split": ([0-9]+)'
+- metric: moderate_n_eps01_rsrfd_wins
+  threshold: == 2
+  unit: tables where RS+RFD has the lowest MSE at eps = 0.1
+  source: Section 4.3.4, p.31; Table 5, p.37, and Table 8, p.38, https://petsymposium.org/popets/2026/popets-2026-0034.pdf
+  measurement_protocol: 'Same runs as moderate_n_corrrr_wins. For Tables 5 and 8 at eps = 0.1, count the cases
+    where RS+RFD''s minimum MSE is below Corr-RR''s. The paper: "Under tight privacy (eps = 0.1), however, even
+    the largest Phase I setting (50%, i.e., 1,000 users) cannot overcome the GRR noise, and Corr-RR does not
+    outperform RS+RFD."'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-corrrr/metrics.json
+    regex: '"moderate_n_eps01_rsrfd_wins": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = cc6c059fcc073ab55feeb230ce66d78929e042c1
+    git diff --quiet
+    mkdir amber-corrrr
+    python3 -m venv amber-corrrr/venv
+    cat > amber-corrrr/requirements.txt <<'REQ'
+    numpy==2.3.5 --hash=sha256:0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28
+    pandas==2.3.3 --hash=sha256:b3d11d2fda7eb164ef27ffc14b4fcab16a80e1ce67e9f57e19ec0afaf715ba89
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    matplotlib==3.10.7 --hash=sha256:d5f256d49fea31f40f166a5e3131235a5d2f4b7f44520b1cf0baf1ce568ccff0
+    contourpy==1.3.3 --hash=sha256:4d00e655fcef08aba35ec9610536bfe90267d7ab5ba944f7032549c55a146da1
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.61.0 --hash=sha256:0bdcf2e29d65c26299cc3d502f4612365e8b90a939f46cd92d037b6cb7bb544a
+    kiwisolver==1.4.9 --hash=sha256:f6008a4919fdbc0b0097089f67a1eb55d950ed7e90ce2cc3e640abadd2757a04
+    packaging==25.0 --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484
+    pillow==12.0.0 --hash=sha256:82240051c6ca513c616f7f9da06e871f61bfd7805f566275841af15015b8f98d
+    pyparsing==3.2.5 --hash=sha256:e38a4f02064cf41fe6593d328d0512495ad1f3d8a91c4f73fc401b3079a59a5e
+    REQ
+    amber-corrrr/venv/bin/pip install --quiet --no-input --require-hashes -r amber-corrrr/requirements.txt
+    amber-corrrr/venv/bin/python -c "import sys, numpy, pandas, matplotlib; print(sys.version.split()[0], numpy.__version__, pandas.__version__, matplotlib.__version__)" > amber-corrrr/versions.log
+    export MPLBACKEND=Agg MPLCONFIGDIR="$PWD/amber-corrrr/mpl" PYTHONDONTWRITEBYTECODE=1 FIG_OUT_DIR=amber-corrrr
+    for t in 2 3 4 5 7 8; do
+      amber-corrrr/venv/bin/python reproduction/table_$t.py > amber-corrrr/table_$t.log 2> amber-corrrr/table_$t.err
+    done
+    python3 -I - <<'CHECK' > amber-corrrr/metrics.json
+    import csv, json, math, pathlib, re
+    o = pathlib.Path('amber-corrrr'); R = lambda f: (o/f).read_text()
+    assert not any('Traceback' in R(f'table_{t}.err') for t in (2, 3, 4, 5, 7, 8)), 'traceback'
+    P2 = {'(X1, X2)': '.100 .100 .491 .491 .899 .899', '(X1, X3)': '.094 .012 .495 .241 .900 .897',
+          '(X1, X4)': '.100 .011 .508 .128 .903 .812', '(X2, X3)': '.007 .098 .231 .490 .808 .804',
+          '(X2, X4)': '.009 .006 .247 .243 .810 .730', '(X3, X4)': '.007 .099 .251 .495 .811 .904',
+          'Average': '.053 .054 .370 .348 .855 .841'}
+    cols = ['Syn%s_rho_%s' % (m, r) for r in ('0.1', '0.5', '0.9') for m in 'AB']
+    rows = list(csv.DictReader(open(o/'table_2.csv')))
+    assert [r['Pair'] for r in rows] == list(P2) and list(rows[0]) == ['Pair'] + cols, 'table 2 shape'
+    out = {r[0]: r[1:] for r in (re.split(r'\s{2,}', l.strip()) for l in R('table_2.log').splitlines()) if r[0] in P2}
+    assert all(out[r['Pair']] == ['%.3f' % float(r[c]) for c in cols] for r in rows), 'table 2 log != csv'
+    t2 = sum(('%.3f' % float(r[c])).lstrip('0') == p for r in rows for c, p in zip(cols, P2[r['Pair']].split()))
+    assert R('table_3.log') == R('table_3.txt'), 'table 3 log != txt'
+    B = re.findall(r'Dataset: (\w+)\n  d \(num attributes\): +(\d+)\n  \|D\| \(max domain size\): +(\d+)\n  # Users: +(\d+)\n  Correlation range: +([\d.]+) to ([\d.]+)\n', R('table_3.txt'))
+    S = {b[0]: b[1:] for b in B}; assert len(B) == 3 and sorted(S) == ['adult', 'clave', 'mushroom'], 'table 3 datasets'
+    E3 = {'clave': ('2', '2', 10, '0.298'), 'mushroom': ('2', '5', 8, '0.209'), 'adult': ('3', '2', 10, ('0.43', '0.95'))}
+    t3 = 0
+    for k, (d, D, u, c) in E3.items():
+        s = S[k]; t3 += (s[0] == d) + (s[1] == D) + (round(int(s[2]) / 1000) == u)
+        if k == 'adult': t3 += ('%.2f' % float(s[3]) == c[0]) + ('%.2f' % float(s[4]) == c[1])
+        else: t3 += '%.3f' % float(s[3]) == c == '%.3f' % float(s[4])
+    lo = {}
+    for t, model, n in ((4, 'STAR', 200), (5, 'STAR', 2000), (7, 'PROGRESSIVE', 200), (8, 'PROGRESSIVE', 2000)):
+        rows = list(csv.DictReader(open(o/f'table_{t}.csv'))); log = R(f'table_{t}.log'); assert log.count('MSE TABLE') == 3
+        assert len(rows) == 30 and list(rows[0]) == ['model', 'epsilon', 'Phase1_pct', 'n1', 'RS+RFD', 'Corr-RR'], f'table {t} shape'
+        for e in ('0.1', '0.3', '0.5'):
+            g = [r for r in rows if r['epsilon'] == e]
+            assert [(r['model'], int(r['Phase1_pct']), int(r['n1'])) for r in g] == [(model, p, n * p // 100) for p in range(5, 55, 5)], f'table {t} rows'
+            blk = log.split(f'({model} MODEL, ε = {e})')[1].split('MSE TABLE')[0]
+            for m in ('RS+RFD', 'Corr-RR'):
+                v = [float(r[m]) for r in g]; assert all(math.isfinite(x) and x > 0 for x in v), f'table {t} values'
+                assert re.search(r'\n%s +%s *\n' % (re.escape(m), '  +'.join(re.escape('%.3e' % x) for x in v)), blk), f'table {t} log != csv'
+                lo[t, e, m] = (min(v), int(g[v.index(min(v))]['n1']))
+    W = lambda t, e, a, b: lo[t, e, a][0] < lo[t, e, b][0]
+    print(json.dumps({'table2_cells_matched': t2, 'table3_values_matched': t3,
+        'small_n_rsrfd_wins': sum(W(t, e, 'RS+RFD', 'Corr-RR') for t in (4, 7) for e in ('0.1', '0.3')),
+        'moderate_n_corrrr_wins': sum(W(t, e, 'Corr-RR', 'RS+RFD') for t in (5, 8) for e in ('0.3', '0.5')),
+        'moderate_n_corrrr_best_split': sum(lo[t, e, 'Corr-RR'][1] in (100, 200) for t in (5, 8) for e in ('0.3', '0.5')),
+        'moderate_n_eps01_rsrfd_wins': sum(W(t, '0.1', 'RS+RFD', 'Corr-RR') for t in (5, 8))}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-corrrr/versions.log
+  - amber-corrrr/table_2.log
+  - amber-corrrr/table_2.csv
+  - amber-corrrr/table_3.log
+  - amber-corrrr/table_3.txt
+  - amber-corrrr/table_4.log
+  - amber-corrrr/table_4.csv
+  - amber-corrrr/table_5.log
+  - amber-corrrr/table_5.csv
+  - amber-corrrr/table_7.log
+  - amber-corrrr/table_7.csv
+  - amber-corrrr/table_8.log
+  - amber-corrrr/table_8.csv
+  - amber-corrrr/metrics.json
+baseline:
+  captured_on: '2026-11-15'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; numpy 2.3.5, pandas 2.3.3, matplotlib 3.10.7 in a local venv
+  outputs:
+  - path: amber-corrrr/versions.log
+    sha256: 4355183251327d122d314ff2e81745c83cc8af39b2a108d9b673838ca706976a
+  - path: amber-corrrr/table_2.log
+    sha256: 6d00fabf3a321a7561fed0e3f7a618d3d8096e22d970841429e626f1e8b8d0f6
+  - path: amber-corrrr/table_2.csv
+    sha256: 3795e1d7b64cdd49aa467c66fe0ac1306c59356e57bbae8790449bd5391da9a0
+  - path: amber-corrrr/table_3.log
+    sha256: 9e6641402f44e49fb7ae381d4223e801522a74ca9b3519416080ab9073dee6d4
+  - path: amber-corrrr/table_3.txt
+    sha256: 9e6641402f44e49fb7ae381d4223e801522a74ca9b3519416080ab9073dee6d4
+  - path: amber-corrrr/table_4.log
+    sha256: 169dd507807dd8c809031b50781e8639390c05fd31ab8cc33b9be43ae82e7711
+  - path: amber-corrrr/table_4.csv
+    sha256: 7f6f5ea66c55628820c191868c309b82ccff603111c8ca767d3cd828b12ba992
+  - path: amber-corrrr/table_5.log
+    sha256: 790abb737014b3c950fa6d98c66b6a64611ddf22c540f7873053bf699691bb4e
+  - path: amber-corrrr/table_5.csv
+    sha256: a331b736e7dc228fb091aa30f6da927fb9b1ca26b52ac9f8e46c1babad73d654
+  - path: amber-corrrr/table_7.log
+    sha256: 5c9417feb116dd7e17a021e1b65e4f3b524146dfa6783f0e5af7c8e5f3b0648a
+  - path: amber-corrrr/table_7.csv
+    sha256: 925d496ad9f05be62aecd001395847490b00b5043ccdce3f92efc588e1dd4558
+  - path: amber-corrrr/table_8.log
+    sha256: 0e5c84bae74a3f5477805b6ecfd07328cdc3cebeb7787f5924a913d41762e5ee
+  - path: amber-corrrr/table_8.csv
+    sha256: b7f8f80fa867ab70ac670f3ae965b78db3768d77c59ba2c27a91ca406f33b5eb
+  - path: amber-corrrr/metrics.json
+    sha256: 8196b58abce3a3a628e452e87633860031398071235eb10848a968216c21cb5f
+  metrics:
+    table2_cells_matched: 42
+    table3_values_matched: 12
+    small_n_rsrfd_wins: 4
+    moderate_n_corrrr_wins: 4
+    moderate_n_corrrr_best_split: 4
+    moderate_n_eps01_rsrfd_wins: 2
+  bit_for_bit_expected: false
