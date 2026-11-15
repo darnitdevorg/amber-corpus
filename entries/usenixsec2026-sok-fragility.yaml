@@ -1,0 +1,283 @@
+# Verified subset: artifact appendix E2 (regenerate the defense table, paper Tables 4 and 6) and the
+# batch part of E3 (Safe Rust interoperability over the 55 minimal first-level defense combinations,
+# Section 6.1 / Table 5). E1 has no threshold; E4 and the single E3 interop query need the Graphviz
+# `dot` renderer and are not run (see resources.notes). This entry makes no claim about them.
+id: usenixsec2026-sok-fragility
+title: 'SoK: On the Fragility of Memory Error Exploit Mitigations'
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity26-jacobs.pdf
+artifact:
+  url: https://zenodo.org/records/20759147
+  clone: |
+    Download the ten files of Zenodo record 20759147 (the version the AEC results page links; concept
+    DOI 10.5281/zenodo.20315524) into a fresh directory and run run.command there:
+      https://zenodo.org/api/records/20759147/files/<name>/content -> <name>
+    for <name> in README.md Defenses.py ExploitGraph.py Explorer.py EdgeIDMapping.py DotExporter.py
+    generate_defense_table.py cla_generation.py portability_test.py generate_subgraphs.py.
+    run.command checks all ten SHA-256 digests. The files are byte-identical to
+    https://github.com/adriaanjacobs/sec26-sok-fragility at commit 23c4d63d5bb6.
+  ref_type: doi
+  ref: 10.5281/zenodo.20759147
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Appendix A.2.3: "None. The artifact runs on a commodity laptop or desktop with any budget in terms
+    of computing power or storage. The experiments should finish in a few seconds"; A.2.4: "tested on
+    Linux with Python 3.12.3 and the Python graphviz package version 0.20.2"; E2 and E3 are each
+    "5 human-minutes + less than 1 compute-minute + less than 5 MB disk". E3 Results: "Out of 55
+    records, only 4 records should block all CLA paths when deployed with Rust as shown in Table 5".
+    https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle2ae-final71.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2026/results (cycle 2, id 71).
+
+    What runs: the artifact's own `python3 generate_defense_table.py` (E2) and
+    `python3 cla_generation.py` (E3, the 55-record batch), unmodified, in a venv holding only the
+    hash-pinned graphviz 0.20.2 wheel the appendix names. Neither script renders a graph, so the
+    system Graphviz binary is not needed. A stdlib checker then parses def_tbl.tex and
+    cla_results.txt and writes metrics.json. It also logs cla_rust_side_not_bypassed (the count when
+    only the Rust side is required to stay unbypassed), which is not a claim. It agrees (4).
+
+    Excluded: E1 is a single illustrative fragility query with no numeric threshold. E4
+    (portability_test.py) and E3's single `Defenses.py interop --set1 Rust --set2 FineIBT intelSHSTK`
+    call graphviz render(), which needs the system `dot` executable; it was not installed on the
+    test machine and no root access was available. Not running them is a setup limit, not a result.
+
+    The model is a deterministic graph reachability analysis: no seeds, sampling or timing.
+    Python 3.12 prints one SyntaxWarning for '\m' in generate_defense_table.py line 171 to
+    def_tbl.stderr.log (it embeds the absolute checkout path); the checker fails only on Traceback
+    or Error.
+
+    Expected values were fixed before any run: the six goal / execution-control cells of every
+    Table 4 (41 rows) and Table 6 (20 rows) defense were extracted from the published PDF with
+    pdftotext -bbox, gave identical results on the author's copy, and were checked cell by cell
+    against rendered page images (110 checkmarks). Section 4 says "We map 40 representative
+    defenses" but Table 4 prints 41 rows; the claim judges every printed row.
+
+    First capture on 2026-11-13 in a fresh Zenodo download: exit 0, 8.8 s wall including venv
+    creation and the wheel install, 75432 KiB peak RSS (GNU time), under a 1 GiB memory cap with
+    swap disabled; about 14 MB workspace including the venv. All ten inputs were unchanged afterwards.
+    An independent validator took only the declarative data from the artifact (graph edges and AND
+    gates, and which edges and knowledge each defense marks), and used its own reachability fixpoint,
+    threat-model merge and Section 6.1.2 interop semantics (residual capabilities of each side,
+    union, re-evaluate). It re-derived all 61 table rows equal to the paper and the same decision
+    for all 55 interop records, and it also parsed both outputs a second way. The 55 combinations
+    are a hard-coded list in cla_generation.py; the validator confirmed they are exactly the
+    minimal covers of the four violation classes (spatial, temporal, miscasts, uninitialized) under
+    the artifact's own @defense_category labels. cla_records therefore checks coverage of that list
+    against the paper's 55, not a computation. The checker rejected 25 incomplete or invalid
+    fixtures (missing or empty files, truncated table or interop log, missing header or footer,
+    dropped, duplicated, extra or renamed rows, wrong column count, records missing, extra,
+    duplicated, reordered or with one or three result lines, stray lines, tracebacks or errors in
+    stderr). Four value-tampered fixtures (a checkmark added, a checkmark removed, a safe record
+    flipped to bypassed, a bypassed record flipped to safe) each turned at least one claim
+    NOT_REPRODUCED.
+
+    The literal run.command passed from a second, fresh Zenodo download on 2026-11-13: exit 0,
+    8.5 s wall including venv setup, 75300 KiB peak RSS, same limits, no limit event. Same six
+    metrics; validator, the category check and all 29 fixtures re-confirmed, and every claim's
+    regex and threshold replayed REPRODUCED. A tampered Defenses.py or cla_generation.py and a
+    truncated download each stopped the command at sha256sum before any output was written.
+    Baseline hashes below are from this fresh run. versions.log, cla.stderr.log and metrics.json
+    were byte-identical to the first capture. def_tbl.tex and cla_results.txt differ only in the
+    order of edge macros within a table cell and of goal names in the "completely new goals" lines
+    (Python set iteration over objects hashed by id); every goal cell and every interop decision is
+    identical. def_tbl.stderr.log differs only by the checkout path. Hence bit_for_bit_expected is
+    false.
+
+    Prerequisites: Linux x86_64, POSIX shell, Python 3 with the venv module (3.12.3 tested),
+    sha256sum, and network access to Zenodo and PyPI. network_required covers only input and wheel
+    acquisition; the analysis itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: table4_rows_matched
+  threshold: == 41
+  unit: table rows
+  source: Paper Table 4 (published p.856) and Section 4 (pp.856-857); artifact appendix C2 / E2.
+  measurement_protocol: 'Run the unmodified generate_defense_table.py. Each `\midrule` row of def_tbl.tex
+    must have 11 `&`-separated columns; the set of row names must equal the 61 defenses of Tables 4 and 6,
+    with no duplicates, and the `% <n> defenses found` header, `\end{table*}` and both trailing summary
+    comments must be present. A cell counts as reached iff it contains `\cmarkbad`. Count the Table 4
+    defenses whose six cells (Info. Disclosure, Access Control, Arbitrary Computation, Func.-Gran. CF
+    Hijack, Instr.-Gran. CF Hijack, ACE) all equal the paper. Exact; the model is deterministic.'
+  expected_verdict: REPRODUCED
+  notes: 'Covers the design-level fragility results of Section 5, e.g. every memory-safety defense except
+    SoftBound write-only blocks all goals, while every CFI, CPI and randomization defense leaves the
+    three high-level attacker goals reachable.'
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"table4_rows_matched": ([0-9]+)'
+- metric: table6_rows_matched
+  threshold: == 20
+  unit: table rows
+  source: Paper Appendix A Table 6 (published p.867); artifact appendix E2 ("should cover defenses shown in
+    Table 4 as well as in Table 6").
+  measurement_protocol: Same run and parse as table4_rows_matched; count the Table 6 defenses whose six cells
+    equal the paper.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"table6_rows_matched": ([0-9]+)'
+- metric: cla_records
+  threshold: == 55
+  unit: defense combinations
+  source: 'Paper Section 6.1 "The model identifies 55 such combinations" (p.860); artifact appendix E3
+    "Out of 55 records".'
+  measurement_protocol: 'Run the unmodified cla_generation.py. cla_results.txt must hold one `checking
+    interop of [''Rust''] and [...]` block per entry of the script''s minimal_defense_sets list, in order,
+    each with exactly two result lines (Rust side first, then the combination). Count the blocks. Missing,
+    extra or malformed blocks fail the checker.'
+  expected_verdict: REPRODUCED
+  notes: The 55 are a hard-coded list, so this checks the artifact's coverage against the paper's count.
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"cla_records": ([0-9]+)'
+- metric: cla_safe_combinations
+  threshold: == 4
+  unit: defense combinations
+  source: 'Paper Section 6.1 "Our model concludes that only 4 combinations, comprising 6 distinct defenses,
+    eliminate all CLA paths" (p.860); artifact appendix E3.'
+  measurement_protocol: Same run. Count the records where both result lines say "not bypassed", i.e. neither
+    Safe Rust nor the C/C++ combination gains a goal once each side's residual attacker capabilities are
+    transferred to the other.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"cla_safe_combinations": ([0-9]+)'
+- metric: cla_safe_distinct_defenses
+  threshold: == 6
+  unit: defenses
+  source: Paper Section 6.1 "comprising 6 distinct defenses" (p.860).
+  measurement_protocol: Same run. Number of distinct defense names across the safe records.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"cla_safe_distinct_defenses": ([0-9]+)'
+- metric: cla_safe_defenses_in_table5
+  threshold: == 6
+  unit: defenses
+  source: Paper Table 5 (p.860)
+  measurement_protocol: 'Same run. How many of the distinct safe defenses are among Table 5''s LowFat, MarkUs,
+    DangSan, Chow et al. (chow2005shredding), SafeInit and HexType. Together with the previous claim this
+    pins the identities, not only the count.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fragility/metrics.json
+    regex: '"cla_safe_defenses_in_table5": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    sha256sum -c - <<'SUMS'
+    a4144e499304bc2816dd88a385e0651ae0685183f9f13b99ca7953adbaf831ba  README.md
+    cd498aca74a3565d02e4813bddd8950d675b718fa38c7b7d09c9f164013906ba  Defenses.py
+    0943dc773e5c7ae17ded46345322ccb07fe10c7dce96ea414ec93f525ac8c3f6  ExploitGraph.py
+    0df9249dd1b8cdbf431bf2e29a460410b92b69bd9bbac0b18400dc27b2e6328e  Explorer.py
+    207f53b043aad9f20492c97f01db7a3acd513f59f645b79210e39d618bd14259  EdgeIDMapping.py
+    a92e39046f55f60e4e0c62335331d3b7bbc29a155b50ae743ffce325fc695272  DotExporter.py
+    e3e3622c3455544eb7ab3ca4512ac83f4f09b467f9950195e13deeed91b3ac8f  generate_defense_table.py
+    eaa4057a79fc3b66c11e17e9245a9f644295ed0aa110d78f5edfd136bd6bed86  cla_generation.py
+    9d590f026d5942816660894bebab2377433e3cffe2ce26b397b88128d0952fc2  portability_test.py
+    7be68eb22630a04e6314f2b000cbc727fa3b5bbe19aaa5563b7abec0d40bba94  generate_subgraphs.py
+    SUMS
+    mkdir amber-fragility
+    python3 -m venv amber-fragility/venv
+    echo 'graphviz==0.20.2 --hash=sha256:63d1ae75f1ca60f980e1cd3a61a678eef8de645ef8427736b2bb9bdd035ca44b' > amber-fragility/requirements.txt
+    amber-fragility/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-fragility/requirements.txt
+    amber-fragility/venv/bin/python -c 'import sys, graphviz; print(sys.version.split()[0], graphviz.__version__)' > amber-fragility/versions.log
+    amber-fragility/venv/bin/python generate_defense_table.py > amber-fragility/def_tbl.tex 2> amber-fragility/def_tbl.stderr.log
+    amber-fragility/venv/bin/python cla_generation.py > amber-fragility/cla_results.txt 2> amber-fragility/cla.stderr.log
+    python3 -I - amber-fragility <<'CHECK' > amber-fragility/metrics.json
+    import ast, json, re, sys
+    d = sys.argv[1]
+    for f in ('def_tbl', 'cla'):
+        assert not re.search(r'Traceback|Error', open(f'{d}/{f}.stderr.log').read()), f'{f} stderr reports an error'
+    PAPER = r"""T4 000000 Safe Rust|CCured|SoftBound|StickyTags|LowFat|EffectiveSan|EffectiveSan-bounds|EffectiveSan-type|HexType|PACMem|CETS|DangSan|MarkUs|FFMalloc|SafeInit|Chow et al.|CHERI|Cornucopia|Mon CH{\'E}RI|DFI|MvArmor (MVX+ASP-DLK)
+    T4 111101 SoftBound-w.o.
+    T4 111111 $W\oplus X$|WIT|DSR|eXec-Only Memory|ILR
+    T4 111000 SafeStack|CPI|IFCC|FineIBT|Intel Shadow Stack
+    T4 111100 CPS|Intel IBT|Intel CET|ILR+XOM|Readactor++|Cox et al. (MVX+ASP)|ReMon (MVX+DCL)
+    T4 100000 \textsc{Kenali}|\textsc{TRUVIN}
+    T6 000000 Baggy Bounds|Baggy Bounds (64-bit)|PTAuth|PUMM|CAMP|ShadowBound|ShadowBound-MarkUs|ShadowBound-FFMalloc|ShadowBound-PUMM|DANGNULL|Oscar|CAVER|Type++
+    T6 111100 TASR|ARM BTI|Clang Standard Protection (ARM)
+    T6 111111 VIP-CFI|VIP-CPI
+    T6 111000 PAC-RET|CFA+"""  # paper Tables 4 and 6: Info, Access, Arbitrary, Func-CFH, Instr-CFH, ACE (1 = attacker reaches goal)
+    want = {n: (t, bits) for t, bits, names in (l.split(' ', 2) for l in PAPER.splitlines()) for n in names.split('|')}
+    tex = open(f'{d}/def_tbl.tex').read()
+    head = re.match(r'% (\d+) defenses found\n', tex)
+    assert head and r'\end{table*}' in tex and '% In total, this table covers' in tex and '% merged defense notation:' in tex, 'incomplete table'
+    got = {}
+    for row in tex.split(r'\midrule')[1:]:
+        cols = [c.strip() for c in row.split(r'\thicktoprule')[0].strip().removesuffix('\\\\').split('&')]
+        name = re.fullmatch(r'\\large (.+)~\\cite\{[^}]*\}', cols[0])
+        assert len(cols) == 11 and name and name[1] not in got, 'malformed or duplicate row'
+        got[name[1]] = ''.join('1' if r'\cmarkbad' in c else '0' for c in cols[5:])
+    assert len(got) == int(head[1]) and set(got) == set(want), 'generated rows do not cover Tables 4 and 6'
+    recs = []
+    for line in open(f'{d}/cla_results.txt').read().splitlines():
+        if m := re.fullmatch(r"checking interop of \['Rust'\] and (\[.*\])", line):
+            recs.append((ast.literal_eval(m[1]), []))
+        elif line.startswith('\t\tit now even allows completely new goals'):
+            assert recs and recs[-1][1][-1:] == ['bypassed'], 'new-goals line without bypass'
+        else:
+            m = re.fullmatch(r'\t(\[.*\]) (got interop-bypassed!|not bypassed)', line)
+            assert m and recs and len(recs[-1][1]) < 2 and ast.literal_eval(m[1]) == (['Rust'], recs[-1][0])[len(recs[-1][1])], 'unexpected line'
+            recs[-1][1].append('bypassed' if m[2].startswith('got') else 'ok')
+    listed = ast.literal_eval(re.search(r'minimal_defense_sets = (\[.*?\n\])', open('cla_generation.py').read(), re.S)[1])
+    assert [s for s, _ in recs] == listed and all(len(r) == 2 for _, r in recs), 'interop records do not cover minimal_defense_sets'
+    safe = [s for s, r in recs if r == ['ok', 'ok']]
+    distinct = {x for s in safe for x in s}
+    print(json.dumps({
+        'table4_rows_matched': sum(got[n] == b for n, (t, b) in want.items() if t == 'T4'),
+        'table6_rows_matched': sum(got[n] == b for n, (t, b) in want.items() if t == 'T6'),
+        'cla_records': len(recs),
+        'cla_safe_combinations': len(safe),
+        'cla_safe_distinct_defenses': len(distinct),
+        'cla_safe_defenses_in_table5': len(distinct & {'LowFat', 'MarkUs', 'DangSan', 'chow2005shredding', 'SafeInit', 'HexType'}),
+        'cla_rust_side_not_bypassed': sum(r[0] == 'ok' for _, r in recs),
+    }, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-fragility/versions.log
+  - amber-fragility/def_tbl.tex
+  - amber-fragility/def_tbl.stderr.log
+  - amber-fragility/cla_results.txt
+  - amber-fragility/cla.stderr.log
+  - amber-fragility/metrics.json
+baseline:
+  captured_on: '2026-11-13'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3, graphviz 0.20.2 (Python package) in a local venv
+  outputs:
+  - path: amber-fragility/versions.log
+    sha256: b77b993c0f207e91a5e8f8ec71d3e30eef86f0b2c3d353a29f4b5b47eebf9ff1
+  - path: amber-fragility/def_tbl.tex
+    sha256: 421e0efa597960c9373a751a6680b45b146ffd75d9268c47fc8e56242e6f0a34
+  - path: amber-fragility/def_tbl.stderr.log
+    sha256: 113c53906f8bb3ce114643040650610dbc1ad127e8889d67067b43a10631ab62
+  - path: amber-fragility/cla_results.txt
+    sha256: ec59a1971869680fceb9f509982619f6058f353e0c4801cea9da014c399cd32d
+  - path: amber-fragility/cla.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-fragility/metrics.json
+    sha256: 13aa9b620b31e9fcb2f93b4cd7b44dcbcab15b45263b6c7d3d47f55500f477f5
+  metrics:
+    table4_rows_matched: 41
+    table6_rows_matched: 20
+    cla_records: 55
+    cla_safe_combinations: 4
+    cla_safe_distinct_defenses: 6
+    cla_safe_defenses_in_table5: 6
+  bit_for_bit_expected: false
