@@ -1,0 +1,279 @@
+# Verified subset: artifact Experiment 2 (bench.sh, communication cost) and the theoretical-size part of
+# Experiment 3 (theo_size_time.py): paper Table 2 and the Section 6.2 totals and reductions. The timing results
+# (Table 4, the 59%/70% time reductions, cargo bench) are excluded; see resources.notes.
+id: pets2026-canonize-communication
+title: 'CAnonize: A Compact Anonymous Survey Protocol'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0127.pdf
+  doi: 10.56553/popets-2026-0127
+artifact:
+  url: https://github.com/uclcrypto/CAnonize/tree/bea24217190d0249eddeaef38cd77ece1de367e5
+  clone: git clone https://github.com/uclcrypto/CAnonize.git && cd CAnonize && git checkout
+    bea24217190d0249eddeaef38cd77ece1de367e5, then run run.command in the checkout root.
+  ref_type: commit
+  ref: bea24217190d0249eddeaef38cd77ece1de367e5
+  license: MIT OR Apache-2.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository: "The artifact can be run in less than 5
+    minutes if Rust is already installed"; "Can run on a laptop (no special hardware requirements)"; the authors
+    used "an Intel Core i7-1355U CPU ... and 16 GB RAM" and "Rust (v.1.85.0)". Experiment 2 (./bench.sh, "around
+    40 seconds") "shows the communication cost for each step of each protocol (Table 2)"; Experiment 3's
+    theo_size_time.py computes the theoretical communication size. The appendix prints both expected tables. The
+    AEC row (issue 2026.4) awards available, functional and reproduced and pins this commit:
+    https://secartifacts.github.io/pets2026/results.
+
+    Tested: the unmodified bench.sh and theo_size_time.py. bench.sh builds the release binary, runs CAnonize (AS)
+    and Anonize (AN) 50 times each for timings, then once each with sizes only, writing size.txt; bench.py prints
+    the medians and the size table to run.log. Each run executes the whole protocol (one RA, one SA, one user)
+    and ends with sa.submission_check(...).unwrap(), so every one of the 102 runs also verified its submission.
+    The measured sizes are the authors' own: main.rs adds size_of_val of each message struct and the capacity of
+    each of its Vec buffers, times 8. All randomness comes from ark_std::test_rng() (a fixed seed), so the sizes
+    are deterministic.
+
+    Excluded: the timing results, which depend on the hardware: Table 4, the "59%" (appendix) and "70%" (paper)
+    execution-time reductions, cargo bench and the theoretical times. bench.sh's timing medians stay in run.log
+    and bench.csv but are not judged. Table 3 (operation counts) is, per the appendix, "computed manually" and
+    not reproducible with the artifact. This entry makes no claim about any of these.
+
+    Native, no Docker. The authors' Dockerfile only builds with rust:1.85 and pip-installs pandas. Here rustup
+    installs Rust 1.85.0 (the appendix version) into amber-canonize/rustup. Crates come from the artifact's
+    Cargo.lock with --locked: 105 crates.io checksums, and the git dependency groth-sahai-rs pinned to commit
+    cc0c3f023efb68c07e5a9d2da9fc9ca588f05698. bench.py and theo_size_time.py run in a venv with hash-pinned
+    pandas 2.3.3 / numpy 2.3.5 wheels (the appendix asks for "pandas 2.1.2 or later"). The command refuses a
+    different commit or any edit to tracked files (git diff --quiet).
+
+    First capture on 2026-11-15 in a fresh clone: exit 0, 1 min 43 s wall including toolchain, crate and wheel
+    downloads, 631588 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled, 857 MB workspace.
+    All nine values match the paper. size.txt equals the appendix table cell for cell.
+
+    An independent validator re-derived everything another way. It parsed size.txt with pandas and the size
+    frame bench.py printed to run.log, and the two agree. It read the group-element counts of Table 2 from the
+    PDF's word coordinates and multiplied them by the curve sizes stated in Section 6.2 (Z_q 255, G1 381, G2 762,
+    G_T 4572 bits). That gave the theoretical sizes for every phase, equal to theo_size_time.py's output, and the
+    phase counts sum to the Total rows. It also read the 16 printed "k" cells from the PDF instead of the typed-in
+    lists. All 33 checks passed, and its nine values equal the checker's. In a throwaway copy, every test_rng()
+    was swapped for a StdRng seeded with 1, 2, 3, 7 and 12345 in turn. All ten runs (5 seeds × 2 protocols) gave
+    sizes identical to size.txt, and every submission verified. The unmodified binary gave identical sizes over
+    5 repeats, and the same sizes when built with Rust 1.93.0. The checker rejected or failed 24 incomplete or
+    invalid fixtures and accepted only the genuine output. The fixtures cover missing or empty files, dropped,
+    duplicated, renamed or swapped rows, a changed header, an extra column, an altered or non-integer cell,
+    broken row sums, a consistent but smaller row, bench.csv truncated to 49 runs, an altered or missing
+    theoretical row, and a panic, traceback or cargo error on stderr.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-15: exit 0,
+    1 min 41 s wall, 536344 KiB peak RSS, 857 MB workspace (checkout, toolchain, crates, venv, build, captures).
+    Same nine metrics; validator (33/33), all 24 fixtures and a replay of every measure block re-confirmed. A
+    wrong commit and edits to src/main.rs, bench.sh or theo_size_time.py each stopped the command before
+    amber-canonize/ was created. Baseline hashes below are from this fresh run. versions.log, size.txt,
+    theo.log and metrics.json were byte-identical to the first capture. run.stderr.log differs only in cargo's
+    "Finished ... in 0.0Xs" times, and run.log and bench.csv in the measured milliseconds.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, rustup, a C linker (cc), Python 3.12 with venv, and network
+    access to static.rust-lang.org, crates.io, GitHub and PyPI. The experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: size_cells_matched
+  threshold: == 12
+  unit: table cells
+  source: Artifact appendix, Experiment 2, expected communication-cost table (ours 5,056 / 3,456 / 8,512 / 3,456 /
+    52,544 / 64,512; orig. 59,328 / 2,688 / 62,016 / 2,688 / 563,712 / 628,416 bits), the measured data behind paper
+    Table 2 (p.407).
+  measurement_protocol: Run bench.sh unmodified. Parse its size.txt, which must have exactly the header
+    Exp_type,UR1,UR2,UR_tot,SR,Submission,Tot(bits), exactly one ours and one orig. row of integers, and consistent
+    sums (UR_tot = UR1 + UR2, Total = UR_tot + SR + Submission). bench.csv must hold 50 complete timing rows per
+    protocol, and there must be no panic or error on stderr. Count cells equal to the appendix table. Exact
+    integers, no tolerance.
+  expected_verdict: REPRODUCED
+  notes: Covers both protocols and every step.
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"size_cells_matched": ([0-9]+)'
+- metric: exp_total_ours_bits
+  threshold: == 64512
+  unit: bits
+  source: 'Paper Section 6.2 (p.407): "The experimentally measured serialized sizes are 64 512 bits and 628 416
+    bits, respectively".'
+  measurement_protocol: Total size (bits) of the ours (CAnonize) row of size.txt, as size_cells_matched.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"exp_total_ours_bits": ([0-9]+)'
+- metric: exp_total_orig_bits
+  threshold: == 628416
+  unit: bits
+  source: Paper Section 6.2 (p.407), as exp_total_ours_bits.
+  measurement_protocol: Total size (bits) of the orig. (Anonize) row of size.txt, as size_cells_matched.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"exp_total_orig_bits": ([0-9]+)'
+- metric: exp_reduction_pct
+  threshold: == 90
+  unit: percent
+  source: 'Paper Section 6.2 (p.407): "yielding an empirical reduction of approximately 90%".'
+  measurement_protocol: 100 * (1 - ours total / orig. total) from size.txt, rounded half-up to an integer.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"exp_reduction_pct": ([0-9]+)'
+- metric: table2_exp_cells_matched
+  threshold: == 8
+  unit: table cells
+  source: Paper Table 2 "exp. size" column (p.407), 8.5k / 62k (user registration), 3.5k / 2.7k (survey
+    registration), 53k / 564k (submission), 65k / 628k (total) for ours / orig.
+  measurement_protocol: UR_tot, SR, Submission and Total from size.txt for both protocols, shown in thousands of
+    bits at the table's precision (one decimal below 10,000 bits, else a whole number; half-up). Count cells
+    equal to Table 2.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"table2_exp_cells_matched": ([0-9]+)'
+- metric: theo_total_ours_bits
+  threshold: == 39753
+  unit: bits
+  source: 'Paper Section 6.2 (p.407): "CAnonize transmits a total of 39 753 bits in theory, compared to 534 354
+    bits for Anonize".'
+  measurement_protocol: Tot(bit) of the ours row printed by the artifact's theo_size_time.py (group-element counts
+    times the BLS12-381 element sizes).
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"theo_total_ours_bits": ([0-9]+)'
+- metric: theo_total_orig_bits
+  threshold: == 534354
+  unit: bits
+  source: Paper Section 6.2 (p.407), as theo_total_ours_bits.
+  measurement_protocol: Tot(bit) of the orig. row printed by theo_size_time.py.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"theo_total_orig_bits": ([0-9]+)'
+- metric: theo_reduction_pct
+  threshold: '>= 92'
+  unit: percent
+  source: 'Paper Section 6.2 (p.407): "corresponding to a 92% reduction in theoretical communication cost";
+    Introduction (p.397): "CAnonize theoretically reduces total communication per survey instance by 92%".'
+  measurement_protocol: 100 * (1 - theoretical ours total / orig. total) from theo_size_time.py, to 2 dp. The
+    paper's 92 truncates 92.56, so the claim is read as "at least 92%".
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"theo_reduction_pct": ([0-9.]+)'
+- metric: table2_theo_cells_matched
+  threshold: == 8
+  unit: table cells
+  source: Paper Table 2 "theo. size" column (p.407), 5.3k / 39k, 2.7k / 1.5k, 32k / 494k, 40k / 534k for ours /
+    orig.
+  measurement_protocol: UR, SR, Subm and Tot(bit) from theo_size_time.py for both protocols, at the same
+    precision as table2_exp_cells_matched. Count cells equal to Table 2.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-canonize/metrics.json
+    regex: '"table2_theo_cells_matched": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = bea24217190d0249eddeaef38cd77ece1de367e5
+    git diff --quiet HEAD --
+    mkdir amber-canonize
+    export RUSTUP_HOME="$PWD/amber-canonize/rustup" CARGO_HOME="$PWD/amber-canonize/cargo" RUSTUP_TOOLCHAIN=1.85.0
+    rustup toolchain install 1.85.0 --profile minimal --no-self-update 2> amber-canonize/setup.log
+    python3 -m venv amber-canonize/venv
+    cat > amber-canonize/requirements.txt <<'REQ'
+    numpy==2.3.5 --hash=sha256:0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28
+    pandas==2.3.3 --hash=sha256:b3d11d2fda7eb164ef27ffc14b4fcab16a80e1ce67e9f57e19ec0afaf715ba89
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    REQ
+    amber-canonize/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-canonize/requirements.txt
+    export PATH="$PWD/amber-canonize/venv/bin:$PATH"
+    { rustc -V; cargo -V; python3 -c "import sys, numpy, pandas; print(sys.version.split()[0], 'numpy==' + numpy.__version__, 'pandas==' + pandas.__version__)"; } > amber-canonize/versions.log
+    cargo build --release --locked 2> amber-canonize/build.log
+    bash bench.sh > amber-canonize/run.log 2> amber-canonize/run.stderr.log
+    cp size.txt bench.csv amber-canonize/
+    python3 theo_size_time.py > amber-canonize/theo.log
+    python3 -I - amber-canonize <<'PYTHON' > amber-canonize/metrics.json
+    import csv, json, pathlib, re, sys
+    from decimal import Decimal, ROUND_HALF_UP
+    root = pathlib.Path(sys.argv[1])
+    assert not re.search(r'panicked|Traceback|^error', (root/'run.stderr.log').read_text(), re.M), 'run reports an error'
+    rows = [[c.strip() for c in r] for r in csv.reader(open(root/'size.txt')) if r]
+    assert rows[0] == ['Exp_type', 'UR1', 'UR2', 'UR_tot', 'SR', 'Submission', 'Tot(bits)'] and len(rows) == 3, 'size.txt shape'
+    size = {r[0]: [int(c) for c in r[1:]] for r in rows[1:]}
+    assert sorted(size) == ['orig.', 'ours'] and all(len(v) == 6 for v in size.values()), 'size.txt rows'
+    for u1, u2, ut, sr, sub, tot in size.values():
+        assert ut == u1 + u2 and tot == ut + sr + sub, 'size.txt sums'
+    bench = [r for r in csv.reader(open(root/'bench.csv'))][1:]
+    assert sorted(r[0] for r in bench) == ['orig.'] * 50 + ['ours'] * 50 and all(len(r) == 16 for r in bench), 'bench.sh incomplete'
+    theo = {m[1]: [int(x) for x in m.groups()[1:]] for m in re.finditer(r'^\d+\s+(ours|orig\.)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$', (root/'theo.log').read_text(), re.M)}
+    assert sorted(theo) == ['orig.', 'ours'], 'theo.log rows'
+    APPENDIX = {'ours': [5056, 3456, 8512, 3456, 52544, 64512], 'orig.': [59328, 2688, 62016, 2688, 563712, 628416]}
+    k = lambda b: str((Decimal(b) / 1000).quantize(Decimal('1') if b >= 10000 else Decimal('0.1'), ROUND_HALF_UP))  # Table 2 "k" precision
+    EXP = {'ours': ['8.5', '3.5', '53', '65'], 'orig.': ['62', '2.7', '564', '628']}
+    THEO = {'ours': ['5.3', '2.7', '32', '40'], 'orig.': ['39', '1.5', '494', '534']}
+    exp_cells = {p: [v[2], v[3], v[4], v[5]] for p, v in size.items()}
+    print(json.dumps({
+        'size_cells_matched': sum(a == b for p in APPENDIX for a, b in zip(size[p], APPENDIX[p])),
+        'exp_total_ours_bits': size['ours'][5], 'exp_total_orig_bits': size['orig.'][5],
+        'exp_reduction_pct': int((100 * (1 - Decimal(size['ours'][5]) / size['orig.'][5])).quantize(Decimal('1'), ROUND_HALF_UP)),
+        'table2_exp_cells_matched': sum(k(b) == w for p in EXP for b, w in zip(exp_cells[p], EXP[p])),
+        'theo_total_ours_bits': theo['ours'][3], 'theo_total_orig_bits': theo['orig.'][3],
+        'theo_reduction_pct': float((100 * (1 - Decimal(theo['ours'][3]) / theo['orig.'][3])).quantize(Decimal('0.01'), ROUND_HALF_UP)),
+        'table2_theo_cells_matched': sum(k(b) == w for p in THEO for b, w in zip(theo[p], THEO[p])),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-canonize/versions.log
+  - amber-canonize/run.log
+  - amber-canonize/run.stderr.log
+  - amber-canonize/size.txt
+  - amber-canonize/bench.csv
+  - amber-canonize/theo.log
+  - amber-canonize/metrics.json
+baseline:
+  captured_on: '2026-11-15'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    rustc 1.85.0, Python 3.12.3 numpy 2.3.5 pandas 2.3.3
+  outputs:
+  - path: amber-canonize/versions.log
+    sha256: d7f1126b458e5817a80953d95097d17ceda11838e064aabe74314e57795596f5
+  - path: amber-canonize/run.log
+    sha256: 11929cc4b49631adbe3586634c0f62a63a7de991eb2a1e23d2861db3fd7ee11a
+  - path: amber-canonize/run.stderr.log
+    sha256: 91f5cbccc8d6128df49b5c83e66a8477f9c8d50c63b9349c7c49f9d940aa1415
+  - path: amber-canonize/size.txt
+    sha256: bf7bef6719eab271ee5b1cc315ee811f0bda98ad373d90d0ced2ff86abb49f90
+  - path: amber-canonize/bench.csv
+    sha256: 4c94ad8bbfa0cf5424765d3e097cef41bee592ee6673ea27bb9c427e51d5fc61
+  - path: amber-canonize/theo.log
+    sha256: d68f34756f2565d3d89b961e4d60825a46cf9f077e876bd2113424bfe2517cc6
+  - path: amber-canonize/metrics.json
+    sha256: b5d4959449a90f83a5b161d3cbdfb52501ca9bce19b99ada73ee1a883d2c1b12
+  metrics:
+    size_cells_matched: 12
+    exp_total_ours_bits: 64512
+    exp_total_orig_bits: 628416
+    exp_reduction_pct: 90
+    table2_exp_cells_matched: 8
+    theo_total_ours_bits: 39753
+    theo_total_orig_bits: 534354
+    theo_reduction_pct: 92.56
+    table2_theo_cells_matched: 8
+  bit_for_bit_expected: false
