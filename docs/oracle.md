@@ -7,7 +7,8 @@ and re-executed on machine B by a person who only has the bundle, the producer's
 public key and these instructions.
 
 The entry is `entries/usenixsec2024-oideli.yaml` (ProVerif proofs, about a second of
-compute; the setup is what takes time). The artifact is a public git URL at a pinned
+compute; the setup is what takes time); section 4 also records a second entry,
+Terrapin, run the same way. The artifact is a public git URL at a pinned
 commit, so machine B clones it fresh — nothing from A's checkout is reused.
 
 ## 0. Setup, on every machine (A and B)
@@ -87,6 +88,17 @@ The re-run is itself a new signed bundle in `store/`, signed with B's key. Send
 | sbomit (NYU) | B | RHEL 10.2, x86_64 | `2a834edf2dcc` → `eab209068cf5` | REPRODUCED | verified | none; 4/4 identical, 2/2 same | 2026-11-12, repeated with #678 `5e5b5e1` after the Nov 11 review round; the old bundle still verifies |
 | sbomit (NYU) via S3 | B | RHEL 10.2, x86_64 | `4f98c67243fc` | REPRODUCED | verified from the bucket | none; 4/4 identical, 2/2 same | 2026-11-12, `--store s3` against a moto endpoint on the VM, rerun bundle written back to the bucket |
 | | B | | | | | | |
+
+### Second entry: Terrapin (`entries/usenixsec2024-terrapin-rogue-extension.yaml`)
+
+Same procedure, different artifact: an SSH server, a tampering proxy and a client on
+localhost, driven from the entry's `run.command` (venv, pinned wheels, about 25 s).
+Three claims, all measured from `amber-terrapin/metrics.json`.
+
+| machine | role | OS / CPU | run id (12) | verdict | verify | rerun drift | notes |
+|---|---|---|---|---|---|---|---|
+| darnit VM (NYU) | A | RHEL 10.2, x86_64 | `c9bfae3dbf36` | REPRODUCED | – | – | 2026-11-14, #678 `0987ddb`; 3/3 claims (1, 2, 1) |
+| sbomit (NYU) | B | RHEL 10.2, x86_64 | `c9bfae3dbf36` → `cbf3ed5e0202` | REPRODUCED | verified with A's key; a wrong key fails `signatures_verified` and `rerun` then executes nothing | none; 3/3 claims same, `metrics.json` identical, 4 logs changed (timestamps, ports) | 2026-11-14, 23 s; rerun bundle signed by B's key |
 
 If anything in this page did not work exactly as written, that is a finding too —
 open an issue on the corpus repo with the step and the output.
