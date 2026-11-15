@@ -1,0 +1,295 @@
+# Verified subset: artifact appendix E1 only (claims C1 and C2), the transparency analysis of the
+# 200-paper sample: the criteria availability split, per-paper availability, the transparency score
+# and Table 3. E2 / C3 (the R regression model, Table 4) is excluded; see resources.notes.
+id: usenixsec2025-transparency
+title: How Transparent is Usable Privacy and Security Research? A Meta-Study on Current Research Transparency Practices
+venue:
+  name: USENIX Security
+  year: 2025
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+artifact:
+  url: https://zenodo.org/records/15772699
+  clone: Download https://zenodo.org/api/records/15772699/files/artifacts.zip/content as artifacts.zip. Require SHA-256
+    9ca45f4795d0e9cd240320c83654b5fb1bc3352d144929d6b8bec179ab784971; `mkdir artifact && unzip -q artifacts.zip -d artifact`,
+    enter artifact/ and run run.command there, leaving ../artifacts.zip in place.
+  ref_type: doi
+  ref: 10.5281/zenodo.15772699
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix E1 is included: "(E1): [Transparency Analysis] [15 human-minutes + 0 compute-hour +
+    <1GB disk]: Process the result dataset obtained from the manual paper annotation and calculate
+    availabilities, transparency scores, etc." It runs transparency-score.ipynb (raw coding to
+    data/results.tsv) and then main.ipynb (output/numbers/numbers-generated.tex and
+    output/tables/criteria.tex, which is Table 3). Appendix A.2.3 (hardware dependencies): "None."
+    https://secartifacts.github.io/usenixsec2025/appendix-files/sec25cycle2ae-final15.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2025/results (cycle 2, id 15).
+
+    Excluded: E2 / C3, the exploratory regression on the transparency score (Table 4, Section 6.4.2).
+    It runs R inside the authors' Docker container ("15 human-minutes + 30 compute-minutes + 6GB disk"),
+    and this entry makes no claim about it. The sample-size estimation PDFs are results, not an experiment.
+
+    The appendix cites the concept DOI 10.5281/zenodo.15532982, which resolves to record 15772699 (pinned).
+    Compared with v1.2 (record 15705591), the notebooks, constants.py, tex.py and every analysis input are
+    byte-identical; only R files, the README and the CSV quoting of title/author in
+    data/gdrive/papers-2018-2023.csv differ, and no claim depends on them.
+
+    The appendix runs the notebooks with "Run All" in Jupyter inside a Poetry environment. The command
+    executes every code cell of both notebooks verbatim and in order instead (no Jupyter server) and
+    installs the versions from the artifact's own code/poetry.lock as hash-pinned cp312 wheels. All 18
+    hashes appear in that lock file. The bundled results.tsv, numbers-generated.tex and criteria.tex are
+    deleted before running, so only regenerated outputs are judged. The archived criteria.tex is kept
+    inside ../artifacts.zip as the Table 3 reference: before any run, all 52 criterion rows and 10 category
+    rows were checked cell by cell against paper Table 3 (p. 5973) and found identical.
+    Prerequisites: Linux x86_64, Python 3.12 with venv, unzip, cmp, sha256sum, network access to PyPI.
+
+    First capture and a second run from a fresh Zenodo download using the literal command below, on
+    2026-11-13: both exited 0, in 38 s and 35 s wall including the wheel install, with 236 MB peak RSS
+    (GNU time) under a 4 GiB address-space limit, and gave identical metrics. The regenerated
+    criteria.tex is byte-identical to the archived one, and numbers-generated.tex (887 values) differs from
+    the archived file only in its timestamp comment. results.tsv differs only in the iteration order of
+    Python set literals (string hash randomisation) and in CSV quoting of titles; its Transparency Score
+    column is identical. A separate stdlib-only validator re-derived every claim from
+    data/transparency-analysis.tsv, using the paper's Table 5 values and Section 6.3.1 construction rather
+    than the artifact code, and matched all seven numeric claims and the raw counts (12,851 codings:
+    5,662 available, 463 partially, 2,738 unavailable, 3,988 not applicable). The checker rejected
+    30 incomplete or invalid fixtures. A tampered source file or archive stops the command before any metric.
+    Between runs only three outputs change: the timestamp comment in numbers-generated.tex, the venv path in
+    main.stderr.log (seaborn UserWarnings only) and the set-literal order in results.tsv. The baseline is the
+    fresh literal-command run, not the authors' bundled outputs.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: criteria_available_pct
+  threshold: == 63.9
+  unit: percent of applicable criteria codings
+  source: Paper Section 5.3.1 (p. 5974) and Section 6.1 key finding (p. 5976); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: For every (paper, study, criterion) take the highest availability over all reporting locations,
+    applying codings of the pseudo-study 'Main' to each sub-study, and reduce the fine ratings to available / partially
+    available / unavailable (Table 5). Over all codings except 'does not apply', the share in each group, printed to one
+    decimal as in the paper. Regenerated numbers-generated.tex key crit.withoutDoesNotApply.01Available.perc.
+  expected_verdict: REPRODUCED
+  notes: '"63.9% of all criteria were available, 5.2% partially available, and 30.9% unavailable" (n = 8,863 applicable
+    codings over 200 papers and 52 criteria).'
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"criteria_available_pct": ([0-9.]+)'
+- metric: criteria_partially_available_pct
+  threshold: == 5.2
+  unit: percent of applicable criteria codings
+  source: Paper Section 5.3.1 (p. 5974) and Section 6.1 key finding (p. 5976); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: For every (paper, study, criterion) take the highest availability over all reporting locations,
+    applying codings of the pseudo-study 'Main' to each sub-study, and reduce the fine ratings to available / partially
+    available / unavailable (Table 5). Over all codings except 'does not apply', the share in each group, printed to one
+    decimal as in the paper. Regenerated numbers-generated.tex key crit.withoutDoesNotApply.02PartiallyAvailable.perc.
+  expected_verdict: REPRODUCED
+  notes: Same split as criteria_available_pct; the three shares sum to 100.
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"criteria_partially_available_pct": ([0-9.]+)'
+- metric: criteria_unavailable_pct
+  threshold: == 30.9
+  unit: percent of applicable criteria codings
+  source: Paper Section 5.3.1 (p. 5974) and Section 6.1 key finding (p. 5976); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: For every (paper, study, criterion) take the highest availability over all reporting locations,
+    applying codings of the pseudo-study 'Main' to each sub-study, and reduce the fine ratings to available / partially
+    available / unavailable (Table 5). Over all codings except 'does not apply', the share in each group, printed to one
+    decimal as in the paper. Regenerated numbers-generated.tex key crit.withoutDoesNotApply.06Unavailable.perc.
+  expected_verdict: REPRODUCED
+  notes: Same split as criteria_available_pct.
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"criteria_unavailable_pct": ([0-9.]+)'
+- metric: paper_availability_mean_pct
+  threshold: == 65.0
+  unit: percent
+  source: Paper Section 6.1 (p. 5974); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: Per paper, available codings divided by applicable codings (available + partially + unavailable),
+    with the same reduction as the split; the mean over the 200 papers, one decimal. Key paper.availability.availableRate.mean.perc.
+  expected_verdict: REPRODUCED
+  notes: '"On average, 65.0% of the papers'' applicable criteria are available (median: 65.6%, std: 11.2%)." The checker
+    also requires the median 65.6.'
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"paper_availability_mean_pct": ([0-9.]+)'
+- metric: paper_availability_std_pct
+  threshold: == 11.2
+  unit: percent
+  source: Paper Section 6.1 (p. 5974); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: Sample standard deviation (ddof = 1, pandas describe) of the per-paper availability rate over 200
+    papers, one decimal. Key paper.availability.availableRate.std.perc.
+  expected_verdict: REPRODUCED
+  notes: Same quantity as paper_availability_mean_pct.
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"paper_availability_std_pct": ([0-9.]+)'
+- metric: transparency_score_mean
+  threshold: == 0.677
+  unit: transparency score (0-1)
+  source: Paper Section 6.3.2 (p. 5976); artifact appendix C2 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: 'Transparency score per paper (Section 6.3.1): ignore criteria that do not apply; per criterion
+    take the highest availability per study, map it to the Table 5 value (1, 0.75, 0.5, 0) and average over studies; the
+    score is the mean over applicable criteria. Mean over 200 papers to three decimals. Key ts.TransparencyScore.mean.'
+  expected_verdict: REPRODUCED
+  notes: '"0.677 ± 0.103 (median = 0.681) that ranges from 0.281 to 0.885". The checker requires count 200, median 0.681,
+    min 0.281 and max 0.885.'
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"transparency_score_mean": ([0-9.]+)'
+- metric: transparency_score_std
+  threshold: == 0.103
+  unit: transparency score (0-1)
+  source: Paper Section 6.3.2 (p. 5976); artifact appendix C2 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: Sample standard deviation (ddof = 1) of the per-paper transparency score over 200 papers, three
+    decimals. Key ts.TransparencyScore.std.
+  expected_verdict: REPRODUCED
+  notes: Same quantity as transparency_score_mean.
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"transparency_score_std": ([0-9.]+)'
+- metric: table3_rows_matched
+  threshold: == 52
+  unit: Table 3 criterion rows
+  source: Paper Table 3 (p. 5973); artifact appendix C1 / E1. https://www.usenix.org/system/files/usenixsecurity25-klemmer.pdf
+  measurement_protocol: Regenerated output/tables/criteria.tex must have exactly 52 criterion rows in 10 categories; count
+    rows whose criterion name and four cells (n/a, available, partially, unavailable percentages) equal the same row of
+    the archived criteria.tex read from ../artifacts.zip. That archived table equals paper Table 3 cell by cell (checked
+    before the run).
+  expected_verdict: REPRODUCED
+  notes: Per-criterion availability for applicable studies and the share of studies a criterion did not apply to.
+  measure:
+    file: amber-transparency/metrics.json
+    regex: '"table3_rows_matched": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    echo '9ca45f4795d0e9cd240320c83654b5fb1bc3352d144929d6b8bec179ab784971  ../artifacts.zip' | sha256sum -c -
+    for f in code/literature-analysis/transparency-score.ipynb code/literature-analysis/main.ipynb code/literature-analysis/constants.py code/literature-analysis/tex.py data/transparency-analysis.tsv; do
+      unzip -p ../artifacts.zip "$f" | cmp - "$f"
+    done
+    mkdir amber-transparency
+    python3 -m venv amber-transparency/venv
+    cat > amber-transparency/requirements.txt <<'REQ'
+    contourpy==1.3.1 --hash=sha256:efa874e87e4a647fd2e4f514d5e91c7d493697127beb95e77d2f7561f6905bd9
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.55.3 --hash=sha256:b8d5e8916c0970fbc0f6f1bece0063363bb5857a7f170121a4493e31c3db3314
+    kiwisolver==1.4.8 --hash=sha256:cc978a80a0db3a66d25767b03688f1147a69e6237175c0f4ffffaaedf744055a
+    matplotlib==3.10.0 --hash=sha256:9b0558bae37f154fffda54d779a592bc97ca8b4701f1c710055b609a3bac44c8
+    numpy==2.2.1 --hash=sha256:5062dc1a4e32a10dc2b8b13cedd58988261416e811c1dc4dbdea4f57eea61b0d
+    packaging==24.2 --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759
+    pandas==2.2.3 --hash=sha256:fffb8ae78d8af97f849404f21411c95062db1496aeb3e56f146f0355c9989319
+    patsy==1.0.1 --hash=sha256:751fb38f9e97e62312e921a1954b81e1bb2bcda4f5eeabaf94db251ee791509c
+    pillow==11.1.0 --hash=sha256:7fdadc077553621911f27ce206ffcbec7d3f8d7b50e0da39f10997e8e2bb7f6a
+    pyparsing==3.2.1 --hash=sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2024.2 --hash=sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725
+    scipy==1.15.1 --hash=sha256:0fb57b30f0017d4afa5fe5f5b150b8f807618819287c21cbe51130de7ccdaed2
+    seaborn==0.13.2 --hash=sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    statsmodels==0.14.4 --hash=sha256:4bbb150620b53133d6cd1c5d14c28a4f85701e6c781d9b689b53681effaa655f
+    tzdata==2024.2 --hash=sha256:a48093786cdcde33cad18c2555e8532f34422074448fbc874186f0abd79565cd
+    REQ
+    amber-transparency/venv/bin/pip install --quiet --no-input --only-binary=:all: --require-hashes -r amber-transparency/requirements.txt
+    amber-transparency/venv/bin/python -c "import sys, numpy, pandas, scipy; print(sys.version.split()[0], numpy.__version__, pandas.__version__, scipy.__version__)" > amber-transparency/versions.log
+    grep -E '^3\.12\.[0-9]+ 2\.2\.1 2\.2\.3 1\.15\.1$' amber-transparency/versions.log
+    rm data/results.tsv output/numbers/numbers-generated.tex output/tables/criteria.tex  # judge only regenerated outputs
+    cd code/literature-analysis
+    for nb in transparency-score main; do  # every code cell of each notebook, verbatim and in order
+      MPLBACKEND=Agg MPLCONFIGDIR=../../amber-transparency/mpl ../../amber-transparency/venv/bin/python - "$nb.ipynb" > "../../amber-transparency/$nb.log" 2> "../../amber-transparency/$nb.stderr.log" <<'RUN'
+    import json, sys
+    ns = {'__name__': '__main__'}
+    for i, cell in enumerate(json.load(open(sys.argv[1]))['cells']):
+        if cell['cell_type'] == 'code':
+            exec(compile(''.join(cell['source']), '%s cell %d' % (sys.argv[1], i), 'exec'), ns)
+    print('completed', sys.argv[1])
+    RUN
+    done
+    cd ../..
+    python3 -I - <<'CHECK' > amber-transparency/metrics.json
+    import json, re, subprocess
+    for nb in ('transparency-score', 'main'):
+        assert open(f'amber-transparency/{nb}.log').read().endswith(f'completed {nb}.ipynb\n'), f'{nb} did not finish'
+        assert not re.search(r'Traceback|Error', open(f'amber-transparency/{nb}.stderr.log').read()), f'{nb} stderr has errors'
+    pairs = re.findall(r'^\\definevar\{([^}]+)\}\{([^}]*)\}$', open('output/numbers/numbers-generated.tex').read(), re.M)
+    v = dict(pairs)
+    assert len(v) == len(pairs), 'duplicate keys'
+    def num(key, pattern):
+        assert re.fullmatch(pattern, v[key]), f'{key} = {v[key]!r}'
+        return float(v[key].rstrip('%').rstrip('\\'))
+    pct, ts = (lambda k: num(k, r'[0-9]+\.[0-9]\\%')), (lambda k: num('ts.TransparencyScore.' + k, r'[01]\.[0-9]{3}'))
+    avail = lambda k: pct(f'paper.availability.availableRate.{k}.perc')
+    assert v['ts.TransparencyScore.count'] == '200.000' and avail('50percentile') == 65.6, 'coverage: 200 papers'
+    assert (ts('50percentile'), ts('min'), ts('max')) == (0.681, 0.281, 0.885), 'TS median/range (Section 6.3)'
+    CELL = r' & \\cellcolor\{[^}]+\}([0-9.]+)\\%'
+    ROW = r'^ +& ([^&]+) & .+ & ([0-9.]+)\\%' + CELL * 3 + r' \\\\$'
+    CAT = r'^ +\\multicolumn\{3\}\{l\}\{\\textbf\{([^}]+)\}\} & ---' + CELL * 3 + r' \\\\$'
+    new = open('output/tables/criteria.tex').read()
+    ref = subprocess.run(['unzip', '-p', '../artifacts.zip', 'output/tables/criteria.tex'], capture_output=True, text=True, check=True).stdout
+    assert len(re.findall(ROW, ref, re.M)) == 52 and len(re.findall(CAT, new, re.M)) == 10, 'Table 3 has 52 criteria in 10 categories'
+    assert len(re.findall(ROW, new, re.M)) == 52, 'regenerated Table 3 does not have 52 criterion rows'
+    print(json.dumps({
+        'criteria_available_pct': pct('crit.withoutDoesNotApply.01Available.perc'),
+        'criteria_partially_available_pct': pct('crit.withoutDoesNotApply.02PartiallyAvailable.perc'),
+        'criteria_unavailable_pct': pct('crit.withoutDoesNotApply.06Unavailable.perc'),
+        'paper_availability_mean_pct': avail('mean'),
+        'paper_availability_std_pct': avail('std'),
+        'transparency_score_mean': ts('mean'),
+        'transparency_score_std': ts('std'),
+        'table3_rows_matched': sum(a == b for a, b in zip(re.findall(ROW, new, re.M), re.findall(ROW, ref, re.M))),
+    }, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-transparency/versions.log
+  - amber-transparency/transparency-score.log
+  - amber-transparency/transparency-score.stderr.log
+  - amber-transparency/main.log
+  - amber-transparency/main.stderr.log
+  - data/results.tsv
+  - output/numbers/numbers-generated.tex
+  - output/tables/criteria.tex
+  - amber-transparency/metrics.json
+baseline:
+  captured_on: '2026-11-13'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic; Python
+    3.12.3, numpy 2.2.1, pandas 2.2.3, scipy 1.15.1
+  outputs:
+  - path: amber-transparency/versions.log
+    sha256: dcaf7b25fe904c0d35d9b422df2aa8973bd6ee6be4bba269768b43b6430c29ed
+  - path: amber-transparency/transparency-score.log
+    sha256: 6bc3b596a3cdb84ffd08029aded22e2124b5281002b37ebc441e358680e589a5
+  - path: amber-transparency/transparency-score.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-transparency/main.log
+    sha256: ca292e027f321dd12afcd13bc73383c5ee1fb10439d56c578c03558069f4cc6a
+  - path: amber-transparency/main.stderr.log
+    sha256: 497abdd5c350b438a87bba378fdf07284e8a718ead7005014fbf8d899ab1b8af
+  - path: data/results.tsv
+    sha256: bbf01ec727cc546100f8eed03bf588d39bb3e893802ac0feab4186667c31fb54
+  - path: output/numbers/numbers-generated.tex
+    sha256: db40e6ae0cb0e19e07b9b3d26f206e4d5afcc6b4d7bc0abc8c89b086c01269b0
+  - path: output/tables/criteria.tex
+    sha256: 9088987a3e2563df4b69bf9cc050813f6ab5e62e7265003839ce104892951080
+  - path: amber-transparency/metrics.json
+    sha256: 985b875ca6e2db91e5d7834dd8c53be910844f09495f833c9a6cb912dd4a29bc
+  metrics:
+    criteria_available_pct: 63.9
+    criteria_partially_available_pct: 5.2
+    criteria_unavailable_pct: 30.9
+    paper_availability_mean_pct: 65.0
+    paper_availability_std_pct: 11.2
+    transparency_score_mean: 0.677
+    transparency_score_std: 0.103
+    table3_rows_matched: 52
+  bit_for_bit_expected: false
