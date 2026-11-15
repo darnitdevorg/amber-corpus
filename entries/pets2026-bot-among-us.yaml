@@ -1,0 +1,332 @@
+# Verified subset: the quantitative survey analysis in analysis.ipynb (paper Sections 4.3-4.4 and
+# Appendix B): sample size, the before/after privacy-concern Wilcoxon test, the three Spearman tests and
+# the Discord-WhatsApp Tukey HSD comparisons. Figures and the qualitative coding (code.csv) are excluded.
+id: pets2026-bot-among-us
+title: 'Bot Among Us: Exploring User Awareness and Privacy Concerns About Chatbots in Group Chats'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0016.pdf
+  doi: 10.56553/popets-2026-0016
+artifact:
+  url: https://github.com/csienslab/bot-among-us/tree/df1622ecaa2bf46f83d8153361a8b2abf7725a99
+  clone: |
+    git clone https://github.com/csienslab/bot-among-us.git artifact, then
+    `git -C artifact checkout df1622ecaa2bf46f83d8153361a8b2abf7725a99` and run
+    run.command from inside artifact/.
+  ref_type: commit
+  ref: df1622ecaa2bf46f83d8153361a8b2abf7725a99
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Artifact appendix (ARTIFACT-APPENDIX.md at the pinned commit): "No special hardware
+    requirements", "Overall compute time: ~1 minute to execute all cells", "Disk space: ~3 GB
+    for the Docker image + <10 MB for repo, data, and generated figures". Its evaluation step is
+    "Kernel -> Restart & Run All" on analysis.ipynb. Badges: PoPETs 2026 proceedings page
+    ("Artifact: Available, Functional, Reproduced") and https://secartifacts.github.io/pets2026/results.
+    That secartifacts row links DOI 10.56553/popets-2026-0003, which is a different paper
+    (PriVA-C); this paper is popets-2026-0016.
+
+    Tested: every code cell of analysis.ipynb, run verbatim and in order in one Python namespace,
+    on the bundled anonymized survey CSV (N=374). Code cells are numbered from 0 in notebook
+    order, as the driver labels them. The only skipped cell is the final `%pip freeze` IPython
+    magic, whose exact text is asserted. The claims are the paper's reported statistics:
+    sample size, the before/after privacy-concern percentages and Wilcoxon signed-rank test
+    (Sec. 4.4.1, Table 7), the significance pattern of the three Spearman tests (Sec. 4.3.2/4.4.1,
+    Table 6) and the Discord-WhatsApp Tukey HSD p-values (App. B.3). Not tested: figures, the
+    chi-square tests (the paper reports no statistic), and the qualitative coding in code.csv,
+    which the appendix says is "not included in the analysis script".
+
+    Native, no Docker. The appendix suggests jupyter/datascience-notebook:latest; run.command
+    instead builds a local venv with pip --require-hashes from the wheels below. The top-level
+    versions equal the authors' own `%pip freeze` (last notebook cell) and the paper's "All
+    calculations were conducted using Scipy 1.11.3": numpy 1.26.4, pandas 2.3.1, scipy 1.11.3,
+    statsmodels 0.14.0, patsy 0.5.3, matplotlib 3.8.0, seaborn 0.13.0, altair 5.1.2,
+    ipython 8.16.1. Transitive dependencies are the cp312 wheels pip resolved on 2026-11-13.
+    The authors ran Python 3.11.6 on aarch64; this run used Python 3.12.3 on x86_64.
+    IPython is installed so that code cell 31's display(tukey_result.summary()) prints the Tukey
+    tables to stdout; outside a kernel IPython's display() prints the object. The cells write
+    their figures into the checkout's figures/ directory, as the notebook does.
+
+    Prerequisites: Linux x86_64, git, Python 3.12 with venv, network access to PyPI.
+    network_required covers git and PyPI acquisition only; the analysis itself is offline.
+    No random seeds, resampling or timing apply. The "95% bootstrap CI" printed by code cell 40
+    is a deterministic percentile interval of the paired differences ([-2, 3], as in Sec. 4.4.1).
+
+    Paper-internal inconsistency, recorded before the run: Table 6 gives the message-metadata
+    and group-metadata rows as rho 0.0389 / p 0.4527 and 0.1563 / p 0.0024, but Sec. 4.4.1 gives
+    0.079 (p = 0.13) and 0.15 (p < 0.01). The rerun gives 0.0786 / 0.1292 and 0.1454 / 0.0048,
+    matching the text. The claim uses the significance pattern (n.s., n.s., significant), which
+    Table 6 and the text share. The message-content row (-0.0577, p 0.2654) agrees in both.
+    The paper prints effect size r = 0.308; the notebook gives -0.30877, so 0.308 is a
+    truncation. It is not claimed.
+
+    First run on 2026-11-13 (clean clone, Python 3.12.3 venv): exit 0 in 46.3 s wall,
+    275680 KiB GNU time maximum RSS under a 4 GiB address-space cap; all 73 code cells ran.
+    The regenerated stdout equals the authors' saved notebook stdout except that the Tukey
+    tables appear as text and one Spearman p-value differs in its last digit
+    (0.00484501460104667 vs 0.0048450146010466716). A separate validator recomputed the
+    claims from the raw CSV: counts and percentages with the csv module, Wilcoxon and
+    Spearman from ranks, and Tukey HSD with scipy.stats.tukey_hsd instead of statsmodels.
+    It reused only the authors' grading key (code cells 0-24) for the QID28-30 scores, and it
+    agrees on all nine claims. It also reproduces all nine App. B.3 platform means (58/45/36%,
+    3.36/3.33/2.95, 3.29/2.93/2.60), which the notebook does not print as text.
+
+    The literal run.command, parsed from this YAML, passed from a second fresh clone on
+    2026-11-13 with no pip cache: exit 0 in 55.3 s wall including PyPI downloads, 275040 KiB
+    maximum RSS, about 541 MB on disk with the venv. versions.log, run.log, run.stderr.log and
+    metrics.json were byte-identical to the first run. Every measure regex replays to
+    REPRODUCED. The checker rejected 25 incomplete or invalid fixtures: missing, empty or
+    truncated logs, a missing completion marker, Traceback or Error on stderr, altered
+    platform counts, removed, reordered or altered Tukey rows or tables, altered or missing
+    Spearman results, disagreeing Wilcoxon runs, an altered interval, and altered or
+    duplicated Likert tables. A wrong claim value with intact structure is written to
+    metrics.json and judged NOT_REPRODUCED. A wrong commit or an edited input file stops the
+    command before amber-bot/ is created; a different scipy version fails the versions check.
+    The baseline below is from the fresh literal-command run.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: valid_participants
+  threshold: == 374
+  unit: participants
+  source: Paper Sections 3.3 and 4 ("We collected valid responses from 374 participants"),
+    https://petsymposium.org/popets/2026/popets-2026-0016.pdf
+  measurement_protocol: 'Sum of the per-platform counts printed by the notebook (code cell 8, QID5 value_counts)
+    for the bundled "Chatbot User Study Cleaned.csv". The checker also requires the paper''s split WhatsApp 244,
+    Discord 83, Telegram 40, Viber 6, LINE 1 (Sec. 4).'
+  expected_verdict: REPRODUCED
+  notes: Establishes that the released dataset is the paper's full valid sample, not a subset.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"valid_participants": ([0-9]+)'
+- metric: concern_before_pct
+  threshold: == 64.3
+  unit: percent of respondents (1 dp)
+  source: Paper Section 4.4.1 ("Initially, 64.3% somewhat or strongly agreed with the statement")
+  measurement_protocol: 'Discord users excluded (n = 291, as in Sec. 4.4.1). Somewhat agree + Strongly agree share of
+    QID83 (the privacy-concern statement asked before the permissions are shown), from the percentage table the
+    notebook prints (code cell 50), rounded to 1 dp. The checker requires the printed counts to sum to 291 and the
+    Discord-included table (n = 374) to give 60.4 -> 68.2, as App. B.4 states.'
+  expected_verdict: REPRODUCED
+  notes: Before half of the paired privacy-concern comparison.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"concern_before_pct": ([0-9.]+)'
+- metric: concern_after_pct
+  threshold: == 73.2
+  unit: percent of respondents (1 dp)
+  source: Paper Section 4.4.1 ("Afterward, this rose to 73.2%")
+  measurement_protocol: 'Same table and population as concern_before_pct, for QID33 (the same statement asked after
+    the chatbot permissions are shown), rounded to 1 dp. Strongly agree must also rise from 27.1 to 37.5 (Sec. 4.4.1).'
+  expected_verdict: REPRODUCED
+  notes: After half of the paired privacy-concern comparison.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"concern_after_pct": ([0-9.]+)'
+- metric: wilcoxon_statistic
+  threshold: == 2261.5
+  unit: Wilcoxon W
+  source: Paper Appendix B.6, Table 7 ("Test Statistic 2261.5")
+  measurement_protocol: 'scipy.stats.wilcoxon on the Likert-coded (1-5) QID83 vs QID33 pairs for the 291 non-Discord
+    respondents, as printed by code cell 38 (and identically by code cell 40). Default zero_method, two-sided.'
+  expected_verdict: REPRODUCED
+  notes: The test behind the paper's claim that concern rises after learning chatbot permissions.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"wilcoxon_statistic": ([0-9.]+)'
+- metric: wilcoxon_p
+  threshold: < 0.001
+  unit: p-value
+  source: Paper Section 4.4.1 ("A Wilcoxon signed-rank test showed that the change in concerns exists (p < 0.001")
+  measurement_protocol: 'p-value printed with wilcoxon_statistic (code cell 38). The Discord-included test (code cell 51)
+    must also give p < 0.001 (App. B.4).'
+  expected_verdict: REPRODUCED
+  notes: Significance of the before/after change at the paper's alpha (0.05, two-tailed); the paper reports p < 0.001.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"wilcoxon_p": ([0-9.e-]+)'
+- metric: spearman_significant_questions
+  threshold: == 1
+  unit: significant Spearman tests (of 3)
+  source: Paper Sections 4.3.2/4.4.1 and Appendix B.6 Table 6 (n.s., n.s., significant at p < 0.05)
+  measurement_protocol: 'Spearman correlation of self-reported knowledge (QID27, coded 1-5) with the graded scores for
+    message type (QID28), message metadata (QID29) and group metadata (QID30), all 374 respondents, as printed by
+    code cells 34-36. Count of tests with p < 0.05. The checker also requires the Sec. 4.4.1 text values: rho -0.058
+    (p 0.27), 0.079 (p 0.13), 0.15 (p < 0.01).'
+  expected_verdict: REPRODUCED
+  notes: Self-reported knowledge does not track actual understanding, except for group metadata. Table 6 rows 2-3
+    print different coefficients from the text; see resources.notes.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"spearman_significant_questions": ([0-9]+)'
+- metric: tukey_discord_whatsapp_q1_p
+  threshold: == 0.0011
+  unit: Tukey HSD adjusted p-value (4 dp)
+  source: Paper Appendix B.3 ("the difference between Discord and WhatsApp is statistically significant (p = 0.0011)")
+  measurement_protocol: 'statsmodels MultiComparison(...).tukeyhsd(alpha=0.05) on the QID28 (message type) scores of
+    the WhatsApp, Discord and Telegram respondents (code cell 31); p-adj of the Discord-WhatsApp row of the printed
+    table. Each of the three tables must have exactly the pairs Discord-Telegram, Discord-WhatsApp, Telegram-WhatsApp,
+    and Discord-Telegram here must be 0.3575 (App. B.3).'
+  expected_verdict: REPRODUCED
+  notes: Discord users, whose platform officially supports chatbots, understand chatbot message access better than
+    WhatsApp users.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"tukey_discord_whatsapp_q1_p": ([0-9.]+)'
+- metric: tukey_discord_whatsapp_q2_p
+  threshold: == 0.0372
+  unit: Tukey HSD adjusted p-value (4 dp)
+  source: Paper Appendix B.3 ("The only statistically significant difference was between Discord and WhatsApp (p = 0.0372)")
+  measurement_protocol: As tukey_discord_whatsapp_q1_p, for the QID29 (message metadata) scores (second printed table).
+  expected_verdict: REPRODUCED
+  notes: Same platform difference for message metadata.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"tukey_discord_whatsapp_q2_p": ([0-9.]+)'
+- metric: tukey_discord_whatsapp_q3_p
+  threshold: < 0.0001
+  unit: Tukey HSD adjusted p-value (4 dp)
+  source: Paper Appendix B.3 ("only the difference between Discord and WhatsApp reached statistical significance (p < 0.0001)")
+  measurement_protocol: As tukey_discord_whatsapp_q1_p, for the QID30 (group metadata) scores (third printed table).
+    statsmodels prints p-adj to 4 dp, so a value below 0.00005 reads 0.0.
+  expected_verdict: REPRODUCED
+  notes: Same platform difference for group metadata.
+  measure:
+    file: amber-bot/metrics.json
+    regex: '"tukey_discord_whatsapp_q3_p": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = df1622ecaa2bf46f83d8153361a8b2abf7725a99
+    git diff --quiet HEAD -- analysis.ipynb 'Chatbot User Study Cleaned.csv' question_id_mapping.csv
+    mkdir amber-bot
+    python3 -m venv amber-bot/venv
+    cat > amber-bot/requirements.txt <<'REQ'
+    altair==5.1.2 --hash=sha256:7219708ec33c152e53145485040f428954ed15fd09b2a2d89e543e6d111dae7f
+    asttokens==3.0.2 --hash=sha256:9da13157f5b28becde0bd374fc677dcd3c290614264eff096f167c469cd9f933
+    attrs==26.1.0 --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
+    backcall==0.2.0 --hash=sha256:fbbce6a29f263178a1f7915c1940bde0ec2b2a967566fe1c65c1dfb7422bd255
+    contourpy==1.3.3 --hash=sha256:4d00e655fcef08aba35ec9610536bfe90267d7ab5ba944f7032549c55a146da1
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    decorator==5.3.1 --hash=sha256:f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c
+    executing==2.3.0 --hash=sha256:736e859c9f8701f11fcf516856f26f562e04776387824b43a35a1dfe21c84122
+    fonttools==4.68.0 --hash=sha256:3edce69ecdefa73ab1041901ca22eefed6ebb93a77bc77e889d940479f25bf7d
+    ipython==8.16.1 --hash=sha256:0852469d4d579d9cd613c220af7bf0c9cc251813e12be647cb9d463939db9b1e
+    jedi==0.20.1 --hash=sha256:0fb16d86c4a4c73c37ba518c77419975e30fcc620658a8d14fbb5720cdd34142
+    jinja2==3.1.6 --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+    jsonschema==4.26.0 --hash=sha256:d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce
+    jsonschema-specifications==2025.9.1 --hash=sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe
+    kiwisolver==1.5.1 --hash=sha256:34633ecf50d16187ab8e5528b7a2530f2feb4e23f300db4672538b51cfc5cd38
+    markupsafe==3.0.4 --hash=sha256:8e124f974786f831d6043728e38296969d3579db8896fe004682f5758e613581
+    matplotlib==3.8.0 --hash=sha256:dae97fdd6996b3a25da8ee43e3fc734fff502f396801063c6b76c20b56683196
+    matplotlib-inline==0.2.2 --hash=sha256:3c821cf1c209f59fb2d2d64abbf5b23b67bcb2210d663f9918dd851c6da1fcf6
+    numpy==1.26.4 --hash=sha256:675d61ffbfa78604709862923189bad94014bef562cc35cf61d3a07bba02a7ed
+    packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    pandas==2.3.1 --hash=sha256:7dcb79bf373a47d2a40cf7232928eb7540155abbc460925c2c96d2d30b006eb4
+    parso==0.8.7 --hash=sha256:a8926eb2a1b915486941fdbd31e86a4baf88fe8c210f25f2f35ecec5b574ca1c
+    patsy==0.5.3 --hash=sha256:7eb5349754ed6aa982af81f636479b1b8db9d5b1a6e957a6016ec0534b5c86b7
+    pexpect==4.9.0 --hash=sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523
+    pickleshare==0.7.5 --hash=sha256:9649af414d74d4df115d5d718f82acb59c9d418196b7b4290ed47a12ce62df56
+    pillow==13.0.0 --hash=sha256:42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
+    prompt-toolkit==3.0.53 --hash=sha256:01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2
+    ptyprocess==0.7.0 --hash=sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35
+    pure-eval==0.2.4 --hash=sha256:96cae060a313cfaad51bb761278bfb0e62dc0248d9315a81173752dc546cd37a
+    pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9
+    pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+    python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+    pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+    referencing==0.37.0 --hash=sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231
+    rpds-py==2026.9.1 --hash=sha256:addeda51556dac7c1a2f14cda62db8b621cd12afba3091d03a96c72932387eab
+    scipy==1.11.3 --hash=sha256:d2f6dee6cbb0e263b8142ed587bc93e3ed5e777f1f75448d24fb923d9fd4dce6
+    seaborn==0.13.0 --hash=sha256:70d740828c48de0f402bb17234e475eda687e3c65f4383ea25d0cc4728f7772e
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    stack-data==0.6.3 --hash=sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695
+    statsmodels==0.14.0 --hash=sha256:8be53cdeb82f49c4cb0fda6d7eeeb2d67dbd50179b3e1033510e061863720d93
+    toolz==1.2.0 --hash=sha256:890f820b1cb8152785aaf9386d8707770110809035800985ca65cb24ce1120ef
+    traitlets==5.16.1 --hash=sha256:f775618166caa0396c8e337099240f2bd3e5e917d203b2e6fbe21a58d3cb1f6b
+    typing-extensions==4.16.0 --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+    tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+    wcwidth==0.9.4 --hash=sha256:b185c8b927b23af2721be1783499d1cfa5c028b098b0858951b4ae224477f1c2
+    REQ
+    amber-bot/venv/bin/pip install --quiet --no-input --only-binary=:all: --require-hashes -r amber-bot/requirements.txt
+    amber-bot/venv/bin/python -c "import numpy, pandas, scipy, statsmodels, IPython; print('numpy', numpy.__version__, 'pandas', pandas.__version__, 'scipy', scipy.__version__, 'statsmodels', statsmodels.__version__, 'ipython', IPython.__version__)" > amber-bot/versions.log
+    grep -Fx 'numpy 1.26.4 pandas 2.3.1 scipy 1.11.3 statsmodels 0.14.0 ipython 8.16.1' amber-bot/versions.log
+    MPLBACKEND=Agg MPLCONFIGDIR=amber-bot/mpl amber-bot/venv/bin/python - > amber-bot/run.log 2> amber-bot/run.stderr.log <<'RUN'
+    import json
+    code = [''.join(c['source']) for c in json.load(open('analysis.ipynb'))['cells'] if c['cell_type'] == 'code']
+    assert code[-2:] == ['%pip freeze', ''], 'unexpected final cells'
+    ns = {'__name__': '__main__'}
+    for i, src in enumerate(code[:-2]):  # every code cell before the %pip freeze magic, verbatim and in order
+        exec(compile(src, 'analysis.ipynb code cell %d' % i, 'exec'), ns)
+    print('AMBER-RUN-COMPLETE', len(code) - 2)
+    RUN
+    python3 -I - <<'CHECK' > amber-bot/metrics.json
+    import json, re
+    log, err = open('amber-bot/run.log').read(), open('amber-bot/run.stderr.log').read()
+    assert log.endswith('AMBER-RUN-COMPLETE 73\n') and not re.search(r'Traceback|Error', err), 'incomplete run'
+    n = dict(re.findall(r'^(\w+) +(\d+)$', re.search(r'^QID5\n(.*?)\nName: count', log, re.S | re.M)[1], re.M))
+    assert n == {'WhatsApp': '244', 'Discord': '83', 'Telegram': '40', 'Viber': '6', 'LINE': '1'}, 'platform counts'
+    tukey = []
+    for part in log.split('Multiple Comparison of Means - Tukey HSD, FWER=0.05')[1:]:
+        rows = re.findall(r'^ ?(\w+) +(\w+) +-?[\d.]+ +([\d.]+) +-?[\d.]+ +-?[\d.]+ +(?:True|False)$', part.split('\n-----', 2)[1], re.M)
+        assert [r[:2] for r in rows] == [('Discord', 'Telegram'), ('Discord', 'WhatsApp'), ('Telegram', 'WhatsApp')], 'Tukey pairs'
+        tukey.append({r[0] + '-' + r[1]: float(r[2]) for r in rows})
+    assert len(tukey) == 3 and tukey[0]['Discord-Telegram'] == 0.3575, 'three Tukey tables'
+    sp = [(float(r), float(p)) for r, p in re.findall(r'Spearman’s correlation coefficient: (\S+)\np-value: (\S+)\n', log)]
+    assert len(sp) == 3 and [round(r, 3) for r, _ in sp[:2]] == [-0.058, 0.079] and [round(p, 2) for _, p in sp[:2]] == [0.27, 0.13], 'Spearman'
+    assert round(sp[2][0], 2) == 0.15 and sp[2][1] < 0.01, 'Spearman group metadata'
+    wx = [(float(w), float(p)) for w, p in re.findall(r'Wilcoxon signed-rank test statistic: (\S+)\np-value: (\S+)\n', log)]
+    assert len(wx) == 3 and wx[0] == wx[1] and wx[2][1] < 0.001, 'Wilcoxon (n=291 twice, n=374 once)'
+    assert log.count('95% bootstrap CI for median difference: [-2.000, 3.000]\n') == 1, 'paired-difference interval'
+    tables = [dict((l[:27].strip(), (float(l.split()[-2]), float(l.split()[-1]))) for l in b.splitlines())
+              for b in re.findall(r'^ +QID33 +QID83\n((?:.+\n){5})', log, re.M)]
+    assert len(tables) == 4 and [round(sum(v[1] for v in t.values())) for t in tables] == [291, 100, 374, 100], 'Likert tables'
+    agree = lambda t, i: round(t['Somewhat agree'][i] + t['Strongly agree'][i], 1)
+    assert [round(tables[1]['Strongly agree'][i], 1) for i in (1, 0)] == [27.1, 37.5] and [agree(tables[3], i) for i in (1, 0)] == [60.4, 68.2], 'coverage %'
+    print(json.dumps({'valid_participants': sum(map(int, n.values())), 'concern_before_pct': agree(tables[1], 1), 'concern_after_pct': agree(tables[1], 0),
+                      'wilcoxon_statistic': wx[0][0], 'wilcoxon_p': wx[0][1], 'spearman_significant_questions': sum(p < 0.05 for _, p in sp),
+                      'tukey_discord_whatsapp_q1_p': tukey[0]['Discord-WhatsApp'], 'tukey_discord_whatsapp_q2_p': tukey[1]['Discord-WhatsApp'],
+                      'tukey_discord_whatsapp_q3_p': tukey[2]['Discord-WhatsApp']}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-bot/versions.log
+  - amber-bot/run.log
+  - amber-bot/run.stderr.log
+  - amber-bot/metrics.json
+baseline:
+  captured_on: '2026-11-13'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; numpy 1.26.4, pandas 2.3.1, scipy 1.11.3, statsmodels 0.14.0
+    in a local venv
+  outputs:
+  - path: amber-bot/versions.log
+    sha256: 5563772616f9088f43501218f8fea6a4352d8759abfd47bd11697903e8e97a81
+  - path: amber-bot/run.log
+    sha256: 4ceab627aac94f3dd6da15d75efcf51e23a4d7c2c05f1a4006257505f45277d8
+  - path: amber-bot/run.stderr.log
+    sha256: 11514322611674540f81c4b11c3d0cf0d57858a6b869fa1c24021e801c517cba
+  - path: amber-bot/metrics.json
+    sha256: 0d7bb77181cae5f1e51a555f6b8dbdd42b2f1a584d2ade8818805b3355adadc2
+  metrics:
+    valid_participants: 374
+    concern_before_pct: 64.3
+    concern_after_pct: 73.2
+    wilcoxon_statistic: 2261.5
+    wilcoxon_p: 0.00046460740249200415
+    spearman_significant_questions: 1
+    tukey_discord_whatsapp_q1_p: 0.0011
+    tukey_discord_whatsapp_q2_p: 0.0372
+    tukey_discord_whatsapp_q3_p: 0.0
+  bit_for_bit_expected: false
