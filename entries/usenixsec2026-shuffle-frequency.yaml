@@ -1,0 +1,308 @@
+# Verified subset: artifact appendix C1 / E1 only, the small-domain accuracy and
+# communication comparison (paper Table 2: 3 datasets x 6 protocols x 6 privacy
+# levels) and the Section 6 statements derived from it. E2 (Table 3, AOL) and
+# E3 (Figure 2 poisoning curves) are excluded; see resources.notes.
+id: usenixsec2026-shuffle-frequency
+title: High-Accuracy, Poisoning-Resilient Frequency Estimation in the Shuffle Model
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity26-wu-shaoqiang.pdf
+artifact:
+  url: https://zenodo.org/records/21836332
+  clone: Download https://zenodo.org/api/records/21836332/files/usenixsec2026-1832-artifact.zip/content as
+    artifact.zip. Require SHA-256 74f45f9ef9ffa603f529c5d9ee04aecc2304b29af523f406f1aaf6443631d487;
+    `unzip -q artifact.zip`, enter usenixsec2026-1832-artifact/ and run run.command there, leaving
+    ../artifact.zip in place.
+  ref_type: doi
+  ref: 10.5281/zenodo.21836332
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 60
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix C1 / E1 is included: "(E1): Small-domain MAE [~5 human-minutes
+    + 30-60 compute-minutes full, or ~5 s with --quick; <1 GB disk]. How to:
+    Reproduce paper Table 2 (Claim C1)." The full run (not --quick) is used.
+    Appendix A.2.3: "the workloads are single-threaded with a resident-memory
+    footprint of at most 4 GB. No GPU, accelerators, or specialized hardware".
+    https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle2ae-final167.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2026/results (cycle 2, id 167).
+
+    Excluded: E2 (Table 3, AOL, 2-3 compute-hours) and E3 (Figure 2 / Appendix
+    E.2 poisoning curves, ~5 compute-hours, a figure with no numeric threshold).
+    This entry makes no claim about those, nor about C2/C3.
+
+    Version: the AEC results row links Zenodo v1 (record 20405419, numpy 1.26.4
+    pins); the appendix names the concept DOI 10.5281/zenodo.20405418 and the
+    numpy 2.4.4 / scipy 1.17.1 pins, which first appear in v2 (20740245). This
+    entry pins the current version, 21836332. Compared with v2 it only reorders
+    the CSV columns and rows (table2.py) and converts CRLF to LF (baselines.py,
+    __init__.py, city.csv, fire.csv; otherwise byte-identical); small_domain.py and
+    occupation.csv are unchanged, and the bundled Table 2 values are identical in
+    v1, v2 and v3.
+
+    Native, no conda or Docker: a Python 3 venv with hash-pinned wheels for the
+    artifact's own pins (requirements.txt: numpy==2.4.4, scipy==1.17.1). Python
+    3.12.3 was tested; the authors used 3.14. All randomness is seeded in
+    table2.py. The command checks the script, protocol modules and inputs against
+    the archive and deletes the bundled results/table2_with_p95.csv before running,
+    so only the regenerated table is judged. network_required covers the Zenodo
+    archive and PyPI wheels; the experiment is offline.
+
+    Appendix A.4.2: the recomputed numbers match "bit-for-bit on the pinned
+    NumPy/SciPy versions (the CSUZZ and CZ columns of Table 2 to within one or
+    two in the last printed digit, which affects no comparison in the paper)".
+    That exception is the only tolerance used, and only for those two columns.
+
+    First capture on 2026-11-14: exit 0, 124 s wall, 147432 KiB peak RSS (GNU
+    time), under a 3 GiB memory cap with swap disabled. The appendix's 30-60
+    minutes is for a 2022 laptop; all 108 rows of the full 100-trial grid ran.
+    Against the authors' bundled CSV, BC and GKMP rows are byte-identical, LWY
+    and Ours differ only at ~1e-14 relative (floating-point last bits), and
+    CSUZZ/CZ MAE differ by up to 2.4%, the documented separate-run exception.
+    All 216 Table 2 cells match at printed precision except CSUZZ/CZ MAE, which
+    stay within the documented two digits.
+
+    An independent validator re-extracted Table 2 from the paper PDF text
+    instead of using the checker's transcription, read the regenerated values from
+    the artifact's stdout table instead of the CSV, and re-derived all eight
+    metrics with identical results. The only stdout/CSV disagreement is a
+    double-rounding edge: Occupation GKMP eps=2 MAE 0.85461 prints as 0.85 in
+    stdout but rounds to 0.9 as in the paper. It also cross-checked CSUZZ and BC
+    MAE against closed-form Gaussian expectations from the cited papers' noise
+    formulas (Cheu et al. 2019; Balcer and Cheu 2020): all 36 noise rates q match
+    the formulas, BC message counts match 1 + d*q to 6e-6, and 35 of 36 MAEs are
+    within 3 standard errors. The other, Occupation BC eps=0.25, is at -3.03 SE
+    (135.57 vs 136.93), within the 3.19 Bonferroni bound for 36 tests; it is
+    byte-identical to the authors' value. The checker rejected 27 incomplete or
+    invalid fixtures (missing or empty files, dropped, extra, duplicated or
+    relabelled rows, renamed or missing columns, NaN/inf/non-numeric values,
+    altered cells, CSUZZ/CZ off by 3, Ours pushed above LWY, msgs 7.6,
+    tracebacks) and accepted only the genuine output.
+
+    The literal run.command passed from a second, fresh Zenodo download and
+    extraction on 2026-11-14: exit 0, 137 s wall including venv setup, 148548 KiB
+    peak RSS, about 226 MB workspace (archive, extraction, venv, captures). Same
+    eight metrics; validator and all 27 fixtures re-confirmed. The regenerated CSV,
+    metrics.json and the (empty) stderr were byte-identical to the first capture;
+    stdout differs only in per-row timings and the absolute path of the "Saved"
+    line. A tampered table2.py and a corrupted archive each stopped the command
+    before any metric was written. Baseline hashes below are from this fresh run.
+
+    Prerequisites: Linux x86_64, POSIX shell, Python 3 (3.12 for the pinned cp312
+    wheels) with venv, sha256sum, unzip, cmp, and network access to Zenodo and PyPI.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: table2_exact_cells_matched
+  threshold: == 144
+  unit: table cells
+  source: Paper Section 6 Table 2 (published p.1319); artifact appendix C1/E1.
+  measurement_protocol: 'Run the unmodified reproduce/table2.py (full grid: City d=40, Fire d=272, Occupation
+    d=529; eps in {0.25, 0.5, 0.75, 1, 2, 3}; delta = 1e-6; 100 trials) after deleting the bundled
+    results/table2_with_p95.csv. The regenerated CSV must have the exact header and exactly the 108
+    (dataset, eps, protocol) rows, all finite. For the BC, GKMP, LWY and Ours rows, count MAE and Msgs/user
+    cells equal to Table 2 at its printed precision: MAE as integers for BC and 1 dp for GKMP, LWY and Ours;
+    msgs as integers for BC, 1 dp for Ours, 2 dp for LWY, and GKMP in the k/M notation (1 dp below 10k,
+    integer k below 1M, 1 dp M above). No tolerance. A Traceback or Error in either log fails the checker.'
+  expected_verdict: REPRODUCED
+  notes: The appendix states these four columns reproduce bit-for-bit on the pinned versions.
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"table2_exact_cells_matched": ([0-9]+)'
+- metric: table2_csuzz_cz_cells_within_2
+  threshold: == 72
+  unit: table cells
+  source: Paper Table 2 (p.1319); artifact appendix A.4.2 ("the CSUZZ and CZ columns of Table 2 to within one
+    or two in the last printed digit").
+  measurement_protocol: 'Same run and parse as table2_exact_cells_matched. For the CSUZZ and CZ rows, count MAE
+    and Msgs/user cells whose regenerated value, rounded to Table 2''s printed integer, is within 2 of the printed
+    value. The tolerance is the authors'' documented one, used for these two columns only.'
+  expected_verdict: REPRODUCED
+  notes: Msgs/user is deterministic for both (d and 2), so only MAE can vary.
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"table2_csuzz_cz_cells_within_2": ([0-9]+)'
+- metric: baseline_reduction_in_range
+  threshold: == 54
+  unit: comparisons
+  source: 'Paper Section 6, "Small-domain evaluation" (p.1319): "Across all three datasets and all reported privacy
+    levels, the MAE reduction is between 4.2x and 13.2x" (over CSUZZ, BC and CZ).'
+  measurement_protocol: 'From the regenerated CSV with MAE rounded to Table 2 precision (the paper derives its prose
+    numbers from the rounded table, see the eps = 1 claims), compute baseline MAE / Ours MAE for each dataset,
+    eps and baseline in {CSUZZ, BC, CZ} (3 x 6 x 3 = 54) and count ratios with 4.2 <= ratio <= 13.2.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"baseline_reduction_in_range": ([0-9]+)'
+- metric: ours_beats_lwy_eps_ge_half
+  threshold: == 15
+  unit: settings
+  source: 'Paper Section 6 (p.1319): P^H1 "improves over LWY at all but eps = 0.25, where the two achieve essentially
+    equal MAE"; appendix C1.'
+  measurement_protocol: 'From the regenerated CSV with MAE rounded to Table 2 precision, count (dataset, eps) with eps
+    in {0.5, 0.75, 1, 2, 3} where Ours MAE < LWY MAE. All 3 x 5 = 15 must hold. eps = 0.25 ("essentially
+    equal") has no numeric threshold and is not judged.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"ours_beats_lwy_eps_ge_half": ([0-9]+)'
+- metric: lwy_reduction_eps1_city_pct
+  threshold: == 10.0
+  unit: percent
+  source: 'Paper Section 6 (p.1319): "At eps = 1, it reduces MAE relative to LWY by 10.0% on City, 10.2% on Fire,
+    and 8.3% on Occupation."'
+  measurement_protocol: 'From the regenerated CSV, round City eps = 1 MAE of LWY and Ours to 1 dp as in Table 2, then
+    report 100 * (LWY - Ours) / LWY rounded to 1 dp. The paper''s three percentages follow from the rounded table
+    values (6.0 and 5.4 give 10.0%), not the unrounded means (which give 9.04%).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"lwy_reduction_eps1_city_pct": ([0-9.]+)'
+- metric: lwy_reduction_eps1_fire_pct
+  threshold: == 10.2
+  unit: percent
+  source: Paper Section 6 (p.1319), as for lwy_reduction_eps1_city_pct.
+  measurement_protocol: Same as lwy_reduction_eps1_city_pct, for Fire.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"lwy_reduction_eps1_fire_pct": ([0-9.]+)'
+- metric: lwy_reduction_eps1_occupation_pct
+  threshold: == 8.3
+  unit: percent
+  source: Paper Section 6 (p.1319), as for lwy_reduction_eps1_city_pct.
+  measurement_protocol: Same as lwy_reduction_eps1_city_pct, for Occupation.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"lwy_reduction_eps1_occupation_pct": ([0-9.]+)'
+- metric: ours_max_msgs_per_user
+  threshold: == 7.5
+  unit: messages per user
+  source: 'Paper Section 6 (p.1319): P^H1 "uses 1.5 messages per user on all three datasets once eps >= 1; the
+    strongest-privacy regime requires a few additional messages (at most 7.5 per user)".'
+  measurement_protocol: From the regenerated CSV, round Ours Msgs/user to 1 dp as in Table 2 and report the maximum
+    over all 18 (dataset, eps) settings.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-shuffle/metrics.json
+    regex: '"ours_max_msgs_per_user": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    echo '74f45f9ef9ffa603f529c5d9ee04aecc2304b29af523f406f1aaf6443631d487  ../artifact.zip' | sha256sum -c -
+    mkdir amber-shuffle
+    python3 -m venv amber-shuffle/venv
+    cat > amber-shuffle/requirements.txt <<'REQ'
+    numpy==2.4.4 --hash=sha256:81f4a14bee47aec54f883e0cad2d73986640c1590eb9bfaaba7ad17394481e6e
+    scipy==1.17.1 --hash=sha256:02ae3b274fde71c5e92ac4d54bc06c42d80e399fec704383dcd99b301df37458
+    REQ
+    amber-shuffle/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-shuffle/requirements.txt
+    amber-shuffle/venv/bin/python -c "import sys, numpy, scipy; print(sys.version.split()[0], numpy.__version__, scipy.__version__)" > amber-shuffle/versions.log
+    for f in reproduce/table2.py protocols/__init__.py protocols/small_domain.py protocols/baselines.py data/city.csv data/fire.csv data/occupation.csv; do
+      unzip -p ../artifact.zip "usenixsec2026-1832-artifact/$f" | cmp - "$f"
+    done
+    rm results/table2_with_p95.csv
+    amber-shuffle/venv/bin/python reproduce/table2.py > amber-shuffle/table2.stdout.log 2> amber-shuffle/table2.stderr.log
+    cp results/table2_with_p95.csv amber-shuffle/
+    python3 -I - amber-shuffle <<'PYTHON' > amber-shuffle/metrics.json
+    import csv, json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    TABLE2 = """City CSUZZ 280 101 62 46 22 14 | 40 40 40 40 40 40
+    City BC 148 85 58 44 22 15 | 29 38 40 40 41 41
+    City GKMP 7.9 4.0 2.6 1.9 0.9 0.5 | 416k 107k 49k 29k 8.0k 4.1k
+    City CZ 99 48 32 25 15 12 | 2 2 2 2 2 2
+    City LWY 21.6 11.1 7.7 6.0 3.8 3.1 | 1.19 1.05 1.02 1.01 1.01 1.00
+    City Ours 22.0 10.9 7.3 5.4 2.6 1.6 | 1.5 1.5 1.5 1.5 1.5 1.5
+    Fire CSUZZ 194 89 59 43 22 14 | 272 272 272 272 272 272
+    Fire BC 169 87 58 44 22 15 | 254 268 271 272 273 273
+    Fire GKMP 8.0 4.0 2.6 1.9 0.9 0.5 | 647k 166k 76k 45k 12k 6.3k
+    Fire CZ 93 46 32 24 15 12 | 2 2 2 2 2 2
+    Fire LWY 21.6 11.0 7.6 5.9 3.7 3.1 | 1.29 1.08 1.04 1.02 1.01 1.01
+    Fire Ours 21.4 10.8 7.1 5.3 2.6 1.6 | 2.0 1.5 1.5 1.5 1.5 1.5
+    Occupation CSUZZ 285 102 62 45 22 14 | 529 529 529 529 529 529
+    Occupation BC 136 83 57 43 22 15 | 321 478 507 517 527 529
+    Occupation GKMP 8.0 4.0 2.6 1.9 0.9 0.5 | 6.9M 1.8M 818k 480k 134k 68k
+    Occupation CZ 102 48 32 25 15 12 | 2 2 2 2 2 2
+    Occupation LWY 21.5 11.1 7.7 6.0 3.7 3.1 | 4.15 1.83 1.39 1.24 1.09 1.06
+    Occupation Ours 21.6 10.8 7.2 5.5 2.6 1.6 | 7.5 3.0 2.0 1.5 1.5 1.5"""
+    EPS = [0.25, 0.5, 0.75, 1.0, 2.0, 3.0]
+    HEADER = 'dataset,n,d,eps,protocol,mae_mean,mae_std,p95,msgs,seed,k,p,rho,q,proto_k'.split(',')
+    def mae(p, v): return f'{v:.0f}' if p in ('CSUZZ', 'BC', 'CZ') else f'{v:.1f}'
+    def msgs(p, v):
+        if p == 'GKMP': return f'{v/1e6:.1f}M' if v >= 1e6 else f'{v/1e3:.0f}k' if v >= 1e4 else f'{v/1e3:.1f}k'
+        return {'LWY': f'{v:.2f}', 'Ours': f'{v:.1f}'}.get(p, f'{v:.0f}')
+    for s in ('stdout', 'stderr'):
+        assert not re.search(r'Traceback|Error', (root/f'table2.{s}.log').read_text()), f'{s} reports an error'
+    with open(root/'table2_with_p95.csv', newline='') as f:
+        reader = csv.DictReader(f)
+        assert reader.fieldnames == HEADER, 'columns'
+        rows = {(r['dataset'], float(r['eps']), r['protocol']): (float(r['mae_mean']), float(r['msgs'])) for r in reader}
+        assert reader.line_num == 109, 'expected 108 data rows'
+    want = {}
+    for line in TABLE2.splitlines():
+        ds, p, *cells = line.replace('|', '').split()
+        for i, e in enumerate(EPS): want[ds, e, p] = (cells[i], cells[6 + i])
+    assert set(rows) == set(want), 'missing, extra or duplicated rows'
+    assert all(math.isfinite(x) for v in rows.values() for x in v), 'non-finite value'
+    got = {k: (mae(k[2], m), msgs(k[2], g)) for k, (m, g) in rows.items()}
+    exact = sum(got[k][i] == want[k][i] for k in want if k[2] not in ('CSUZZ', 'CZ') for i in (0, 1))
+    near = sum(abs(float(got[k][i]) - float(want[k][i])) <= 2 for k in want if k[2] in ('CSUZZ', 'CZ') for i in (0, 1))
+    M = {k: float(v[0]) for k, v in got.items()}
+    DS = ('City', 'Fire', 'Occupation')
+    ratios = [M[ds, e, b] / M[ds, e, 'Ours'] for ds in DS for e in EPS for b in ('CSUZZ', 'BC', 'CZ')]
+    red = {ds: round(100 * (M[ds, 1.0, 'LWY'] - M[ds, 1.0, 'Ours']) / M[ds, 1.0, 'LWY'], 1) for ds in DS}
+    print(json.dumps({
+        'table2_exact_cells_matched': exact,
+        'table2_csuzz_cz_cells_within_2': near,
+        'baseline_reduction_in_range': sum(4.2 <= r <= 13.2 for r in ratios),
+        'ours_beats_lwy_eps_ge_half': sum(M[ds, e, 'Ours'] < M[ds, e, 'LWY'] for ds in DS for e in EPS[1:]),
+        'lwy_reduction_eps1_city_pct': red['City'],
+        'lwy_reduction_eps1_fire_pct': red['Fire'],
+        'lwy_reduction_eps1_occupation_pct': red['Occupation'],
+        'ours_max_msgs_per_user': max(float(got[ds, e, 'Ours'][1]) for ds in DS for e in EPS),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-shuffle/versions.log
+  - amber-shuffle/table2.stdout.log
+  - amber-shuffle/table2.stderr.log
+  - amber-shuffle/table2_with_p95.csv
+  - amber-shuffle/metrics.json
+baseline:
+  captured_on: '2026-11-14'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Python 3.12.3, numpy 2.4.4, scipy 1.17.1
+  outputs:
+  - path: amber-shuffle/versions.log
+    sha256: 16d77384124b5ea82d5a872874a34fd1d55aaff7fca38d7bf81adafc6aec2ff9
+  - path: amber-shuffle/table2.stdout.log
+    sha256: 90df8c837622cf398a8d9ec1cbb632b37b8191279ce95108cbca01973ef2950a
+  - path: amber-shuffle/table2.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-shuffle/table2_with_p95.csv
+    sha256: a77021ccd2ccf9e3657815bdd1a5e2956ef3d8037d6f441d81bdd6b16ce696d9
+  - path: amber-shuffle/metrics.json
+    sha256: 17bb6bbac5920f1107b53bc4c14be46af862e7191c0adecbbbdfd6cf9ef6f4d2
+  metrics:
+    table2_exact_cells_matched: 144
+    table2_csuzz_cz_cells_within_2: 72
+    baseline_reduction_in_range: 54
+    ours_beats_lwy_eps_ge_half: 15
+    lwy_reduction_eps1_city_pct: 10.0
+    lwy_reduction_eps1_fire_pct: 10.2
+    lwy_reduction_eps1_occupation_pct: 8.3
+    ours_max_msgs_per_user: 7.5
+  bit_for_bit_expected: false
