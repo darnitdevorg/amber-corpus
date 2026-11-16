@@ -1,0 +1,335 @@
+# Verified subset: paper Section 6.5 "Pool Re-identification (N=16)" only (Figures 5 and 6): the
+# leave-one-out true-rank accuracy and the per-user entropy loss / Bayes vulnerability of the
+# simulated 16-user Teams case study. Sections 6.3/6.4, Figures 7-9 and the Section 8 volume-only
+# baseline comparison are excluded; see resources.notes.
+id: pets2026-euf-reidentification
+title: 'Access Granted, Privacy Lost: Formalizing & Quantifying the Hidden Anonymity Risks of Exclusive-Use Systems'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0069.pdf
+  doi: 10.56553/popets-2026-0069
+artifact:
+  url: https://github.com/OSUSecLab/EUF/tree/60212e23a04fa2398fbf32979e56343066b07620
+  clone: git clone https://github.com/OSUSecLab/EUF.git && cd EUF && git checkout
+    60212e23a04fa2398fbf32979e56343066b07620, then run run.command in the checkout root.
+  ref_type: commit
+  ref: 60212e23a04fa2398fbf32979e56343066b07620
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Artifact appendix (ARTIFACT-APPENDIX.md at the pinned commit): "The full pipeline can be
+    executed in under one minute and requires trivial storage space"; "No specialized hardware is
+    required"; "Evaluations were performed using Ubunutu 22.04.1 and Python 3.10.12."
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/pets2026/results (issue 2026.3, popets-2026-0069).
+
+    Only Section 6.5 (p.40) is tested. The appendix maps it to "Evaluation: True Rank" (Figure 6,
+    plot_truerank.py) and "Evaluation: Pool Summary" (Figure 5, plot_pool.py). The command runs
+    the artifact's own two scripts unmodified: _run_sim_calc.sh (10 simulated runs, then the
+    pairwise, pool and leave-one-out calculations) and _run_plots.sh (all eight plot and summary
+    scripts). Every claim value is taken from that run.
+    Paper p.39: "We simulate ten runs per user and profile ..., dropping the top and bottom
+    outliers". So 10 runs become 8 per user, and 16 x 8 = 128 traces are evaluated.
+
+    Excluded:
+    - Section 8 volume-only baseline. The paper prints 44.5% Top-1, 72.7% Top-3 and mean rank 2.59
+      (p.42), but the artifact appendix's own output and this run both give 44.4%, 71.9% and 2.79.
+      The "+10.2 / +16.4 percentage points" figures therefore do not follow from the artifact.
+      They are recorded here and not claimed.
+    - Sections 6.3/6.4 (pairwise games, Figures 3, 4, 8) and the PCA in Figure 7. These are outside
+      this subset.
+    - Figures 1, 2 and 9 and all tables, which are illustrative.
+
+    Native, no container. A Python venv installs the artifact's own requirements.txt pins
+    (18 packages), hash-pinned to cp312 manylinux x86_64 wheels from PyPI. Python 3.12.3 was
+    tested; the appendix used 3.10.12. Randomness is seeded per run and per user from sha256 of
+    fixed strings, so the run is deterministic. MPLBACKEND=Agg turns plt.show() into a warning.
+    stderr keeps those UserWarnings and one pandas FutureWarning, unfiltered. network_required
+    covers GitHub and PyPI only; the experiment itself is offline.
+
+    First capture on 2026-11-15 in a fresh clone: exit 0, 106.6 s wall including venv setup,
+    212860 KiB peak RSS (GNU time). Local limits were a 2 GiB memory cap with swap disabled and a
+    30 min timeout. Workspace was about 514 MB, 454 MB of it the venv.
+    All 12 values equal the paper's printed numbers. The printed True Rank and Pool Summary
+    blocks are line-for-line identical to the artifact appendix.
+
+    An independent validator re-derived all 12 values from the raw data/*.csv with the Python
+    stdlib, without reading the logs:
+    - It recomputed every pool trace's H_post (-sum p log2 p) and V (max p) from the full
+      16-way posterior vectors.
+    - It applied the paper's drop-min/max trim per user.
+    - It checked the top1 flags against the ranks.
+    It agreed with the checker on every value: 70/128 Top-1, 114/128 Top-3, mean rank 2.2266,
+    mean dH 1.2125 bits, min dH and min V both Alice_2, max dH and max V both Diane_2.
+
+    The checker rejected 25 incomplete or invalid fixtures and accepted only the genuine output.
+    The fixtures cover:
+    - missing or empty logs
+    - a truncated run
+    - Traceback/Error in any log
+    - a missing or duplicated True Rank block or line
+    - a total other than 128
+    - NaN or inf
+    - a dropped, duplicated or renamed pool user, or n != 8
+
+    The literal run.command, parsed from this YAML, passed from a second fresh clone on
+    2026-11-15. Exit 0, 94.1 s wall, 212620 KiB peak RSS, about 514 MB workspace, and the same 12
+    values. The validator and all 25 fixtures were re-confirmed. The following were byte-identical
+    to the first capture:
+    - all 183 data/*.csv and data/*.json files
+    - versions.log, sim.log, plots.log and metrics.json
+    plots.stderr.log differs only in the absolute checkout path inside warnings. A wrong commit
+    and an edited calc.py each stopped the command before any output. The baseline hashes below
+    are from this fresh run.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access to
+    PyPI.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: top1_accuracy_pct
+  threshold: == 54.7
+  unit: percent of 128 traces
+  source: 'Paper Section 6.5 (p.40): "Top-1 accuracy is 54.7%"; also abstract (p.32) and Section 8 (p.42); Figure 6.'
+  measurement_protocol: 'Leave-one-out re-identification over the N = 16 pool, as computed by the artifact''s
+    calc.py --mode loo and printed by plot_truerank.py after dropping each user''s min and max posterior
+    run (16 users x 8 = 128 traces). Value = 100 * k / total from the printed "Top-1 Accuracy: k / total"
+    line, total required to be 128, rounded to 1 dp as the paper prints it.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"top1_accuracy_pct": ([0-9.]+)'
+- metric: top3_accuracy_pct
+  threshold: == 89.1
+  unit: percent of 128 traces
+  source: 'Paper Section 6.5 (p.40): "top-3 accuracy reaches 89.1%"; also abstract and Section 8.'
+  measurement_protocol: 'As top1_accuracy_pct, from the printed "Top-3 Accuracy: k / 128" line, 1 dp.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"top3_accuracy_pct": ([0-9.]+)'
+- metric: mean_true_rank
+  threshold: == 2.23
+  unit: rank (1 = true user ranked first)
+  source: 'Paper Section 6.5 (p.40): "with mean rank 2.23"; also Section 8 (p.42).'
+  measurement_protocol: 'Mean rank of the true user among the 16 candidates over the 128 trimmed traces, as
+    printed by plot_truerank.py ("Mean Rank", 2 dp).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"mean_true_rank": ([0-9.]+)'
+- metric: median_true_rank
+  threshold: == 1
+  unit: rank
+  source: 'Paper Section 6.5 (p.40): "and median rank 1"; also Section 8 (p.42).'
+  measurement_protocol: 'Median rank over the same 128 traces, as printed by plot_truerank.py ("Median Rank").'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"median_true_rank": ([0-9.]+)'
+- metric: mean_posterior_true
+  threshold: == 0.275
+  unit: probability
+  source: 'Paper Section 6.5 (p.40): "The mean posterior assigned to the true identity is 0.275 (uniform prior
+    = 1/16 = 0.0625)".'
+  measurement_protocol: 'Mean posterior of the true identity over the 128 trimmed traces, as printed by
+    plot_truerank.py ("Mean Posterior(True)", 3 dp).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"mean_posterior_true": ([0-9.]+)'
+- metric: max_posterior_true
+  threshold: == 0.832
+  unit: probability
+  source: 'Paper Section 6.5 (p.40): "with maxima approaching 0.832".'
+  measurement_protocol: 'Maximum posterior of the true identity over the 128 trimmed traces, as printed by
+    plot_truerank.py ("Max Posterior(True)", 3 dp).'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"max_posterior_true": ([0-9.]+)'
+- metric: pool_min_entropy_loss_bits
+  threshold: == 0.68
+  unit: bits
+  source: 'Paper Section 6.5 (p.40): "observed binary signals reduce uncertainty by approximately 0.68 to 2.44
+    bits"; Figure 5.'
+  measurement_protocol: 'Pool mode (calc.py --mode pool, per run): entropy loss dH = 4 - H_post bits for each
+    of the 16 targets. plot_pool.py drops each user''s min and max run by dH and prints the per-user mean
+    over the remaining 8 ("<user>: n=8 dH=..."). Exactly 16 distinct users, each n=8, are required.
+    Value = minimum per-user mean, 2 dp.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"pool_min_entropy_loss_bits": ([0-9.]+)'
+- metric: pool_max_entropy_loss_bits
+  threshold: == 2.44
+  unit: bits
+  source: 'Paper Section 6.5 (p.40): "approximately 0.68 to 2.44 bits"; Figure 5.'
+  measurement_protocol: 'As pool_min_entropy_loss_bits; maximum per-user mean dH, 2 dp.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"pool_max_entropy_loss_bits": ([0-9.]+)'
+- metric: pool_mean_entropy_loss_bits
+  threshold: == 1.2
+  unit: bits
+  source: 'Paper Section 6.5 (p.40): "(mean 1.2 bits or roughly 30%) out of the 4-bit anonymity space".'
+  measurement_protocol: 'Mean over the 16 per-user mean dH values printed by plot_pool.py (equal to the mean
+    over all 128 trimmed traces, since n=8 for every user), 1 dp.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"pool_mean_entropy_loss_bits": ([0-9.]+)'
+- metric: max_entropy_loss_is_diane_2
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 6.5 (p.40): "The strongest case, D2, loses 2.44 bits on average".'
+  measurement_protocol: '1 if the user with the largest per-user mean dH in the plot_pool.py summary is Diane_2,
+    else 0.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"max_entropy_loss_is_diane_2": ([0-9]+)'
+- metric: pool_min_vulnerability_pct
+  threshold: == 19
+  unit: percent
+  source: 'Paper Section 6.5 (p.40): "Bayes vulnerability correspondingly increases from the uniform prior of
+    1/16 = 6.25% to between 19% and 71%"; Figure 5.'
+  measurement_protocol: 'Bayes vulnerability V = max posterior per pool trace. Per-user mean over the same 8
+    trimmed runs, as printed by plot_pool.py ("V=..."). Value = 100 x minimum per-user mean, rounded to an
+    integer percent as the paper prints it.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"pool_min_vulnerability_pct": ([0-9]+)'
+- metric: pool_max_vulnerability_pct
+  threshold: == 71
+  unit: percent
+  source: 'Paper Section 6.5 (p.40): "between 19% and 71%"; Figure 5.'
+  measurement_protocol: 'As pool_min_vulnerability_pct; 100 x maximum per-user mean V, integer percent.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-euf/metrics.json
+    regex: '"pool_max_vulnerability_pct": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 60212e23a04fa2398fbf32979e56343066b07620
+    git diff --quiet HEAD
+    mkdir amber-euf
+    python3 -m venv amber-euf/venv
+    cat > amber-euf/requirements.txt <<'REQ'
+    contourpy==1.3.2 --hash=sha256:f26b383144cf2d2c29f01a1e8170f50dacf0eac02d64139dcd709a8ac4eb3cfe
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.61.1 --hash=sha256:10d88e55330e092940584774ee5e8a6971b01fc2f4d3466a1d6c158230880796
+    joblib==1.5.3 --hash=sha256:5fc3c5039fc5ca8c0276333a188bbd59d6b7ab37fe6632daa76bc7f9ec18e713
+    kiwisolver==1.4.9 --hash=sha256:f6008a4919fdbc0b0097089f67a1eb55d950ed7e90ce2cc3e640abadd2757a04
+    matplotlib==3.10.8 --hash=sha256:3ab4aabc72de4ff77b3ec33a6d78a68227bf1123465887f9905ba79184a1cc04
+    numpy==2.2.6 --hash=sha256:fd83c01228a688733f1ded5201c678f0c53ecc1006ffbc404db9f7a899ac6249
+    packaging==26.0 --hash=sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529
+    pandas==2.3.3 --hash=sha256:b3d11d2fda7eb164ef27ffc14b4fcab16a80e1ce67e9f57e19ec0afaf715ba89
+    pillow==12.1.1 --hash=sha256:aee2810642b2898bb187ced9b349e95d2a7272930796e022efaf12e99dccd293
+    pyparsing==3.3.2 --hash=sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2026.1.post1 --hash=sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a
+    scikit-learn==1.7.2 --hash=sha256:e5bf3d930aee75a65478df91ac1225ff89cd28e9ac7bd1196853a9229b6adb0b
+    scipy==1.15.3 --hash=sha256:271e3713e645149ea5ea3e97b57fdab61ce61333f97cfae392c28ba786f9bb49
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    threadpoolctl==3.6.0 --hash=sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb
+    tzdata==2025.3 --hash=sha256:06a47e5700f3081aab02b2e513160914ff0694bce9947d6b76ebd6bf57cfc5d1
+    REQ
+    amber-euf/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-euf/requirements.txt
+    amber-euf/venv/bin/python -c "import sys, numpy, pandas, scipy, sklearn, matplotlib; print(sys.version.split()[0], numpy.__version__, pandas.__version__, scipy.__version__, sklearn.__version__, matplotlib.__version__)" > amber-euf/versions.log
+    PATH="$PWD/amber-euf/venv/bin:$PATH" bash _run_sim_calc.sh > amber-euf/sim.log 2> amber-euf/sim.stderr.log
+    PATH="$PWD/amber-euf/venv/bin:$PATH" MPLBACKEND=Agg MPLCONFIGDIR="$PWD/amber-euf/mpl" bash _run_plots.sh > amber-euf/plots.log 2> amber-euf/plots.stderr.log
+    cp data/truerank.csv amber-euf/truerank.csv
+    python3 -I - amber-euf <<'PYTHON' > amber-euf/metrics.json
+    import json, math, pathlib, re, statistics, sys
+    root = pathlib.Path(sys.argv[1])
+    for name in ('sim.log', 'sim.stderr.log', 'plots.log', 'plots.stderr.log'):
+        assert not re.search(r'Traceback|Error', (root/name).read_text()), f'{name} reports an error'
+    log = (root/'plots.log').read_text()
+    assert log.count('==== True Rank ====') == 1 and '[!] Finished!' in log, 'missing/duplicate True Rank block or unfinished run'
+    rank = log.split('==== True Rank ====')[1].split('Created out/true_rank.pdf')[0]
+    def one(pattern):
+        found = re.findall(pattern, rank, re.M)
+        assert len(found) == 1, f'expected one match for {pattern}'
+        return found[0]
+    top = {k: tuple(map(int, one(rf'^Top-{k} Accuracy: (\d+) / (\d+) \(')[:2])) for k in (1, 3)}
+    assert all(total == 128 for _, total in top.values()), 'expected 128 evaluated traces'
+    pool = re.findall(r'^(\w+_\d): n=(\d+)\s+ΔH=([0-9.]+)\+-[0-9.]+\s+V=([0-9.]+)\+-[0-9.]+$', log, re.M)
+    users = [u for u, *_ in pool]
+    assert len(users) == 16 and len(set(users)) == 16, 'expected 16 distinct pool users'
+    assert all(n == '8' for _, n, _, _ in pool), 'expected n=8 per user'
+    dh = {u: float(h) for u, _, h, _ in pool}
+    v = [float(x) for *_, x in pool]
+    metrics = {
+        'top1_accuracy_pct': round(100 * top[1][0] / top[1][1], 1),
+        'top3_accuracy_pct': round(100 * top[3][0] / top[3][1], 1),
+        'mean_true_rank': float(one(r'^Mean Rank: ([0-9.]+)$')),
+        'median_true_rank': float(one(r'^Median Rank: ([0-9.]+)$')),
+        'mean_posterior_true': float(one(r'^Mean Posterior\(True\): ([0-9.]+)$')),
+        'max_posterior_true': float(one(r'^Max Posterior\(True\): ([0-9.]+)$')),
+        'pool_min_entropy_loss_bits': round(min(dh.values()), 2),
+        'pool_max_entropy_loss_bits': round(max(dh.values()), 2),
+        'pool_mean_entropy_loss_bits': round(statistics.fmean(dh.values()), 1),
+        'max_entropy_loss_is_diane_2': int(max(dh, key=dh.get) == 'Diane_2'),
+        'pool_min_vulnerability_pct': round(100 * min(v)),
+        'pool_max_vulnerability_pct': round(100 * max(v)),
+    }
+    assert all(math.isfinite(x) for x in metrics.values()), 'non-finite value'
+    print(json.dumps(metrics, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-euf/versions.log
+  - amber-euf/sim.log
+  - amber-euf/sim.stderr.log
+  - amber-euf/plots.log
+  - amber-euf/plots.stderr.log
+  - amber-euf/truerank.csv
+  - amber-euf/metrics.json
+baseline:
+  captured_on: '2026-11-15'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-42-generic;
+    Python 3.12.3, numpy 2.2.6, pandas 2.3.3, scipy 1.15.3, scikit-learn 1.7.2, matplotlib 3.10.8
+  outputs:
+  - path: amber-euf/versions.log
+    sha256: 5325d7b2f14c075ae198d37486572759c982d66907f277396860fa8d0f5f72a4
+  - path: amber-euf/sim.log
+    sha256: 861b60f32ef45e22dd9583a1ac7c742c6f042a340eaf0b03fcc654ebbcd3c5d0
+  - path: amber-euf/sim.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-euf/plots.log
+    sha256: 542a8762c88740f53deb808cc48f567f784caae94e256d79ae052ca41abb42f5
+  - path: amber-euf/plots.stderr.log
+    sha256: d90d825887f51c03746c442adc077a66b62d37c4ab4b9bd1fbc8b1f8d08bfbb2
+  - path: amber-euf/truerank.csv
+    sha256: 6126a35b2aa7f285dd8fe071fefb9204eff3ef444aef93ce7bdb4d29e5edcf12
+  - path: amber-euf/metrics.json
+    sha256: 12d71462a726abe744081c36f0c3368c1e91894f7423850366ba2f617112caa1
+  metrics:
+    top1_accuracy_pct: 54.7
+    top3_accuracy_pct: 89.1
+    mean_true_rank: 2.23
+    median_true_rank: 1.0
+    mean_posterior_true: 0.275
+    max_posterior_true: 0.832
+    pool_min_entropy_loss_bits: 0.68
+    pool_max_entropy_loss_bits: 2.44
+    pool_mean_entropy_loss_bits: 1.2
+    max_entropy_loss_is_diane_2: 1
+    pool_min_vulnerability_pct: 19
+    pool_max_vulnerability_pct: 71
+  bit_for_bit_expected: false
