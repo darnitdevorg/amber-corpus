@@ -1,0 +1,381 @@
+# Verified subset: artifact Experiment 3 only (comparing_entropy_empirical_analysis.ipynb), Section 6.2
+# and Appendix D: Table 2 (all 14 attributes x 5 measures), Tables 3 and 4, and four quantitative
+# statements the paper makes about Figures 5/6. Experiments 1, 2, 4 and 5 are excluded; see resources.notes.
+id: pets2026-fingerprinting-entropy
+title: An Improved Entropy Measure for Web Browser Fingerprinting Risk
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0102.pdf
+  doi: 10.56553/popets-2026-0102
+artifact:
+  url: https://github.com/google/fingerprinting-risk-measures/tree/f45ee12ca187369aebab0aaa6421b3a6a6be80e6
+  clone: git clone https://github.com/google/fingerprinting-risk-measures.git && cd fingerprinting-risk-measures
+    && git checkout f45ee12ca187369aebab0aaa6421b3a6a6be80e6, then run run.command in the checkout root.
+  ref_type: commit
+  ref: f45ee12ca187369aebab0aaa6421b3a6a6be80e6
+  license: Apache-2.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 2
+  disk_gb: 1
+  runtime_minutes: 15
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository. Experiment 3: "Open and run
+    all cells in comparing_entropy_empirical_analysis.ipynb", "~5 human-minute + ~25 compute-minutes",
+    producing "the plots for Figure 5 and Figure 6, and the data for Table 2, Table 3, and Table 4".
+    Hardware: "The memory usage for the execution of the notebooks is generally < 2 GB."; storage
+    "< 2 GB (The dataset is ~170 MB ...)". The appendix adds that results "should not quantitatively
+    vary by more than 5% from the results illustrated in the paper"; this entry does not use that
+    allowance, because every judged value is deterministic and compared exactly. The AEC row (PoPETs
+    2026) awards available, functional and reproduced and pins this commit:
+    https://secartifacts.github.io/pets2026/results.
+
+    Data: the notebook downloads survey-and-browser-attributes-data.csv (166926732 B) from Harvard
+    Dataverse doi:10.7910/DVN/0SGZFF with pooch, which verifies the notebook's pinned
+    md5:8f6db8be6551cc740c9a64d6c2bc8a8f. The file is public and needs no account, but the Dataverse
+    page states that downloading it means agreeing to its research-use terms (no re-identification,
+    no re-distribution). XDG_CACHE_HOME keeps the download inside amber-fprisk/cache; the dataset is
+    not listed in run.outputs and must not be republished.
+
+    Tested: the unmodified notebook, every code cell run in order in one namespace (what Jupyter's
+    "Run All Cells" does) with MPLBACKEND=Agg and cwd amber-fprisk/, so the 14 <attribute>_mean100.csv
+    files the notebook saves land there. One shim: the notebook imports IPython.display.display but
+    never calls it in this experiment, so the cells' own namespace resolves that one import to a stub
+    instead of installing IPython; library code is not affected. After the cells finish, the runner
+    writes the notebook's Table 2 frame (df), Table 3 frame (os_table) and Table 4 rows to CSV.
+    Subsampling is deterministic: df.sample(random_state=0 + trial), 100 trials per n.
+
+    Excluded: Experiment 1 (simulated Figures 1-3, 8, 9; no printed numbers), Experiment 2 (its
+    Table 1 is hard-coded values from prior papers), Experiment 4 (advanced estimators, Figures 7
+    and 10) and Experiment 5 (Appendix F). The Table 2 "example value" column is excluded too: the
+    Fingerprint example is a Python hash() of the attribute string, salted per process, and differs
+    even between the paper and the authors' own stored notebook output. This entry makes no claim
+    about any of these.
+
+    One claim is carried as NOT_COMPARABLE: tsallis_lowest_error_attributes. Its threshold (== 14)
+    was frozen before the first run. The run gives 12: for Color depth and WebGL Vendor, the two
+    3-valued attributes, the mean Tsallis relative error is slightly above Shannon's (0.00608 vs
+    0.00553 and 0.00267 vs 0.00256). The paper reads this statement off Figures 5/6, whose error axis
+    spans -0.01..0.25, so a gap of about 0.0005 is far below what the figure can show. The run is
+    seeded and reproduces the means the authors' notebook stores (see below), so their figure is
+    drawn from these same values; an independent sampler with five other seed sets also puts Shannon below Tsallis for Color depth (5/5) and WebGL Vendor (4/5), so the
+    gap is real at full precision but outside the resolution of the paper's measurement. The value is
+    recorded for drift, not judged; see measure.reason. Following the corpus rule that any
+    NOT_COMPARABLE claim makes the run NOT_COMPARABLE, the entry-level expected_verdict is
+    NOT_COMPARABLE while the other six claims are expected REPRODUCED.
+
+    Native, no Docker or Jupyter: a Python 3 venv with hash-pinned wheels. Top-level versions are the
+    exact ones the appendix lists (pandas 2.2.2, numpy 2.0.2, scipy 1.16.3, matplotlib 3.10.0, pooch
+    1.9.0; adjustText, pydataless, infomeasure and notebook are not imported by this notebook);
+    transitive versions were resolved with uv for Python 3.12 and pinned to one cp312 manylinux or
+    py3-none-any wheel each, sha256 from PyPI. The authors' Dockerfile used Python 3.13.6 with
+    unpinned ">=" requirements; Python 3.12.3 was tested here. The command refuses a different
+    commit or any edit to tracked files (git diff --quiet).
+
+    First capture on 2026-11-15 in a fresh clone: exit 0, 4 min 31 s wall including venv setup and
+    the dataset download, 660232 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap
+    disabled, 590 MB workspace. stderr holds only pooch's download line. Six claims meet the paper:
+    Table 2 70/70 cells, Table 3 8/8, Table 4 46/46, normalized entropy strictly decreasing for 14/14
+    attributes, normalized highest error for 13/13 non-fingerprint attributes, Shannon highest for
+    the Fingerprint. The Fingerprint means equal all 42 rows stored in the authors' notebook at 6 dp,
+    so the run is the authors' run. Three earlier attempts stopped on setup only (a transient TLS
+    error reaching doi.org, then two versions of the IPython shim that matplotlib probed), before any
+    value was computed; the shim was then scoped to the notebook's namespace as described above.
+
+    An independent validator re-derived everything another way, without pandas, the notebook or
+    the checker. With csv and Counter on the raw file (pandas' NA strings mapped, a sha256 of the
+    joined attributes as the fingerprint) it rebuilt Table 2 (70/70), Table 3 (8/8) and Table 4
+    (46/46). It recomputed the four ordering metrics from the artifact's mean CSVs with separate numpy
+    code (14, 12, 13, 1, equal to the checker). It checked every artifact Tsallis mean against the exact
+    expectation under sampling without replacement (worst |z| 2.92 over 588 points) and every Shannon
+    and normalized mean against its own default_rng sampler (worst |z| 3.15). With its own seeds,
+    normalized entropy is strictly decreasing for 12 of 14 attributes: for the 3-valued attributes a
+    single step can rise by less than its Monte Carlo error, so the 14 is tied to the artifact's own
+    fixed seeds, which every rerun of this command uses. The checker rejected or failed 29 incomplete
+    or invalid fixtures (missing or empty files, a traceback, 13 of 14 attributes saved, dropped,
+    duplicated, renamed or reordered rows, altered or NaN cells, a truncated or shifted sample grid,
+    an altered population row, swapped columns, flipped orderings) and accepted only the genuine
+    output. A wrong commit and an edited notebook each stopped the command before amber-fprisk/
+    was created.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-15:
+    exit 0, 4 min 9 s wall, 660456 KiB peak RSS, 590 MB workspace (checkout, venv, dataset cache,
+    captures). Same seven metrics; validator (21/21 checks), all 29 fixtures and a replay of every
+    measure block (six REPRODUCED, one NOT_COMPARABLE, overall NOT_COMPARABLE) re-confirmed. Baseline
+    hashes below are from this run. versions.log, table3.csv, table4.csv, all 14 mean CSVs and
+    metrics.json were byte-identical to the first capture. table2.csv differs only in the salted
+    Fingerprint example value, run.log in the notebook's wall-clock progress timestamps and
+    run.stderr.log in the absolute download path.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access to
+    GitHub, PyPI, doi.org and dataverse.harvard.edu. The computation itself is offline once the
+    dataset is cached.
+role: positive
+expected_verdict: NOT_COMPARABLE
+claims:
+- metric: table2_cells_matched
+  threshold: == 70
+  unit: table cells
+  source: 'Paper Section 6.1 and Table 2 "Browser attributes and fingerprinting measures (N=8400)" (p.713);
+    artifact Experiment 3.'
+  measurement_protocol: 'Run the notebook unmodified on the full dataset (N=8400). Parse table2.csv (the notebook''s
+    Table 2 frame): it must have exactly the 14 attributes of Table 2, once each. Count cells equal to the printed
+    Table 2 at its printed precision: distinct values (integer), % unique (1 dp), Shannon, normalized and Tsallis
+    entropy (3 dp); 14 x 5 = 70 cells. The example-value column is not compared. No tolerance.'
+  expected_verdict: REPRODUCED
+  notes: Full-population statistics, no sampling; the whole table, not a sample.
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"table2_cells_matched": ([0-9]+)'
+- metric: table3_cells_matched
+  threshold: == 8
+  unit: table cells
+  source: Paper Appendix D, Table 3 "OS market share distribution" (p.718); artifact Experiment 3.
+  measurement_protocol: 'Parse table3.csv (the notebook''s os_table): exactly five OS rows. Count n (integer) and
+    % (2 dp) equal to the printed Table 3 for Windows, iOS, Android / Chrome OS / Linux and OS X; 4 x 2 = 8 cells.
+    The StatCounter column is copied from the paper by the notebook and is not compared.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"table3_cells_matched": ([0-9]+)'
+- metric: table4_cells_matched
+  threshold: == 46
+  unit: table cells
+  source: Paper Appendix D, Table 4 "User sample demographic attributes" (p.718); artifact Experiment 3.
+  measurement_protocol: 'Parse table4.csv (the notebook''s demographic rows): after the Total row, exactly the 23
+    rows of Table 4 in order (gender 3, age 6, household income 7, Hispanic origin 1, race 6). Count sample N
+    (integer) and % (1 dp) equal to the printed values; 23 x 2 = 46 cells. The census column is copied from the
+    paper by the notebook and is not compared.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"table4_cells_matched": ([0-9]+)'
+- metric: normalized_decreasing_attributes
+  threshold: == 14
+  unit: attributes
+  source: 'Paper Section 6.2 (p.713), Figures 5/6: "For normalized entropy ... estimated entropy decreases as sample
+    size increases, and this is the case for each of the attributes."'
+  measurement_protocol: 'For each of the 14 attributes, read <attribute>_mean100.csv written by the notebook: exactly
+    the 42 sample sizes n = 200, 400, ..., 8400, each the mean over 100 subsamples without replacement
+    (random_state = trial), all finite, and the n = 8400 row equal to Table 2 at 3 dp. Count attributes whose mean
+    normalized entropy is strictly decreasing over all 42 n.'
+  expected_verdict: REPRODUCED
+  notes: Strict monotonicity holds with the artifact's fixed seeds; with other seeds the 3-valued attributes can
+    show a single rise below Monte Carlo error (resources.notes).
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"normalized_decreasing_attributes": ([0-9]+)'
+- metric: tsallis_lowest_error_attributes
+  threshold: == 14
+  unit: attributes
+  source: 'Paper Section 6.2 (p.713), Figures 5/6: "For all of the attributes, Tsallis entropy maintains the lowest
+    relative error".'
+  measurement_protocol: 'Same files and checks as normalized_decreasing_attributes. Relative error at n is the
+    paper''s |H(X_N) - mean H(X_n)| / H(X_N) (the notebook''s get_entropy_relative_error), averaged over the 41
+    subsample sizes n = 200..8200, separately for Shannon, normalized and Tsallis entropy. Count attributes where
+    Tsallis has the lowest of the three. The average is used because near n = N the bias falls below the 100-trial
+    Monte Carlo noise.'
+  expected_verdict: NOT_COMPARABLE
+  notes: Measured 12. Color depth and WebGL Vendor have Tsallis error 0.00608 / 0.00267 against Shannon 0.00553 /
+    0.00256, a gap invisible on the figure's -0.01..0.25 error axis; the run is seeded and matches the authors'
+    stored means, and independent seeds give the same ordering (resources.notes).
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"tsallis_lowest_error_attributes": ([0-9]+)'
+    comparable: false
+    reason: The paper reads this ordering off Figures 5/6 at plot resolution (error axis -0.01..0.25); for the two
+      3-valued attributes the Tsallis and Shannon errors differ by about 0.0005, below that resolution, and the
+      full-precision count is 12, not 14.
+- metric: normalized_highest_error_attributes
+  threshold: == 13
+  unit: attributes
+  source: 'Paper Section 6.2 (p.713): "Normalized entropy has the highest error for all attributes, except for the
+    combined fingerprint".'
+  measurement_protocol: As tsallis_lowest_error_attributes; count attributes where the mean normalized-entropy
+    relative error is the highest of the three. Expected for all 13 attributes other than Fingerprint.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"normalized_highest_error_attributes": ([0-9]+)'
+- metric: fingerprint_shannon_highest_error
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 6.2 (p.713): "... except for the combined fingerprint, where more than 60% of the values in
+    the sample are unique (Table 2), and where Shannon entropy estimates have higher error."'
+  measurement_protocol: As tsallis_lowest_error_attributes, Fingerprint only; 1 when the mean Shannon relative error
+    is the highest of the three.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-fprisk/metrics.json
+    regex: '"fingerprint_shannon_highest_error": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = f45ee12ca187369aebab0aaa6421b3a6a6be80e6
+    git diff --quiet
+    mkdir amber-fprisk
+    python3 -m venv amber-fprisk/venv
+    cat > amber-fprisk/requirements.txt <<'REQ'
+    certifi==2026.10.23 --hash=sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
+    charset-normalizer==3.5.2 --hash=sha256:3d31298449090ab8d47b7b1b2a555ff73cac7ed438a08b7ac160980c7ebed649
+    contourpy==1.3.2 --hash=sha256:f26b383144cf2d2c29f01a1e8170f50dacf0eac02d64139dcd709a8ac4eb3cfe
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.68.0 --hash=sha256:3edce69ecdefa73ab1041901ca22eefed6ebb93a77bc77e889d940479f25bf7d
+    idna==3.20 --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+    kiwisolver==1.5.1 --hash=sha256:34633ecf50d16187ab8e5528b7a2530f2feb4e23f300db4672538b51cfc5cd38
+    matplotlib==3.10.0 --hash=sha256:9b0558bae37f154fffda54d779a592bc97ca8b4701f1c710055b609a3bac44c8
+    numpy==2.0.2 --hash=sha256:0123ffdaa88fa4ab64835dcbde75dcdf89c453c922f18dced6e27c90d1d0ec5a
+    packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    pandas==2.2.2 --hash=sha256:eee3a87076c0756de40b05c5e9a6069c035ba43e8dd71c379e68cab2c20f16ad
+    pillow==12.2.0 --hash=sha256:b86024e52a1b269467a802258c25521e6d742349d760728092e1bc2d135b4d76
+    platformdirs==4.14.5 --hash=sha256:8e778c6fa421516f4d3369449f8df3b0e1b72c0e0005fe88e3ec772d0a14e750
+    pooch==1.9.0 --hash=sha256:f265597baa9f760d25ceb29d0beb8186c243d6607b0f60b83ecf14078dbc703b
+    pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+    python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+    pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+    requests==2.34.2 --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0
+    scipy==1.16.3 --hash=sha256:72d1717fd3b5e6ec747327ce9bda32d5463f472c9dce9f54499e81fbd50245a1
+    tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+    urllib3==2.8.0 --hash=sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3
+    REQ
+    amber-fprisk/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-fprisk/requirements.txt
+    amber-fprisk/venv/bin/python -c "import sys, numpy, pandas, scipy, matplotlib, pooch; print(sys.version.split()[0], *(m.__name__ + ' ' + m.__version__ for m in (numpy, pandas, scipy, matplotlib, pooch)))" > amber-fprisk/versions.log
+    cd amber-fprisk
+    XDG_CACHE_HOME="$PWD/cache" MPLBACKEND=Agg venv/bin/python - ../comparing_entropy_empirical_analysis.ipynb <<'RUN' > run.log 2> run.stderr.log
+    import builtins, json, sys, types
+    stub = types.SimpleNamespace(display=print)  # notebook imports IPython.display.display but never calls it
+    imp = lambda name, *a, **k: stub if name == 'IPython.display' else builtins.__import__(name, *a, **k)
+    ns = {'__builtins__': dict(vars(builtins), __import__=imp)}
+    for cell in json.load(open(sys.argv[1]))['cells']:
+        if cell['cell_type'] == 'code':
+            exec(compile(''.join(cell['source']), 'notebook', 'exec'), ns)
+    ns['df'].to_csv('table2.csv', index=False)
+    ns['os_table'].to_csv('table3.csv')
+    ns['pd'].DataFrame(ns['rows']).to_csv('table4.csv', index=False)
+    RUN
+    cd ..
+    python3 -I - amber-fprisk <<'CHECK' > amber-fprisk/metrics.json
+    import csv, json, math, pathlib, sys
+    d = pathlib.Path(sys.argv[1]); rd = lambda f: list(csv.DictReader(open(d / f, newline='')))
+    T2 = {'User agent': '434 2.8 4.613 0.354 0.859', 'Languages': '264 2.4 1.730 0.133 0.484', 'Timezone': '49 0.2 2.064 0.158 0.674',
+      'Screen resolution': '572 4.5 5.510 0.423 0.940', 'Color depth': '3 0.0 0.616 0.047 0.204', 'Platform': '12 0.0 2.114 0.162 0.688',
+      'Touch points': '11 0.0 1.463 0.112 0.581', 'Hardware concurrency': '24 0.1 2.340 0.180 0.727', 'Device memory': '7 0.0 1.611 0.124 0.610',
+      'WebGL Vendor': '3 0.0 0.465 0.036 0.169', 'WebGL Unmasked Vendor': '36 0.1 3.313 0.254 0.853', 'WebGL Renderer': '36 0.1 0.782 0.060 0.176',
+      'WebGL Unmasked Renderer': '654 3.2 6.833 0.524 0.954', 'Fingerprint': '5973 60.2 12.101 0.928 0.999'}
+    T3 = {'Windows': '4214 50.17', 'iOS': '1568 18.67', 'Android or Chrome OS or Linux': '1526 18.17', 'OS X': '1092 13.00'}
+    T4 = {'Female': '3990 47.5', 'Male': '4227 50.3', 'Other': '183 2.2', '18 - 24 years': '1302 15.5', '25 - 34 years': '2859 34.0',
+      '35 - 44 years': '2024 24.1', '45 - 54 years': '1158 13.8', '55 - 64 years': '712 8.5', '65 or older': '345 4.1', 'Less than $25,000': '1097 13.1',
+      '$25,000 - $49,999': '1842 21.9', '$50,000 - $74,999': '1692 20.1', '$75,000 - $99,999': '1267 15.1', '$100,000 - $149,999': '1411 16.8',
+      '$150,000 or more': '951 11.3', 'Prefer not to say': '140 1.7', 'Yes': '923 11.0', 'White': '5911 70.4', 'Black': '938 11.2', 'Asian': '842 10.0',
+      'American Indian': '53 0.6', 'Native Pacific Islander': '0 0.0', 'Other or mixed': '656 7.8'}
+    same = lambda got, want: format(float(got), '.%df' % len(want.partition('.')[2])) == want
+    log, err = (d / 'run.log').read_text(), (d / 'run.stderr.log').read_text()
+    assert 'Traceback' not in log + err and log.count('saving metrics for') == 14, 'incomplete notebook run'
+    t2 = {r['Attribute']: r for r in rd('table2.csv')}; assert len(t2) == len(rd('table2.csv')) and set(t2) == set(T2), 'table 2 rows'
+    cols = ['Distinct values', '% Unique', 'Shannon entropy', 'Norm. entropy', 'Tsallis entropy']
+    c2 = sum(same(t2[a][c], w) for a in T2 for c, w in zip(cols, T2[a].split()))
+    t3 = {r['OS']: r for r in rd('table3.csv')}; assert set(T3) <= set(t3) and len(t3) == 5, 'table 3 rows'
+    c3 = sum(same(t3[o]['n'], T3[o].split()[0]) + same(t3[o]['%'], T3[o].split()[1]) for o in T3)
+    t4 = rd('table4.csv')[1:]; assert [r['Attribute'] for r in t4] == list(T4), 'table 4 rows'
+    c4 = sum(same(r['Sample(N=8400) (N)'], T4[r['Attribute']].split()[0]) + same(r['Sample(N=8400) (%)'], T4[r['Attribute']].split()[1]) for r in t4)
+    dec = low = high = fp = 0
+    for a in T2:
+        rows = rd(a + '_mean100.csv'); assert [int(r['n']) for r in rows] == list(range(200, 8401, 200)), a + ' sample sizes'
+        v = {k: [float(r[k]) for r in rows] for k in ('Shannon', 'Norm Shannon', 'Tsallis')}
+        assert all(math.isfinite(x) for s in v.values() for x in s), a + ' NaN'
+        assert all(same(v[k][-1], w) for k, w in zip(v, T2[a].split()[2:])), a + ' population row != table 2'
+        e = {k: sum(abs(s[-1] - x) / s[-1] for x in s[:-1]) / 41 for k, s in v.items()}
+        dec += all(x > y for x, y in zip(v['Norm Shannon'], v['Norm Shannon'][1:]))
+        low += e['Tsallis'] < min(e['Shannon'], e['Norm Shannon'])
+        high += e['Norm Shannon'] > max(e['Shannon'], e['Tsallis'])
+        fp += a == 'Fingerprint' and e['Shannon'] > max(e['Norm Shannon'], e['Tsallis'])
+    print(json.dumps({'table2_cells_matched': c2, 'table3_cells_matched': c3, 'table4_cells_matched': c4, 'normalized_decreasing_attributes': dec,
+      'tsallis_lowest_error_attributes': low, 'normalized_highest_error_attributes': high, 'fingerprint_shannon_highest_error': int(fp)}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-fprisk/versions.log
+  - amber-fprisk/run.log
+  - amber-fprisk/run.stderr.log
+  - amber-fprisk/table2.csv
+  - amber-fprisk/table3.csv
+  - amber-fprisk/table4.csv
+  - amber-fprisk/User agent_mean100.csv
+  - amber-fprisk/Languages_mean100.csv
+  - amber-fprisk/Timezone_mean100.csv
+  - amber-fprisk/Screen resolution_mean100.csv
+  - amber-fprisk/Color depth_mean100.csv
+  - amber-fprisk/Platform_mean100.csv
+  - amber-fprisk/Touch points_mean100.csv
+  - amber-fprisk/Hardware concurrency_mean100.csv
+  - amber-fprisk/Device memory_mean100.csv
+  - amber-fprisk/WebGL Vendor_mean100.csv
+  - amber-fprisk/WebGL Unmasked Vendor_mean100.csv
+  - amber-fprisk/WebGL Renderer_mean100.csv
+  - amber-fprisk/WebGL Unmasked Renderer_mean100.csv
+  - amber-fprisk/Fingerprint_mean100.csv
+  - amber-fprisk/metrics.json
+baseline:
+  captured_on: '2026-11-15'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; numpy 2.0.2, pandas 2.2.2, scipy 1.16.3, matplotlib 3.10.0, pooch 1.9.0
+    in a local venv
+  outputs:
+  - path: amber-fprisk/versions.log
+    sha256: 1c57a6f6b013702068e808daabdad74a6ce4e39039911d3b3ad7f1e093a4c844
+  - path: amber-fprisk/run.log
+    sha256: 3801282fab6958c53d8b3883a87c1c8bc66b06dbbbc7a525f3b02e35b208785e
+  - path: amber-fprisk/run.stderr.log
+    sha256: fbb87dad222da4acd0fcaf5a74f2dcb25914eaf872861e98e2122074c0110754
+  - path: amber-fprisk/table2.csv
+    sha256: a89e0d8481e7fe204599fc84f19b42fa2ddf1ac491d772458ef93a3b45f7af1c
+  - path: amber-fprisk/table3.csv
+    sha256: 2fc38285cbef4577a7456bda8d6f4d28055d3e022df384aec813ca09f2965791
+  - path: amber-fprisk/table4.csv
+    sha256: a4f6c85b48d5b12c593780f852f158379fa731f456010b258fb678399c3ae50e
+  - path: amber-fprisk/User agent_mean100.csv
+    sha256: e49398d72e9cf68bdf07e7cc90a09392fc728b14c836a3415f4f355c71377c5d
+  - path: amber-fprisk/Languages_mean100.csv
+    sha256: 927c372c8a140fcc006f8ff42f26f98063b1216cbc6442c4cf766d02db805fd6
+  - path: amber-fprisk/Timezone_mean100.csv
+    sha256: 037dc64cb4a73024950f363437ebd177f3fc4729e1c72dc664a51a9897b44891
+  - path: amber-fprisk/Screen resolution_mean100.csv
+    sha256: b5bbe8855a87104e4eb379c6844b47f419715a9c25575f6e2465c1a4754df37b
+  - path: amber-fprisk/Color depth_mean100.csv
+    sha256: 5a3b9b16dd81003156089f3e60d372fafc1a04ec0a8de639844fd9d12e75dd68
+  - path: amber-fprisk/Platform_mean100.csv
+    sha256: e14fc7b9c3f2fab5fbac5dcc2e8359b99ceb85e538ee84381a4286a01a26588f
+  - path: amber-fprisk/Touch points_mean100.csv
+    sha256: 63fda7d916b9acb32823261cbb18d2a238e7bc4b30873600b519b24d72a0d64d
+  - path: amber-fprisk/Hardware concurrency_mean100.csv
+    sha256: 2d0c4680506d1f515fba64d6fae941954f9824a5cfd2b17f80fa634c69e6162e
+  - path: amber-fprisk/Device memory_mean100.csv
+    sha256: dbe8a72b47c3f7b1e4301172e42daeb1e6186d1e2635058ef71e9c36aa653118
+  - path: amber-fprisk/WebGL Vendor_mean100.csv
+    sha256: 16a35bc06ee75f6c012c21f48c6096e5fc41d637c85d9f9412be1bc0397c67cd
+  - path: amber-fprisk/WebGL Unmasked Vendor_mean100.csv
+    sha256: f168c33e7ff3ad18eef2805b7d07c1b52858cb8eeca565876f208c6e67ecad71
+  - path: amber-fprisk/WebGL Renderer_mean100.csv
+    sha256: 893d3b27f8674baf2914989b54884939f770ab2286794892867be3c8e5b77021
+  - path: amber-fprisk/WebGL Unmasked Renderer_mean100.csv
+    sha256: cd322a5d6bd640f9a830b4c4008a176f2c06c2fe3805104febffe9819906fda8
+  - path: amber-fprisk/Fingerprint_mean100.csv
+    sha256: 4ab5f757c98d89be6e148c463f1327be7acc6e59fa918a7844486f736aecf0c1
+  - path: amber-fprisk/metrics.json
+    sha256: 2571ac42bc4ab04fafd865002ce6be93a6e7e263cbb787ed641ae1b9aa998906
+  metrics:
+    table2_cells_matched: 70
+    table3_cells_matched: 8
+    table4_cells_matched: 46
+    normalized_decreasing_attributes: 14
+    tsallis_lowest_error_attributes: 12
+    normalized_highest_error_attributes: 13
+    fingerprint_shannon_highest_error: 1
+  bit_for_bit_expected: false
