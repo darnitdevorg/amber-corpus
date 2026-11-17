@@ -1,0 +1,319 @@
+# Verified subset: artifact appendix Experiments 1-3, the six minimal reproducible examples (MREs) that replicate
+# the bug classes found in Opacus, Diffprivlib, dpmm, SmartNoise, Synthcity and MOSTLY AI, plus the suite's
+# correct-mechanism control. Experiment 4 (Docker harness on dpmm/mbi/synthcity) and the paper's audit of 12
+# libraries are excluded; see resources.notes.
+id: pets2026-dp-recorder
+title: 'Privacy in Theory, Bugs in Practice: Grey-Box Auditing of Differential Privacy Libraries'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0091.pdf
+  doi: 10.56553/popets-2026-0091
+artifact:
+  url: https://github.com/ObliviousAI/dp-recorder/tree/85d189ebd7ff81a52984708322ee2c2d8c479db4
+  clone: git clone https://github.com/ObliviousAI/dp-recorder.git && cd dp-recorder && git checkout
+    85d189ebd7ff81a52984708322ee2c2d8c479db4, then run run.command in the checkout root.
+  ref_type: commit
+  ref: 85d189ebd7ff81a52984708322ee2c2d8c479db4
+  license: Apache-2.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT_APPENDIX.md in the repository. "Can run on a laptop (No special
+    hardware requirements)"; "Each deterministic experiment takes < 1 compute-minute. The statistical audit
+    experiment takes less than 10 compute-minutes"; "Storage: < 100 MB of disk space for the repository,
+    excluding Docker layers." The AEC row (issue 2026.3) awards available, functional and reproduced and
+    pins this commit: https://secartifacts.github.io/pets2026/results.
+
+    Tested: the appendix's own pytest commands for Experiment 1 (test_buggy_private_mean,
+    test_domain_inference), Experiment 2 (test_sensitivity_miscalibration, test_noise_miscalibration,
+    test_nan_injection) and Experiment 3 (test_double_spending), then the whole suite from "Testing the
+    Environment", which adds the correct-mechanism control (test_correct_mechanism). Each MRE runs the
+    record/replay auditor on a dataset D and a neighbour D' and expects the auditor to raise; the test
+    catches that AssertionError and prints it, so a PASSED test means the bug was caught. -s is added to
+    every command so those printed messages land in the logs (the appendix already uses -s for
+    Experiment 3). The checker reads each message, not just the pass/fail status.
+
+    Excluded: Experiment 4, the Docker harness that audits instrumented dpmm, mbi and synthcity. It needs
+    Docker, and the appendix says its failure count "may vary slightly between distinct runs". The paper's
+    headline audit (12 libraries, 13 violations, Table 1) is not packaged in the artifact (appendix
+    "Limitations"); the MREs are the authors' reduced analogues of those bugs. This entry makes no claim
+    about Experiment 4 or about any real library.
+
+    Randomness: the deterministic checks (Experiments 1, 2 and the control) compare inputs that the test
+    fixes, so their messages are identical on every run. Experiment 3 estimates epsilon from 10,000 samples
+    with numpy's unseeded global RNG, so its value moves: 1.55 to 1.80 over the twelve executions here
+    (both runs, both suites, eight repeats), and the appendix's example is 1.98. Only the bound "> 1.0" is judged; the value is kept for
+    drift tracking.
+
+    Native, no Poetry or Docker: a Python 3.11 venv with hash-pinned wheels. The 34 versions and sha256
+    are taken from the artifact's poetry.lock (its Python 3.11 resolution, cp311 manylinux x86_64 or
+    pure wheels; Windows-only, Python 3.10-only and coverage packages left out). pyproject.toml requires
+    Python >=3.10,<3.12 and the authors' Dockerfile uses 3.11. PYTHONPATH=src replaces `poetry install`,
+    which only installs the same src/ package. The command refuses a different commit or any edit to
+    tracked files (git diff --quiet).
+
+    First capture on 2026-11-17 in a fresh clone: every pytest run exit 0, 51 s wall including venv setup,
+    264836 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled; 7/7 suite tests passed.
+    Metrics 2 / 3 / 0 / 1 and epsilon 1.75. One fix after this run: the checker cut the last test's log block
+    at the "=====" summary, but pytest prints the "generated xml file" line between PASSED and that summary, so
+    the checker failed on its own parsing. The block now ends at that line; it was re-run on the same
+    outputs. No claim, threshold or protocol changed. The claims were frozen before the run.
+
+    An independent validator re-derived everything another way, without pytest or the checker's parsing.
+    It imported the artifact's buggy functions and Auditor directly and drove record/replay itself; it
+    recomputed each expected distance from the test inputs in plain Python (|2 - 99| = 97, |2 - 1| = 1,
+    NaN -> inf) and each Record/Replay pair (3 vs 2); it ran the correct mechanism without an exception; it
+    re-ran the double-spending audit with a fixed seed (epsilon 1.7517) and computed the analytic
+    composition of two Laplace(1) mechanisms with dp_accounting (2.0000, single 1.0000), matching Section
+    4.3.6's "2ε". All 13 checks passed and its five values equal the checker's. The checker rejected or failed
+    27 incomplete or invalid fixtures (missing or empty logs, XML and status file, a missing run or pytest
+    usage error, FAILED tests, removed, renamed or duplicated tests, a removed, relabelled or wrong-valued
+    equality message, Dist <= Sens, a wrong distance, a removed or duplicated violation line, a removed
+    budget message, epsilon 0.98 / NaN / missing, an injected traceback, a failing or missing control, a
+    junit collection error or duplicate testcase) and accepted only the genuine output. A wrong commit, an
+    edited src/dp_recorder/auditing/audit_primitives.py and an edited tests/test_double_spending.py each
+    stopped the command before amber-dprecorder/ was created.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-17: exit 0,
+    38 s wall, 269168 KiB peak RSS, 524 MB workspace (checkout, venv, captures), the same 2 / 3 / 0 / 1 and
+    epsilon 1.80. Validator 13/13, all 27 fixtures and a replay of every measure block re-confirmed.
+    Baseline hashes below are from this fresh run. versions.log and status.txt were byte-identical to the
+    first capture; the logs differ only in the run directory, timings and the epsilon lines, and the junit
+    XML carries timestamps and the host name.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.11 with venv on PATH as python3.11 (tested
+    3.11.15, e.g. `uv python install 3.11.15`), and network access to GitHub and PyPI. The experiment itself
+    is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: invariance_violations_flagged
+  threshold: == 2
+  unit: caught invariance violations
+  source: 'Paper Section 3.2 (p.471): ensure_equality "asserts that the input q matches the recorded input from
+    the D trace. If they differ, it flags a violation."; Section 4.3.7 Opacus and 4.3.4 Diffprivlib / 4.3.8 dpmm
+    (pp.475-476); artifact appendix Experiment 1.'
+  measurement_protocol: 'Run `pytest tests/test_buggy_private_mean.py tests/test_domain_inference.py -v -s`.
+    The first MRE leaks the dataset size into a public scaling factor (Opacus, len(dataset)); the second infers
+    the class domain from private data with np.unique (Diffprivlib, dpmm). A test counts only if junit and the
+    log both say PASSED and its log block holds exactly one caught "Equality Failure @ ''n''" (first test) or
+    "''num_classes''" (second test) with Record (D) 3 and Replay (D'') 2, the values the test inputs imply.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-dprecorder/metrics.json
+    regex: '"invariance_violations_flagged": ([0-9]+)'
+- metric: sensitivity_violations_flagged
+  threshold: == 3
+  unit: caught sensitivity violations
+  source: 'Paper Section 3.2 (p.471): "If the empirical distance between them exceeds the declared sensitivity
+    ... a sensitivity violation is flagged"; Sections 4.3.1 SmartNoise SDK (p.474), 4.3.3 Synthcity (p.475)
+    and 4.3.9 pathological inputs (p.477); artifact appendix Experiment 2.'
+  measurement_protocol: 'Run `pytest tests/test_sensitivity_miscalibration.py tests/test_noise_miscalibration.py
+    tests/test_nan_injection.py -v -s`. A test counts only if junit and the log both say PASSED and its log
+    block holds exactly one "Call i (Laplace): Dist X > Sens Y" with X > Y and (X, Y) equal to the values the
+    test inputs imply: (97, 5) for a sum over raw instead of clipped data, (1, 0) for the PrivBayes
+    K == n_features scale collapse, (inf, 5) for a NaN that slips through np.clip.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-dprecorder/metrics.json
+    regex: '"sensitivity_violations_flagged": ([0-9]+)'
+- metric: control_false_positives
+  threshold: == 0
+  unit: failing control tests
+  source: 'Artifact appendix "Testing the Environment": `pytest`, "The tests should pass"; tests/test_correct_mechanism.py
+    ("provides a passing reference example for the auditor"). Paper Section 4.3.10 (p.477) reports correct
+    libraries where the audit found no violation.'
+  measurement_protocol: 'Run the whole suite (`pytest tests -v -s`). It must collect exactly the seven test
+    files'' tests. The value is 1 if test_correct_count_mechanism (a correct Laplace count, sensitivity 1,
+    neighbour differs by one record) fails in junit or the log, else 0. Shows the auditor does not flag a
+    correct mechanism.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-dprecorder/metrics.json
+    regex: '"control_false_positives": ([0-9]+)'
+- metric: double_spending_budget_exceeded
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 4.3.6 MOSTLY AI (p.476): "Only a single budget is accounted for, although both routines
+    add Laplace noise ... the actual privacy cost is 2ε even though the system reports ε"; Section 3.3
+    Re:cord-play-sample; artifact appendix Experiment 3.'
+  measurement_protocol: 'Run `pytest tests/test_double_spending.py -v -s`. Two Laplace queries each spend the
+    full epsilon = 1 while the pipeline claims 1 in total. Re:cord-play-sample draws 10,000 samples of the
+    isolated trace, composes the empirical PLDs and reads epsilon at delta = 1e-5. The value is 1 only if the
+    test PASSED and its log holds the caught "Privacy budget exceeded!" assertion.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-dprecorder/metrics.json
+    regex: '"double_spending_budget_exceeded": ([0-9]+)'
+- metric: double_spending_empirical_epsilon
+  threshold: '> 1.0'
+  unit: epsilon at delta = 1e-5
+  source: 'Artifact appendix Experiment 3: "the empirical Epsilon is significantly higher than the target
+    Epsilon (e.g., Target Epsilon: 1.0 | Empirical Epsilon: 1.98)"; paper Section 4.3.6 (p.476).'
+  measurement_protocol: 'The "Empirical Epsilon" the test prints (2 dp) in the same run; exactly one such line
+    and a finite value are required. Threshold is the declared budget of 1.0. The RNG is unseeded, so the
+    value varies between runs; it is recorded for drift, only the bound is judged.'
+  expected_verdict: REPRODUCED
+  notes: 'The analytic composition of the two Laplace(1) mechanisms (dp_accounting PLD) is epsilon = 2.0000 at
+    delta = 1e-5; the empirical estimate sits below it (1.55-1.75 observed).'
+  measure:
+    file: amber-dprecorder/metrics.json
+    regex: '"double_spending_empirical_epsilon": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 85d189ebd7ff81a52984708322ee2c2d8c479db4
+    git diff --quiet HEAD --
+    mkdir amber-dprecorder
+    python3.11 -m venv amber-dprecorder/venv
+    cat > amber-dprecorder/requirements.txt <<'REQ'
+    absl-py==1.4.0 --hash=sha256:0d3fe606adfa4f7db64792dd4c7aee4ee0c38ab75dfd353b7a83ed3e957fcb47
+    attrs==25.4.0 --hash=sha256:adcf7e2a1fb3b36ac48d97835bb6d8ade15b8dcce26aba8bf1d14847b57a3373
+    contourpy==1.3.3 --hash=sha256:51e79c1f7470158e838808d4a996fa9bac72c498e93d8ebe5119bc1e6becb0db
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    dm-tree==0.1.9 --hash=sha256:294dc1cecf87552a45cdd5ddb215e7f5295a5a47c46f1f0a0463c3dd02a527d7
+    dp-accounting==0.4.4 --hash=sha256:8421eb08655ea7ae9b3fb7e18b8da20a974873a869399439cf842a050b7e5567
+    fonttools==4.61.0 --hash=sha256:b5ca59b7417d149cf24e4c1933c9f44b2957424fc03536f132346d5242e0ebe5
+    graphviz==0.20.3 --hash=sha256:81f848f2904515d8cd359cc611faba817598d2feaac4027b266aa3eda7b3dde5
+    iniconfig==2.3.0 --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
+    joblib==1.5.2 --hash=sha256:4e1f0bdbb987e6d843c70cf43714cb276623def372df3c22fe5266b2670bc241
+    kiwisolver==1.4.9 --hash=sha256:dc1ae486f9abcef254b5618dfb4113dd49f94c68e3e027d03cf0143f3f772b61
+    markdown-it-py==4.0.0 --hash=sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147
+    matplotlib==3.10.7 --hash=sha256:2222c7ba2cbde7fe63032769f6eb7e83ab3227f47d997a8453377709b7fe3a5a
+    mdurl==0.1.2 --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8
+    mpmath==1.3.0 --hash=sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c
+    numpy==1.26.4 --hash=sha256:666dbfb6ec68962c033a450943ded891bed2d54e6755e35e5835d63f4f6931d5
+    packaging==25.0 --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484
+    pandas==2.3.3 --hash=sha256:b98560e98cb334799c0b07ca7967ac361a47326e9b4e5a7dfb5ab2b1c9d35a1b
+    pillow==12.0.0 --hash=sha256:5269cc1caeedb67e6f7269a42014f381f45e2e7cd42d834ede3c703a1d915fe3 --hash=sha256:bee2a6db3a7242ea309aa7ee8e2780726fed67ff4e5b40169f2c940e7eb09227
+    pluggy==1.6.0 --hash=sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746
+    pygments==2.19.2 --hash=sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b
+    pyparsing==3.2.5 --hash=sha256:e38a4f02064cf41fe6593d328d0512495ad1f3d8a91c4f73fc401b3079a59a5e
+    pytest==8.4.2 --hash=sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    rich==15.0.0 --hash=sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb
+    scikit-learn==1.7.2 --hash=sha256:89877e19a80c7b11a2891a27c21c4894fb18e2c2e077815bcade10d34287b20d
+    scipy==1.16.3 --hash=sha256:0151a0749efeaaab78711c78422d413c583b8cdd2011a3c1d6c794938ee9fdb2
+    seaborn==0.13.2 --hash=sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    threadpoolctl==3.6.0 --hash=sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb
+    tqdm==4.67.1 --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    wrapt==2.0.1 --hash=sha256:df0b6d3b95932809c5b3fecc18fda0f1e07452d05e2662a0b35548985f256e28
+    REQ
+    amber-dprecorder/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-dprecorder/requirements.txt
+    amber-dprecorder/venv/bin/python -c "import sys; from importlib.metadata import version as v; assert sys.version_info[:2] == (3, 11); print(sys.version.split()[0], *(p + '==' + v(p) for p in ('numpy', 'scipy', 'dp-accounting', 'pytest')))" > amber-dprecorder/versions.log
+    run() {  # the appendix's pytest commands; -s prints each caught violation; exit codes go to the checker
+      n=$1; shift
+      PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg amber-dprecorder/venv/bin/python -m pytest -v -s -p no:cacheprovider --junitxml="amber-dprecorder/$n.xml" "$@" > "amber-dprecorder/$n.log" 2>&1 && s=0 || s=$?
+      echo "$n $s" >> amber-dprecorder/status.txt
+    }
+    run exp1 tests/test_buggy_private_mean.py tests/test_domain_inference.py
+    run exp2 tests/test_sensitivity_miscalibration.py tests/test_noise_miscalibration.py tests/test_nan_injection.py
+    run exp3 tests/test_double_spending.py
+    run suite tests
+    python3 -I - amber-dprecorder <<'PYTHON' > amber-dprecorder/metrics.json
+    import json, math, pathlib, re, sys, xml.etree.ElementTree as ET
+    root = pathlib.Path(sys.argv[1])
+    EXP = {'exp1': ['test_buggy_private_mean::test_invariant_violation', 'test_domain_inference::test_domain_inference_bug'],
+           'exp2': ['test_sensitivity_miscalibration::test_sensitivity_bug', 'test_noise_miscalibration::test_noise_miscalibration_bug', 'test_nan_injection::test_nan_injection_bug'],
+           'exp3': ['test_double_spending::test_accounting_bug']}
+    EXP['suite'] = sorted(EXP['exp1'] + EXP['exp2'] + EXP['exp3'] + ['test_correct_mechanism::test_correct_count_mechanism'])
+    status = dict(l.split() for l in (root/'status.txt').read_text().splitlines())
+    assert sorted(status) == sorted(EXP) and all(s in ('0', '1') for s in status.values()), 'missing run or pytest usage/collection error'
+    passed, seg = {}, {}
+    for n, tests in EXP.items():
+        xml = ET.parse(root/(n + '.xml')).getroot()
+        assert all(s.get('errors') == '0' for s in xml.iter('testsuite')), n + ': collection/setup errors'
+        got = {}
+        for tc in xml.iter('testcase'):
+            k = tc.get('classname').split('.')[-1] + '::' + tc.get('name')
+            assert k not in got, n + ': duplicate test'
+            got[k] = not any(c.tag in ('failure', 'error', 'skipped') for c in tc)
+        assert sorted(got) == sorted(tests), n + ': wrong test set'
+        log = (root/(n + '.log')).read_text()
+        assert 'Traceback' not in log, n + ': traceback in log'
+        starts = [(m.start(), m[1] + '::' + m[2]) for m in re.finditer(r'(?m)^tests/(\w+)\.py::(\w+) ', log)]
+        assert sorted(k for _, k in starts) == sorted(tests), n + ': log does not list exactly its tests'
+        ends = [s for s, _ in starts[1:]] + [log.index('\n- generated xml file', starts[-1][0])]
+        for (s, k), e in zip(starts, ends):
+            ok = log[s:e].rstrip().endswith('PASSED')
+            assert ok == got[k], n + ': log and junit disagree on ' + k
+            passed[n, k], seg[n, k] = ok, log[s:e]
+    EQ = {'test_buggy_private_mean::test_invariant_violation': 'n', 'test_domain_inference::test_domain_inference_bug': 'num_classes'}
+    def eq_hit(k):
+        m = re.findall(r"Equality Failure @ '(\w+)' \(Call \d+\)\n\s+Record \(D\) : (\S+)\n\s+Replay \(D'\): (\S+)", seg['exp1', k])
+        return passed['exp1', k] and m == [(EQ[k], '3', '2')]
+    SENS = {'test_sensitivity_miscalibration::test_sensitivity_bug': (97.0, 5.0), 'test_noise_miscalibration::test_noise_miscalibration_bug': (1.0, 0.0), 'test_nan_injection::test_nan_injection_bug': (math.inf, 5.0)}
+    def sens_hit(k):
+        m = [(float(d), float(s)) for d, s in re.findall(r'Call \d+ \(Laplace\): Dist (\S+) > Sens (\S+)', seg['exp2', k])]
+        return passed['exp2', k] and len(m) == 1 and m[0][0] > m[0][1] and m[0] == SENS[k]
+    k3 = EXP['exp3'][0]
+    eps = re.findall(r'Target Epsilon: 1\.0 \| Empirical Epsilon: (\S+)', seg['exp3', k3])
+    assert len(eps) == 1 and math.isfinite(float(eps[0])), 'missing empirical epsilon'
+    print(json.dumps({
+        'invariance_violations_flagged': sum(map(eq_hit, EQ)),
+        'sensitivity_violations_flagged': sum(map(sens_hit, SENS)),
+        'control_false_positives': int(not passed['suite', 'test_correct_mechanism::test_correct_count_mechanism']),
+        'double_spending_budget_exceeded': int(passed['exp3', k3] and 'Caught expected AssertionError:\nPrivacy budget exceeded!' in seg['exp3', k3]),
+        'double_spending_empirical_epsilon': float(eps[0]),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-dprecorder/versions.log
+  - amber-dprecorder/status.txt
+  - amber-dprecorder/exp1.log
+  - amber-dprecorder/exp1.xml
+  - amber-dprecorder/exp2.log
+  - amber-dprecorder/exp2.xml
+  - amber-dprecorder/exp3.log
+  - amber-dprecorder/exp3.xml
+  - amber-dprecorder/suite.log
+  - amber-dprecorder/suite.xml
+  - amber-dprecorder/metrics.json
+baseline:
+  captured_on: '2026-11-17'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic;
+    Python 3.11.15 numpy 1.26.4 scipy 1.16.3 dp-accounting 0.4.4 pytest 8.4.2
+  outputs:
+  - path: amber-dprecorder/versions.log
+    sha256: 919a2537fba20a3c5e68781886d390c82fef16c922a8fa085714a6c2378e2637
+  - path: amber-dprecorder/status.txt
+    sha256: 9879072817cc9de443fa2036a165ed2986d6fcf111a8616d144892daf4eac384
+  - path: amber-dprecorder/exp1.log
+    sha256: 99b7fb3d2d474b424b7283bd94e106b52cce9d2d98cd4a79ab05f1abdab7745b
+  - path: amber-dprecorder/exp1.xml
+    sha256: bf91b391d622dd9bbeaab3ff5ab49617d30fd6876bbfbaa875833a19aad370c1
+  - path: amber-dprecorder/exp2.log
+    sha256: 2c7339f34bfd37410b3fa130b5dbfec06c0af0309efaf67dc419561a07a009ff
+  - path: amber-dprecorder/exp2.xml
+    sha256: e1504c4da728acfebe616a1fea4c6887897dba2c6edee328ed522eebab4e462f
+  - path: amber-dprecorder/exp3.log
+    sha256: d6f97dffc4570e2ccb4fbd1cf2b54145419dbac695f097dbe3d29087ef68af50
+  - path: amber-dprecorder/exp3.xml
+    sha256: 0df1e24730065de3f24a1d0e62a2ff019e05cb23f767c5d1b232060e29f8ff05
+  - path: amber-dprecorder/suite.log
+    sha256: e1cc7105831aa7e2642ba8b3ee03e114a7cfcf8d13413f86b687fc62bb9515c2
+  - path: amber-dprecorder/suite.xml
+    sha256: 24aa67774e8e622ae48956df73509df9895434785ece1448386d197feb86f95a
+  - path: amber-dprecorder/metrics.json
+    sha256: 63347e24fddad6c0a909b0530ca0f16ab7b2babbd171599250a716e99f02ce98
+  metrics:
+    invariance_violations_flagged: 2
+    sensitivity_violations_flagged: 3
+    control_false_positives: 0
+    double_spending_budget_exceeded: 1
+    double_spending_empirical_epsilon: 1.8
+  bit_for_bit_expected: false
