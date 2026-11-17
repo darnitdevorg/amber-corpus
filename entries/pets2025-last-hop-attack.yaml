@@ -1,0 +1,320 @@
+# Verified subset: the artifact's three calculation scripts (appendix Experiments 1-4), and the ten numbers the
+# paper prints from them in Sections 2.5, 7 and 7.1.2 and Appendix C. The proofs (Sections 4-6) and the figure
+# shapes are not tested; see resources.notes.
+id: pets2025-last-hop-attack
+title: 'The Last Hop Attack: Why Loop Cover Traffic over Fixed Cascades Threatens Anonymity'
+venue:
+  name: PETS
+  year: 2025
+paper:
+  url: https://petsymposium.org/popets/2025/popets-2025-0067.pdf
+  doi: 10.56553/popets-2025-0067
+artifact:
+  url: https://github.com/Ti-ger/Last_Hop_Attack/tree/2e5ea768949f8689c9320d4f5d2002ff6b20e34c
+  clone: git clone https://github.com/Ti-ger/Last_Hop_Attack.git && cd Last_Hop_Attack && git checkout
+    2e5ea768949f8689c9320d4f5d2002ff6b20e34c, then run run.command in the checkout root.
+  ref_type: commit
+  ref: 2e5ea768949f8689c9320d4f5d2002ff6b20e34c
+  license: GPL-3.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 0.5
+  disk_gb: 0.1
+  runtime_minutes: 1
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is the "Artifact Appendix" section of README.md: "This artifact requires Python3 and
+    the library numpy"; "Any computer on which you can read this site should suffice to run the scripts"; "The
+    runs should not take longer than a minute and consume more than a few megabytes of storage"; "All
+    calculations done in the paper can be reproduced with this artifact." The AEC row (PoPETs 2025) awards
+    available, functional and reproduced and pins this commit: https://secartifacts.github.io/pets2025/results.
+    Upstream has since added README-only commits; the entry keeps the AEC pin.
+
+    Tested: the three scripts the appendix lists, unmodified. lasthop_anonymity_sets.py computes Figure 2 (expected
+    receiver anonymity set, Section 2.4). lasthop_advantage_uniform_cascade_selection.py computes the adversary's
+    advantage, Equation 2 of Section 5.5, for Figures 9, 10, 11 and 13.
+    lasthop_advantage_bandwidth_based_cascade_selection.py computes the Appendix C advantage for Figures 12 and 13.
+    They are closed-form calculations: no randomness, no input data, no network. Each writes CSVs to ./data. The
+    command runs them from amber-lasthop/, so the 8 CSVs land in amber-lasthop/data and the authors' committed data/
+    is left untouched. The claims are the ten values the paper prints in its text, read from those CSVs and rounded
+    half-up to the decimals the paper prints.
+
+    Excluded: the proofs and the impossibility result (Sections 4-6), which the artifact does not compute; the
+    figure shapes; the "≈ 50" and "≈ 5" expected attempts in Section 7, which are not artifact outputs. This entry
+    makes no claim about any of these.
+
+    bandwidth_global_k1000 uses '>= 0.9989'. The formula gives 0.998999, which rounds to 0.9990; the paper
+    truncates it to 0.9989 and says "even higher". Same reading as pets2026-canonize-communication's '>= 92'.
+    The other nine are '==' at the printed precision. The printed Section 2.4 formula raises the remain
+    probability to |E|, which taken literally with |E| = 3 would give 1.0013. Figure 2 (6 000 at one epoch)
+    and the sentence "after three epochs is 1.2" use |E| - 1, as the script does. The claim is the sentence.
+
+    Native, no Docker. The authors' Dockerfile is python:3 plus an unpinned "pip install numpy". Here a venv
+    gets numpy 2.3.5 (cp312 manylinux wheel) with pip --require-hashes. The command refuses a different commit
+    or any edit to tracked files (git diff --quiet), so the scripts and the committed data/ are as reviewed.
+
+    Claims, thresholds and the checker's coverage rules were frozen on 2026-11-17 before any run. During
+    screening the paper's formulas were evaluated by hand and all ten were expected to pass. First capture
+    on 2026-11-17 in a fresh clone, under a 1 GiB memory cap with swap disabled: exit 0, 7.2 s wall
+    including the venv and wheel download, 98744 KiB peak RSS (GNU time), 86 MB workspace. All ten values
+    match. stderr was empty. All 8 regenerated CSVs are byte-identical to the authors' committed data/*.csv.
+
+    An independent validator re-derived everything another way. It does not import the artifact. It types the
+    three formulas from the paper PDF and evaluates them in exact rational arithmetic, with the binomial ratios
+    of Equation 2 simplified by hand instead of math.comb. It then compares every one of the 8,087 cells of the 8
+    generated CSVs, and of the committed ones, to the exact values (all within 1e-12 relative). It re-reads the
+    ten printed values from the paper text. All 45 checks passed, and its ten values equal the checker's. The same
+    formulas also give two more printed values that are not claimed: 0.0199 (Section 7, ten nodes) and
+    0.0199 (Appendix C, ten mixes at one percent bandwidth). The checker rejected all 26 incomplete or invalid
+    fixtures: missing or empty CSVs and logs, an error or Traceback on stderr, dropped, duplicated or extra
+    rows, a renamed or swapped header, an extra column, NaN, inf, non-numeric or out-of-range cells, altered
+    indices and a filled unused slot. Four value changes with an intact shape reached metrics.json and replayed
+    as NOT_REPRODUCED. A wrong commit (upstream HEAD), an edit to any of the three scripts, and an edit to the
+    committed data/ each stopped the command before amber-lasthop/ was created.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-17: exit 0,
+    6.8 s wall, 99072 KiB peak RSS, 83 MB workspace (checkout, venv, captures). Same ten metrics; validator
+    (45/45), all 31 fixtures and a replay of every measure block re-confirmed. Every output, including
+    metrics.json, was byte-identical to the first capture. Baseline hashes below are from this fresh run.
+    bit_for_bit_expected stays false because the appendix makes no determinism claim, though both runs and
+    the authors' committed CSVs agree byte for byte here.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access to GitHub and PyPI
+    for the clone and the wheel. The calculations themselves are offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: anonymity_set_1m_epoch3
+  threshold: == 1.2
+  unit: users
+  source: 'Paper Section 2.5 (p.385): "Even with 1 million concurrent users, the expected anonymity set after three
+    epochs is 1.2"; Figure 2 (p.384).'
+  measurement_protocol: Run lasthop_anonymity_sets.py unmodified (|M| = 1,000 mixes, x = 5, |A| = 1). Read the 1M
+    column, epoch 3 row of amber-lasthop/data/easis.csv, rounded half-up to 1 decimal. easis.csv must have the
+    exact header and epochs 1, 2, 3; every set is at least 1. Like every claim, it is written only after all 8
+    CSVs pass the coverage checks and no stderr reports an error.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"anonymity_set_1m_epoch3": ([0-9.]+)'
+- metric: advantage_1_of_1000
+  threshold: == 0.002
+  unit: advantage
+  source: 'Paper Section 7 (p.391), Figure 9: "even if the adversary observes only a single node of the 1,000 nodes
+    in total, they can already gain an advantage of ≈ 0.002".'
+  measurement_protocol: Run lasthop_advantage_uniform_cascade_selection.py unmodified. Read row |Ψ| = 1 of
+    lasthop_plot_all_1k.csv (|M| = 1,000; 1,000 rows indexed 1..1000 plus the script's unused 0,0 row), rounded
+    half-up to 3 decimals. Every advantage must lie in [0, 1].
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"advantage_1_of_1000": ([0-9.]+)'
+- metric: advantage_10_of_1000
+  threshold: == 0.02
+  unit: advantage
+  source: 'Paper Section 7 (p.391), Figure 9: "For ten observed nodes, the adversary''s advantage rises to ≈ 0.02."'
+  measurement_protocol: Row |Ψ| = 10 of lasthop_plot_all_1k.csv, rounded half-up to 2 decimals, as advantage_1_of_1000.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"advantage_10_of_1000": ([0-9.]+)'
+- metric: advantage_tenth_of_1000
+  threshold: == 0.19
+  unit: advantage
+  source: 'Paper Section 7 (p.391), Figure 10: "When the adversary is able to observe a tenth of the nodes, their
+    advantage is ≈ 0.19."'
+  measurement_protocol: Row |Ψ| = 100 of lasthop_plot_all_1k.csv, rounded half-up to 2 decimals, as advantage_1_of_1000.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"advantage_tenth_of_1000": ([0-9.]+)'
+- metric: advantage_global_1000
+  threshold: == 0.999
+  unit: advantage
+  source: 'Paper Section 7 (p.391), Figure 10: "Considering the global passive adversary, the advantage converges
+    to ≈ 0.999."'
+  measurement_protocol: Row |Ψ| = 1000 (every node corrupted) of lasthop_plot_all_1k.csv, rounded half-up to 3
+    decimals, as advantage_1_of_1000.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"advantage_global_1000": ([0-9.]+)'
+- metric: global_passive_x2
+  threshold: == 0.375
+  unit: advantage
+  source: 'Paper Section 7.1.2 (p.392), Figure 11: "the attacker can achieve an advantage of 0.375 for x = 2".'
+  measurement_protocol: Run lasthop_advantage_uniform_cascade_selection.py unmodified. Read row x = 2 of
+    lasthop_plot_global_passive_10.csv (rows x = 1..10 plus the unused 0,0 row), rounded half-up to 3 decimals.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"global_passive_x2": ([0-9.]+)'
+- metric: global_passive_x10
+  threshold: == 0.89
+  unit: advantage
+  source: 'Paper Section 7.1.2 (p.392), Figure 11: "x = 10, where each mix is allowed to serve at most a tenth of the
+    users as Last Hop, the adversary reaches an advantage of ≈ 0.89".'
+  measurement_protocol: Row x = 10 of lasthop_plot_global_passive_10.csv, rounded half-up to 2 decimals, as
+    global_passive_x2.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"global_passive_x10": ([0-9.]+)'
+- metric: bandwidth_20pct_k10
+  threshold: == 0.35
+  unit: advantage
+  source: 'Paper Appendix C (p.397), Figure 12 (p.396): "if an adversary controls 20 percent of the total bandwidth
+    distributed over ten mixes, they already have an advantage of ≈ 0.35".'
+  measurement_protocol: Run lasthop_advantage_bandwidth_based_cascade_selection.py unmodified. Read the k = 10
+    column at bandwidth 200 of 1,000 in lasthop_plot_bandwidth.csv (rows 1..1000, columns k = 10, 100, 1k),
+    rounded half-up to 2 decimals. Every advantage must lie in [0, 1].
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"bandwidth_20pct_k10": ([0-9.]+)'
+- metric: bandwidth_global_k100
+  threshold: == 0.9899
+  unit: advantage
+  source: 'Paper Appendix C (p.397): "For a global passive adversary with 100 mixes, the advantage is close to one
+    (≈ 0.9899)".'
+  measurement_protocol: The k = 100 column at bandwidth 1000 of 1,000 in lasthop_plot_bandwidth.csv, rounded
+    half-up to 4 decimals, as bandwidth_20pct_k10.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"bandwidth_global_k100": ([0-9.]+)'
+- metric: bandwidth_global_k1000
+  threshold: '>= 0.9989'
+  unit: advantage
+  source: 'Paper Appendix C (p.397): "and for 1,000 mixes, the advantage is even higher (≈ 0.9989)".'
+  measurement_protocol: The k = 1k column at bandwidth 1000 of 1,000 in lasthop_plot_bandwidth.csv, to 6 decimals,
+    as bandwidth_20pct_k10. The paper's 0.9989 truncates the formula's 0.998999, so the claim is read as "at
+    least 0.9989".
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-lasthop/metrics.json
+    regex: '"bandwidth_global_k1000": ([0-9.]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 2e5ea768949f8689c9320d4f5d2002ff6b20e34c
+    git diff --quiet HEAD --
+    mkdir amber-lasthop
+    python3 -m venv amber-lasthop/venv
+    echo 'numpy==2.3.5 --hash=sha256:0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28' > amber-lasthop/requirements.txt
+    amber-lasthop/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-lasthop/requirements.txt
+    export PATH="$PWD/amber-lasthop/venv/bin:$PATH"
+    python3 -c "import sys, numpy; print(sys.version.split()[0], 'numpy==' + numpy.__version__)" > amber-lasthop/versions.log
+    cd amber-lasthop
+    for s in lasthop_anonymity_sets lasthop_advantage_uniform_cascade_selection lasthop_advantage_bandwidth_based_cascade_selection; do
+      python3 "../$s.py" > "$s.log" 2> "$s.stderr.log"
+    done
+    cd ..
+    python3 -I - amber-lasthop <<'PYTHON' > amber-lasthop/metrics.json
+    import json, math, pathlib, re, sys
+    from decimal import Decimal, ROUND_HALF_UP
+    root = pathlib.Path(sys.argv[1])
+    for log in root.glob('lasthop_*.stderr.log'):
+        assert not re.search(r'Traceback|Error', log.read_text()), f'{log.name} reports an error'
+    assert len(list(root.glob('lasthop_*.stderr.log'))) == 3, 'missing stderr log'
+    assert (root/'lasthop_advantage_uniform_cascade_selection.log').read_text() == 'data/lasthop_plot_all_1k.csv\n', 'uniform script stdout'
+    SHAPE = {'easis': ('epoch,5k,10k,50k,100k,1M', [1, 2, 3]),
+             'lasthop_plot_all_1k': ('indices,1k', list(range(1, 1001)) + [0]),
+             'lasthop_plot_ratio_big_steps': ('big steps,1k,5k,10k,100k', [0.2, 0.4, 0.6, 0.8, 1]),
+             'lasthop_plot_global_passive_10': ('indices, advantage', list(range(1, 11)) + [0]),
+             'lasthop_plot_proportion_1k': ('proportion, advantage', [i / 1000 for i in range(1, 1001)]),
+             'lasthop_plot_bandwidth': ('bandwidth_advantage,10,100,1k', list(range(1, 1001))),
+             'lasthop_plot_bandwidth_big_steps_1k': ('bandwidth_advantage,1k', [200, 400, 600, 800, 1000]),
+             'lasthop_plot_bandwidth_big_steps_100': ('bandwidth_advantage,100', [0.2 * s for s in range(1, 6)])}
+    t = {}
+    for name, (head, index) in SHAPE.items():
+        lines = (root/'data'/f'{name}.csv').read_text().splitlines()
+        assert lines and lines[0] == '# ' + head, f'{name} header'
+        rows = t[name] = [[float(c) for c in line.split(',')] for line in lines[1:]]
+        assert [r[0] for r in rows] == index, f'{name} rows/index'
+        assert all(len(r) == head.count(',') + 1 and all(map(math.isfinite, r)) for r in rows), f'{name} cells'
+        lo, hi = (1, math.inf) if name == 'easis' else (0, 1)
+        assert all(lo <= c <= hi for r in rows for c in r[1:]), f'{name} out of range'
+    assert t['lasthop_plot_all_1k'][-1] == [0, 0] and t['lasthop_plot_global_passive_10'][-1] == [0, 0], 'unused slot'
+    r = lambda v, q: float(Decimal(repr(v)).quantize(Decimal(q), ROUND_HALF_UP))  # paper's printed precision
+    adv, gp, bw = t['lasthop_plot_all_1k'], t['lasthop_plot_global_passive_10'], t['lasthop_plot_bandwidth']
+    print(json.dumps({
+        'anonymity_set_1m_epoch3': r(t['easis'][2][5], '0.1'),
+        'advantage_1_of_1000': r(adv[0][1], '0.001'), 'advantage_10_of_1000': r(adv[9][1], '0.01'),
+        'advantage_tenth_of_1000': r(adv[99][1], '0.01'), 'advantage_global_1000': r(adv[999][1], '0.001'),
+        'global_passive_x2': r(gp[1][1], '0.001'), 'global_passive_x10': r(gp[9][1], '0.01'),
+        'bandwidth_20pct_k10': r(bw[199][1], '0.01'), 'bandwidth_global_k100': r(bw[999][2], '0.0001'),
+        'bandwidth_global_k1000': r(bw[999][3], '0.000001'),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-lasthop/versions.log
+  - amber-lasthop/lasthop_anonymity_sets.log
+  - amber-lasthop/lasthop_anonymity_sets.stderr.log
+  - amber-lasthop/lasthop_advantage_uniform_cascade_selection.log
+  - amber-lasthop/lasthop_advantage_uniform_cascade_selection.stderr.log
+  - amber-lasthop/lasthop_advantage_bandwidth_based_cascade_selection.log
+  - amber-lasthop/lasthop_advantage_bandwidth_based_cascade_selection.stderr.log
+  - amber-lasthop/data/easis.csv
+  - amber-lasthop/data/lasthop_plot_all_1k.csv
+  - amber-lasthop/data/lasthop_plot_ratio_big_steps.csv
+  - amber-lasthop/data/lasthop_plot_global_passive_10.csv
+  - amber-lasthop/data/lasthop_plot_proportion_1k.csv
+  - amber-lasthop/data/lasthop_plot_bandwidth.csv
+  - amber-lasthop/data/lasthop_plot_bandwidth_big_steps_1k.csv
+  - amber-lasthop/data/lasthop_plot_bandwidth_big_steps_100.csv
+  - amber-lasthop/metrics.json
+baseline:
+  captured_on: '2026-11-17'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic;
+    Python 3.12.3, numpy 2.3.5
+  outputs:
+  - path: amber-lasthop/versions.log
+    sha256: d2269f525be283f62121fa22493ba07d5fc355c149edb21a11ecbf9485fa8c47
+  - path: amber-lasthop/lasthop_anonymity_sets.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-lasthop/lasthop_anonymity_sets.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-lasthop/lasthop_advantage_uniform_cascade_selection.log
+    sha256: 52ef7ebbd1ffb60c5c98d681df743bdeff42a4d081d3aef66df0d1976d026eb0
+  - path: amber-lasthop/lasthop_advantage_uniform_cascade_selection.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-lasthop/lasthop_advantage_bandwidth_based_cascade_selection.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-lasthop/lasthop_advantage_bandwidth_based_cascade_selection.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-lasthop/data/easis.csv
+    sha256: 45b4ae76e4fe310b3301279527d96fd48b8019deebe3c16fd30e67e368d3b528
+  - path: amber-lasthop/data/lasthop_plot_all_1k.csv
+    sha256: d59ebeadc9ae68aaf3bf2557fd9027cce884cd36e736327e57c6241fa1c974c7
+  - path: amber-lasthop/data/lasthop_plot_ratio_big_steps.csv
+    sha256: 27493527e252e4279281962a76e585f6db126016d545b107e391942f93e06d82
+  - path: amber-lasthop/data/lasthop_plot_global_passive_10.csv
+    sha256: 0e23dc877d48c86a026d7e0be54c1347cdc49e601c028e07534b978f25fc87ea
+  - path: amber-lasthop/data/lasthop_plot_proportion_1k.csv
+    sha256: 67c24145a478a3f441aff02579278ace061c3deb1e6e126b315a1f93fc82852b
+  - path: amber-lasthop/data/lasthop_plot_bandwidth.csv
+    sha256: ffc3bc2b04373d0cb693fee0a446f01798c0f4f83979605ade192e12b7cac8e0
+  - path: amber-lasthop/data/lasthop_plot_bandwidth_big_steps_1k.csv
+    sha256: e2fa7c83ccf1fff98f8d998ce71d1e13318e5f36a18dc8656ac7fb10b87d716a
+  - path: amber-lasthop/data/lasthop_plot_bandwidth_big_steps_100.csv
+    sha256: c9ef60c4408cae550fdb44170d23b5dc6ec7cd20f4552c2f507f5e71ef2feb8d
+  - path: amber-lasthop/metrics.json
+    sha256: 4d5f9ba4d2f97de6c2c7e88484de5e33ee6f96f7c84a94bc7f066260daa8c855
+  metrics:
+    anonymity_set_1m_epoch3: 1.2
+    advantage_1_of_1000: 0.002
+    advantage_10_of_1000: 0.02
+    advantage_tenth_of_1000: 0.19
+    advantage_global_1000: 0.999
+    global_passive_x2: 0.375
+    global_passive_x10: 0.89
+    bandwidth_20pct_k10: 0.35
+    bandwidth_global_k100: 0.9899
+    bandwidth_global_k1000: 0.998999
+  bit_for_bit_expected: false
