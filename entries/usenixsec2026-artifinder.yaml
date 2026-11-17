@@ -1,0 +1,291 @@
+# Verified subset: artifact appendix C2 / E2 only, ArtiFinder's accuracy against three
+# ground-truth sets (paper Table 3) and the heuristic ablation (Section 3.4). E1 (running
+# ArtiFinder on paper PDFs) and E3 (the Section 4 trend statistics) are excluded; see
+# resources.notes.
+id: usenixsec2026-artifinder
+title: 'Not All Those Who Share Are Lost: Analyzing 25 Years of Cybersecurity Artifact Sharing Practices Through
+  Automated Discovery'
+venue:
+  name: USENIX Security
+  year: 2026
+paper:
+  url: https://www.usenix.org/system/files/usenixsecurity26-vansteenhuyse.pdf
+artifact:
+  url: https://zenodo.org/records/21774638
+  clone: Download https://zenodo.org/api/records/21774638/files/artifact.zip/content as artifact.zip.
+    Require SHA-256 b793e0fcb66b79e595385bb372c6e083ac8d84c639dffc8b409932c67c283c95; `mkdir artifact &&
+    unzip -q artifact.zip -d artifact` (the archive has no top-level directory), enter artifact/ and run
+    run.command there, leaving ../artifact.zip in place.
+  ref_type: doi
+  ref: 10.5281/zenodo.21774638
+  license: CC-BY-4.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Only appendix C2 / E2 is included: "(E2): [1 human-minute + 5 compute-minutes
+    + 200MB disk] ... By comparing the raw ArtiFinder output with groundtruth
+    datasets, the accuracy numbers can be recalculated. ... python
+    reproduce_results.py --experiment E2". C2: "ArtiFinder is able to identify
+    artifacts links in cybersecurity paper PDFs with a high (93.3-98.8%) accuracy
+    compared to three different ground truth datasets. By conducting an ablation
+    study, we show that multiple heuristics are needed to achieve this accuracy."
+    Appendix A.2.3 "Hardware dependencies: None."; A.2.4 "any UNIX-based system
+    with Python 3.12 and Poppler".
+    https://secartifacts.github.io/usenixsec2026/appendix-files/sec26cycle2ae-final189.pdf
+    The AEC row awards available, functional and reproduced:
+    https://secartifacts.github.io/usenixsec2026/results (cycle 2, id 189).
+
+    Excluded: E1 runs ArtiFinder on paper PDFs, which the authors cannot
+    redistribute, and its ranking sends live HTTP/DNS requests, so it is neither
+    offline nor deterministic. E3 (C3, the Section 4 statistics over 9,054 papers)
+    is not part of this entry. This entry makes no claim about either.
+
+    Version: the appendix cites concept DOI 10.5281/zenodo.20412201. Record
+    21774638 (files dated 2026-06-18, zip comment = git b9c14ef1) is pinned
+    because it is the version that ships the appendix's reproduce_results.py and
+    expected_results.md; the earlier record 20412202 has neither.
+
+    Native, no Docker: a Python 3 venv with hash-pinned wheels. E2 imports only
+    matplotlib and urllib3 (requirements.txt is unpinned; PyGObject/Poppler are
+    needed only by E1). MPLBACKEND=Agg and a local MPLCONFIGDIR keep matplotlib
+    headless and out of $HOME. reproduce_results.py only prints "Error running"
+    when a script fails, so the checker requires all three "--- Finished" lines,
+    no "Error running" or Traceback, the Figure 2 PNG, and each Table 3 block and
+    ablation block exactly once, then computes every metric from results.md.
+    network_required covers Zenodo and PyPI; E2 itself is offline. The data are
+    fixed, so every output is deterministic.
+
+    GitHubRepo ablation (recorded, not judged): analysis/03c-Ablation.py rewrites
+    p["links"] in place, so the GithubRepo pass runs on links that have already
+    lost the LocationInPaper points. Its 83.63% is the accuracy with both rules
+    removed. Removing GitHubRepo alone gives 91.50% (independent recomputation),
+    while the paper reports the cumulative 83.6% as "Removing this rule yields an
+    accuracy of 83.6%". That claim is therefore carried with comparable: false,
+    a rule fixed in the pre-run plan. The other ablation value (LocationInPaper,
+    first pass) is unaffected and judged. The abstract says "89.6-98.8%"; Table 3,
+    Section 3.3 and appendix C2 say 93.3-98.8%, which is what is judged.
+
+    First capture on 2026-11-13 in a fresh extraction: exit 0, 27.4 s wall
+    including venv setup, 648220 KiB peak RSS (GNU time), under a 4 GiB
+    address-space cap. Sections 3.1-3.3 of results.md are byte-identical to the
+    authors' expected_results.md, all 33 Table 3 cells match the paper, and all
+    165 archive files were unchanged after the run. An independent validator
+    re-derived Table 3, the ablation and the Figure 2 cutoff curve from
+    data/data.json with its own URL matcher and rescoring, using no artifact code.
+    It reproduced every metric, n = 879/742/84, the 643/788 (81.6%) LocationInPaper
+    share, and the optimum cutoff of 20. The checker rejected 21 incomplete or
+    malformed fixtures (missing or empty files, error lines, missing, duplicated,
+    renamed or truncated blocks, NaN/inf, reordered ablation). On 7 value-tampered
+    fixtures it ran, but each turned at least one judged claim NOT_REPRODUCED.
+
+    The literal run.command passed from a second, fresh Zenodo download and
+    extraction on 2026-11-13: exit 0, 26.5 s wall including venv setup, 648300 KiB
+    peak RSS, about 359 MB workspace (archive, extraction, venv, captures). All
+    five outputs, the Figure 2 PNG included, were byte-identical to the first
+    capture. The validator, all 28 fixtures and the 165-file archive check were
+    confirmed again, and every measure regex replayed against the fresh
+    metrics.json gives the expected verdict. A corrupted archive stopped the
+    command at the SHA-256 check before any metric was written. Baseline hashes
+    below are from this fresh run.
+
+    Prerequisites: Linux x86_64, POSIX shell, Python 3.12 with venv (for the
+    pinned cp312 wheels), sha256sum, unzip, and network access to Zenodo and PyPI.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: table3_cells_matched
+  threshold: == 33
+  unit: table cells
+  source: Paper Section 3.3 and Table 3 (published p.6707); artifact appendix C2/E2.
+  measurement_protocol: 'Run the unmodified reproduce_results.py --experiment E2 (analysis/03a-Design.py,
+    03b-Accuracy.py, 03c-Ablation.py) on the bundled data/data.json. From results.md take the three blocks
+    "Accuracy for SecArtifacts / GetIn / Manual Sample dataset" (GetIn is the paper''s Olszewski et al. set);
+    each must appear exactly once with all eleven outcome values: correct presence, exact link, alternative,
+    correct absence, no link, missing link, wrong presence, no link, incorrect link, wrong absence and final
+    accuracy. Count the cells equal to Table 3 at its printed precision (one decimal, %). 11 x 3 = 33. No
+    tolerance beyond the paper''s rounding.'
+  expected_verdict: REPRODUCED
+  notes: Establishes that E2 regenerates the whole of Table 3, not only the headline accuracies.
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"table3_cells_matched": ([0-9]+)'
+- metric: ground_truth_papers
+  threshold: == 1705
+  unit: papers
+  source: Paper Table 3 header, n=879 (secartifacts), n=742 (Olszewski), n=84 (Manual) (p.6707).
+  measurement_protocol: 'Sum the n printed in the three results.md accuracy blocks. This checks that the
+    accuracy was computed over the complete ground-truth sets.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"ground_truth_papers": ([0-9]+)'
+- metric: secartifacts_accuracy_pct
+  threshold: == 95.6
+  unit: percent
+  source: 'Paper Table 3 "Final accuracy" (p.6707); Section 3.3 "Overall, we find a high accuracy for all
+    datasets, ranging from 93.3-98.8%"; appendix C2.'
+  measurement_protocol: 'Final ("Overall") accuracy of the SecArtifacts block in results.md: correct presence
+    (exact or alternative link) plus correct absence (no link, or ground-truth link missing from the paper),
+    over the 879 A* papers listed on secartifacts. Printed precision, one decimal.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"secartifacts_accuracy_pct": ([0-9.]+)'
+- metric: olszewski_accuracy_pct
+  threshold: == 93.3
+  unit: percent
+  source: Paper Table 3 "Final accuracy", Olszewski column (p.6707); Section 3.3; appendix C2 lower bound.
+  measurement_protocol: 'Final accuracy of the GetIn block in results.md (the 742 ML papers manually labelled
+    by Olszewski et al.), computed as for secartifacts. Printed precision, one decimal.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"olszewski_accuracy_pct": ([0-9.]+)'
+- metric: manual_accuracy_pct
+  threshold: == 98.8
+  unit: percent
+  source: Paper Table 3 "Final accuracy", Manual column (p.6707); Section 3.3; appendix C2 upper bound.
+  measurement_protocol: 'Final accuracy of the Manual Sample block in results.md (the 84-paper 5% sample of
+    2000-2012 A* papers), computed as for secartifacts. Printed precision, one decimal.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"manual_accuracy_pct": ([0-9.]+)'
+- metric: location_rule_share_pct
+  threshold: == 81.6
+  unit: percent
+  source: 'Paper Section 3.4: "81.6% of identified artifacts were granted points due to this rule"
+    (LocationInPaper, p.6708).'
+  measurement_protocol: '"percentage of links affected" in the LocationInPaper block of results.md: the share of
+    secartifacts papers (excluding not_linked ones) whose discovered artifact carries a LocationInPaper score,
+    rounded to one decimal.'
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"location_rule_share_pct": ([0-9.]+)'
+- metric: location_ablation_accuracy_pct
+  threshold: == 88.8
+  unit: percent
+  source: 'Paper Section 3.4: "Removing this rule yields an accuracy of 88.8%" (LocationInPaper, p.6708).'
+  measurement_protocol: '"SecArtifacts accuracy without LocationInPaper" in results.md: every link is rescored
+    without its LocationInPaper contribution, the top link is the artifact if it reaches the threshold of 20, and
+    a paper counts as correct when it was correct before and the discovered artifact is unchanged. This is the
+    first ablation pass, so it removes LocationInPaper alone. Rounded to one decimal.'
+  expected_verdict: REPRODUCED
+  notes: Supports C2's "multiple heuristics are needed" (95.6% to 88.8% without this rule).
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"location_ablation_accuracy_pct": ([0-9.]+)'
+- metric: github_ablation_accuracy_pct
+  threshold: == 83.6
+  unit: percent
+  source: 'Paper Section 3.4: "Removing this rule yields an accuracy of 83.6%" (GitHubRepo, p.6708).'
+  measurement_protocol: '"SecArtifacts accuracy without GithubRepo" in results.md. The artifact''s second
+    ablation pass starts from links already stripped of LocationInPaper (03c-Ablation.py assigns p["links"] in
+    place), so the value is the accuracy with both rules removed, not with GitHubRepo removed alone. Recorded
+    for drift only.'
+  expected_verdict: NOT_COMPARABLE
+  notes: Independent recomputation gives 83.63% for both rules removed and 91.50% for GitHubRepo alone.
+  measure:
+    file: amber-artifinder/metrics.json
+    regex: '"github_ablation_accuracy_pct": ([0-9.]+)'
+    comparable: false
+    reason: The paper describes 83.6% as removing GitHubRepo, but the artifact that produced it removes
+      GitHubRepo on top of LocationInPaper; removing GitHubRepo alone recomputes to 91.5%.
+run:
+  command: |
+    set -eu
+    echo 'b793e0fcb66b79e595385bb372c6e083ac8d84c639dffc8b409932c67c283c95  ../artifact.zip' | sha256sum -c -
+    mkdir amber-artifinder figures
+    export MPLBACKEND=Agg MPLCONFIGDIR="$PWD/amber-artifinder/mpl"
+    python3 -m venv amber-artifinder/venv
+    cat > amber-artifinder/requirements.txt <<'REQ'
+    contourpy==1.3.1 --hash=sha256:efa874e87e4a647fd2e4f514d5e91c7d493697127beb95e77d2f7561f6905bd9
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.56.0 --hash=sha256:661a8995d11e6e4914a44ca7d52d1286e2d9b154f685a4d1f69add8418961563
+    kiwisolver==1.4.8 --hash=sha256:cc978a80a0db3a66d25767b03688f1147a69e6237175c0f4ffffaaedf744055a
+    matplotlib==3.10.1 --hash=sha256:c96f2c2f825d1257e437a1482c5a2cf4fee15db4261bd6fc0750f81ba2b4ba3d
+    numpy==2.2.4 --hash=sha256:4f92084defa704deadd4e0a5ab1dc52d8ac9e8a8ef617f3fbb853e79b0ea3592
+    packaging==24.2 --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759
+    pillow==11.1.0 --hash=sha256:7fdadc077553621911f27ce206ffcbec7d3f8d7b50e0da39f10997e8e2bb7f6a
+    pyparsing==3.2.1 --hash=sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    urllib3==2.3.0 --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df
+    REQ
+    amber-artifinder/venv/bin/pip install --quiet --no-input --require-hashes --only-binary :all: -r amber-artifinder/requirements.txt
+    amber-artifinder/venv/bin/python --version > amber-artifinder/versions.log
+    amber-artifinder/venv/bin/pip freeze >> amber-artifinder/versions.log
+    amber-artifinder/venv/bin/python reproduce_results.py --experiment E2 > amber-artifinder/run.log 2>&1
+    cp results.md figures/2-artifindertool_accuracy.png amber-artifinder/
+    python3 -I - <<'CHECK' > amber-artifinder/metrics.json
+    import json, pathlib, re
+    out = pathlib.Path('amber-artifinder')
+    log, md = (out/'run.log').read_text(), (out/'results.md').read_text()
+    assert 'Error running' not in log and 'Traceback' not in log, 'an E2 analysis script failed'
+    assert all(log.count('--- Finished %s ---' % s) == 1 for s in ('03a-Design.py', '03b-Accuracy.py', '03c-Ablation.py')), 'E2 incomplete'
+    assert (out/'2-artifindertool_accuracy.png').read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', 'Figure 2 missing'
+    # Paper Table 3 (p.6707): Correct presence, Exact, Alternative, Correct absence, No link, Missing link,
+    # Wrong presence, No link, Incorrect link, Wrong absence, Final accuracy. GetIn is the paper's Olszewski set.
+    table3 = {'SecArtifacts': [87.0, 58.6, 28.4, 8.5, 0.0, 8.5, 2.2, 0.0, 2.2, 2.3, 95.6],
+              'GetIn': [39.1, 31.8, 7.3, 54.2, 45.8, 8.4, 4.4, 4.4, 0.0, 2.3, 93.3],
+              'Manual Sample': [6.0, 6.0, 0.0, 92.9, 92.9, 0.0, 1.2, 1.2, 0.0, 0.0, 98.8]}
+    block = (r'Accuracy for DATASET dataset: \(n=([0-9]+)\)\n  Correct presence: N \(exact: N, alt: N\)\n'
+             r'  Correct absence: N, \(no link: N, missing link: N\)\n  Wrong presence: N, \(no link: N, incorrect link: N\)\n'
+             r'  Wrong absence: N\n  Overall accuracy: N\n').replace('N', r'([0-9]+\.[0-9])%')
+    cells, papers, acc = 0, 0, {}
+    for name, want in table3.items():
+        m = re.findall(block.replace('DATASET', re.escape(name)), md)
+        assert len(m) == 1 and md.count('Accuracy for %s dataset' % name) == 1, name + ' block must appear exactly once'
+        got = [float(v) for v in m[0][1:]]
+        papers += int(m[0][0]); acc[name] = got[10]
+        cells += sum(g == w for g, w in zip(got, want))
+    abl = re.findall(r'Ablation study for heuristic: (\w+)\nFiltered ([0-9]+) occurrences of heuristic \1\n'
+                     r'percentage of links affected: ([0-9.]+)%\nSecArtifacts accuracy without \1: ([0-9.]+)%\n-----\n', md)
+    assert [a[0] for a in abl] == ['LocationInPaper', 'GithubRepo'] and md.count('Ablation study for heuristic') == 2, 'ablation incomplete'
+    print(json.dumps({'table3_cells_matched': cells, 'ground_truth_papers': papers,
+                      'secartifacts_accuracy_pct': acc['SecArtifacts'], 'olszewski_accuracy_pct': acc['GetIn'],
+                      'manual_accuracy_pct': acc['Manual Sample'], 'location_rule_share_pct': round(float(abl[0][2]), 1),
+                      'location_ablation_accuracy_pct': round(float(abl[0][3]), 1),
+                      'github_ablation_accuracy_pct': round(float(abl[1][3]), 1)}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-artifinder/versions.log
+  - amber-artifinder/run.log
+  - amber-artifinder/results.md
+  - amber-artifinder/2-artifindertool_accuracy.png
+  - amber-artifinder/metrics.json
+baseline:
+  captured_on: '2026-11-13'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-42-generic; Python 3.12.3; matplotlib 3.10.1 and urllib3 2.3.0 in a local venv
+  outputs:
+  - path: amber-artifinder/versions.log
+    sha256: bc063bd042ba763781661d6dc5c18c1fc2f3690f2f8db9dcd454a2eb9ee9d186
+  - path: amber-artifinder/run.log
+    sha256: 15f72d1dc7bb8d30440c33d704418b980064ba02784a375cdd2d9ec9398754d3
+  - path: amber-artifinder/results.md
+    sha256: fb09ec0339a1e44ece36cc9a55ac073e4546a8157e2e5955c96f8d8f5af5a74d
+  - path: amber-artifinder/2-artifindertool_accuracy.png
+    sha256: 5aa771583bda4924c88f6acc625a6e9a3fb766d4c507402bb9d67fb536e981c4
+  - path: amber-artifinder/metrics.json
+    sha256: 36a7e5755d6d078557079a682a2c7b5b926a72741f9b3bc8aea7ade05e75cdc4
+  metrics:
+    table3_cells_matched: 33
+    ground_truth_papers: 1705
+    secartifacts_accuracy_pct: 95.6
+    olszewski_accuracy_pct: 93.3
+    manual_accuracy_pct: 98.8
+    location_rule_share_pct: 81.6
+    location_ablation_accuracy_pct: 88.8
+    github_ablation_accuracy_pct: 83.6
+  bit_for_bit_expected: false
