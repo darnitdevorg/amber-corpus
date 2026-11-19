@@ -1,0 +1,469 @@
+# Verified subset: the appendix's "Run Reduced Suite" (|Y| = 10^3 for PSU-CA and MKPM, 10^5 for PSU, 50
+# repetitions, main-body heuristic, full query budget). Judged: the query-count and full-recovery statements of
+# Section 8.3.1 and Appendix H.2. Runtimes, the paper-scale suite and Appendix H's limited budgets are excluded;
+# see resources.notes.
+id: pets2026-mkpid-attacks
+title: 'Beyond the Output: Inference Attacks on Private Set Union and Multi-Key Private Matching'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  doi: 10.56553/popets-2026-0155
+artifact:
+  url: https://github.com/deRaguso/mkpid-attacks-artifact/tree/e1db13b9097be58298989367b491761db662793a
+  clone: git clone https://github.com/deRaguso/mkpid-attacks-artifact.git && cd mkpid-attacks-artifact && git checkout
+    e1db13b9097be58298989367b491761db662793a, then run run.command in the checkout root.
+  ref_type: commit
+  ref: e1db13b9097be58298989367b491761db662793a
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 2
+  disk_gb: 1
+  runtime_minutes: 90
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository: "Our experiments can be carried out on any
+    hardware with any number of cores"; "The artifact should consume no more than 1GB of disk space"; for the
+    reduced suite, "When executed in an environment with 16 cores, this takes roughly 30 human-minutes and 2
+    compute-hours". The full suite takes "roughly 250 compute-hours". The AEC row (issue 2026.4) awards available,
+    functional and reproduced and pins this commit: https://secartifacts.github.io/pets2026/results and
+    https://petsymposium.org/popets/2026/.
+
+    Tested: the appendix's "Experiment: Run Reduced Suite" with its exact parameters. gen_MKPID_data.py
+    (seeded) builds the 121 MKPM record sets with |Y| = 1000. run_artifact.py then runs PSU-Diff (|Y| = 10^5),
+    PSU-CA-SearchTree (|Y| = 10^3), MKPM-SearchTree and the three T-reconstruction attacks with -r 50 and
+    --omit_appendix. That flag keeps only the full query budget and the p+ heuristic Section 8.3 reports.
+    format_measurements.py runs last. run_artifact.sh starts one detached tmux session per core (plus taskset).
+    The command starts the same twelve run_artifact.py processes in the background and waits for them instead,
+    because a detached session cannot be waited on. It also creates the output directory first: twelve processes
+    racing run_artifact.py's exists()/makedirs() check crashed one core on a first attempt. No source file is
+    edited. Grid (from the code): 108 PSU and 108 PSU-CA cells (n = 0.5-1.5 |Y|, rho = 0-1, rho*n <= |Y|), 121
+    MKPM cells (eta = 0-1). The checker requires every cell exactly once, 50 repetitions per list, the full
+    budget, 12 finished cores and no Traceback.
+
+    Claims, all frozen before the first run as cell counts implied by the paper's sentences and this grid:
+    endpoint query counts (Sec. 8.3.1: at rho or eta 0 or 1 "MKPM-SearchTree issues only one query, whereas
+    PSU-CA-SearchTree always issues three queries"); growth with n (Fig. 10, read as a strict increase of the
+    plotted mean at every step); peak near 0.5 (Fig. 18, read as the argmax in {0.4, 0.5, 0.6}); and full
+    recovery (App. H.2: "with enough queries, both ... output two sets pos = A ∩ B and neg = A \ B"; Sec. 1:
+    PSU-Diff "can fully recover the intersection").
+
+    mkpm_queries_grow_with_n is carried with comparable: false, a decision made after the first run. The
+    threshold was left at the frozen == 50. The run gives 49: MKPM, eta = 0.1, n = 800 -> 900 goes from 343.22
+    to 336.78 queries, although the true intersection grows from 209 to 232 values. The authors' own
+    reduced-suite output at this commit (measurements/medium_expected) has the same dip at the same step (341.24
+    -> 335.80). Their paper-scale Fig. 10 data (measurements/paper, |Y| = 10^4) increases at all 50 MKPM and all
+    50 PSU-CA steps. The appendix itself says reduced-suite results "are reproduced qualitatively, but cannot be
+    quantitatively compared with the measurements from the paper". The series is still close to linear (least-
+    squares R^2 0.988). Because one claim is NOT_COMPARABLE, the entry-level verdict is NOT_COMPARABLE, as in
+    pets2026-corr-rr. The other eight claims are expected to be REPRODUCED.
+
+    Excluded: the paper-scale suite; every runtime (Figs. 9, 11, 12 and the ms/s values in Sec. 8.2-8.4, which
+    depend on hardware); Appendix H's limited query budgets (Fig. 19) and the p- / p* heuristics; and the
+    sentence that the two attacks' query counts differ by at most 0.5% of the upper bound, which is a
+    quantitative statement the appendix rules out at reduced scale. The T-reconstruction attacks record no
+    success value and are only checked for coverage. This entry makes no claim about any of these.
+
+    Artifact detail for reviewers: the Snake attack runs first on the same record list and appends fresh values
+    to T's records in place (2371 -> 3272 distinct values for T900, eta = 0.1). These values are never in Y, so
+    the MKPM intersection truth (len_pos_true) still equals |V(T) ∩ V(Y)| of the generated data. The validator
+    confirmed this for all 121 cells. len_neg_true includes the appended values, and full recovery is judged
+    against the artifact's truth for the list the attack actually received. PSU-CA's full budget is the first 10%
+    step at or above |T|+1 (e.g. 550 for |T| = 500), so the checker asserts budget >= |T|+1 (>= |T| for MKPM).
+
+    Native, no Docker: a Python 3 venv with Faker 40.23.0 hash-pinned. The Dockerfile has an unpinned
+    `pip3 install faker`; 40.23.0 is the latest release before the commit date (2026-06-23), and Faker has no
+    dependencies on Linux. The authors used Python 3.12.3, as tested here. The command refuses a different
+    commit or any edit to tracked files.
+
+    First capture on 2026-11-19 in a fresh clone: exit 0, 42 min 44 s wall including venv setup, 120940 KiB
+    largest single-process RSS (GNU time), under a 4 GiB memory cap with swap disabled. It gave the nine metrics
+    in the baseline. An earlier attempt was stopped on the makedirs race described above, before any result was
+    read. An independent validator parsed the raw CSVs by hand, recomputed every mean, growth step and argmax
+    from the per-repetition lists, checked that the artifact's formatted files equal those means (229/229),
+    re-derived PSU and PSU-CA truth from gen_sets' arithmetic and MKPM truth from the generated record files
+    (121/121), and agreed with the checker on all nine values. Its 19 checks all passed except the frozen
+    mkpm_queries_grow_with_n threshold (49 against 50). The checker rejected all 29 incomplete or invalid
+    fixtures: missing or empty CSVs, logs and formatted files; a Traceback; an unfinished core; dropped,
+    duplicated or altered rows; a wrong n, ratio or |Y|; short or extra repetition lists; a wrong heuristic or
+    reduced budget; a truncated, reordered or NaN plotted series; text cells; a renamed column. Four value
+    changes with an intact shape replayed as NOT_REPRODUCED. A change to the unjudged MKPM series showed as drift.
+    It accepted only the genuine output.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-20: exit 0,
+    43 min 05 s wall, 120872 KiB peak RSS, under the same cap; 63 MB of outputs (326 MB with the checkout and
+    venv). It produced the same nine metrics. The validator, all 34 fixtures and a replay of every measure block
+    gave eight claims REPRODUCED and mkpm_queries_grow_with_n NOT_COMPARABLE, overall NOT_COMPARABLE as
+    expected. A wrong commit (the pin's parent), an edited measure_PSU.py and an edited PSU_functionality.py
+    each stopped the command before amber-mkpid/ was created. The baseline hashes below are from this fresh
+    run. Determinism: the data generator and the PSU/PSU-CA experiments are seeded, so the PSU-CA query lists
+    were identical in all 108 cells across the two runs. MKPM matched in 112/121 cells. The nine that differ
+    come from core 11, the only process that runs no PSU experiment and so never calls seed(). The timing
+    columns and core logs always differ. Every judged value was the same in both runs.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, network access to GitHub and PyPI. The
+    experiment itself is offline. It runs twelve processes; fewer cores only make it slower.
+role: not_comparable
+expected_verdict: NOT_COMPARABLE
+claims:
+- metric: psuca_endpoint_three_queries
+  threshold: == 17
+  unit: PSU-CA cells with rho in {0, 1} where all 50 repetitions use exactly 3 queries
+  source: Section 8.3.1, p.994, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Reduced suite (|Y| = 1000, -r 50, --omit_appendix). In PSUCA.csv take the cells with
+    rho = 0 (11 n values) and rho = 1 (n <= |Y|: 6 values). Count those whose per-repetition num_queries list is
+    50 copies of 3. The paper: "MKPM-SearchTree issues only one query, whereas PSU-CA-SearchTree always issues
+    three queries. This is because PSU-CA-SearchTree requires two additional queries to determine |Y|."'
+  expected_verdict: REPRODUCED
+  notes: Exact and scale-independent; it follows from the attack's three opening queries.
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"psuca_endpoint_three_queries": ([0-9]+)'
+- metric: mkpm_endpoint_one_query
+  threshold: == 22
+  unit: MKPM cells with eta in {0, 1} where all 50 repetitions use exactly 1 query
+  source: Section 8.3.1, p.994, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Same run. In MKPSI.csv take the cells with eta = 0 and eta = 1 (11 n values each) and count
+    those whose num_queries list is 50 copies of 1. Same sentence as psuca_endpoint_three_queries.'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"mkpm_endpoint_one_query": ([0-9]+)'
+- metric: psuca_queries_grow_with_n
+  threshold: == 50
+  unit: n-grid steps where the mean PSU-CA query count strictly increases
+  source: Section 8.3.1 and Figure 10a, p.994, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Same run. For the Fig. 10 series rho in {0.1, ..., 0.5}, read the artifact''s formatted
+    PSUCA_queries_over_n/V1000MR<rho>.csv (mean over 50 repetitions, n = 500 ... 1500). Count the consecutive steps
+    (10 per series) where the mean strictly increases. The paper: "Figure 10 shows that the number of queries grows
+    linearly with the target set size".'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"psuca_queries_grow_with_n": ([0-9]+)'
+- metric: mkpm_queries_grow_with_n
+  threshold: == 50
+  unit: n-grid steps where the mean MKPM query count strictly increases
+  source: Section 8.3.1 and Figure 10b, p.994, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'As psuca_queries_grow_with_n, for MKPM-SearchTree (MKPSI_queries_over_n/V1000MR<eta>.csv,
+    eta in {0.1, ..., 0.5}).'
+  expected_verdict: NOT_COMPARABLE
+  notes: The run gives 49 (one dip at eta = 0.1, n = 800 -> 900). The authors' reduced-suite output has the same
+    dip; see resources.notes.
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"mkpm_queries_grow_with_n": ([0-9]+)'
+    comparable: false
+    reason: Measured on the appendix's reduced suite (|Y| = 10^3), not Fig. 10b's |Y| = 10^4. At this scale the
+      authors' own expected output (measurements/medium_expected) has the same single dip at eta = 0.1, n = 800 ->
+      900, while their paper-scale data increases at all 50 steps. The appendix says reduced results "cannot be
+      quantitatively compared with the measurements from the paper".
+- metric: psuca_peak_near_half
+  threshold: == 11
+  unit: target set sizes where the most expensive rho is 0.4, 0.5 or 0.6
+  source: Section 8.3.1, p.994, and Figure 18a, p.1003, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Same run. For each n = 500 ... 1500 read PSUCA_queries_over_mr/V1000T<n>.csv (mean queries
+    per measured rho) and count the n whose argmax rho is in {0.4, 0.5, 0.6}, the grid points next to 0.5. The paper:
+    "values of rho and eta near 0.5 incur the largest number of queries, and that this is consistent across target
+    set sizes".'
+  expected_verdict: REPRODUCED
+  notes: For n > |Y| only feasible rho are measured (n = 1500 stops at 0.6).
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"psuca_peak_near_half": ([0-9]+)'
+- metric: mkpm_peak_near_half
+  threshold: == 11
+  unit: target set sizes where the most expensive eta is 0.4, 0.5 or 0.6
+  source: Section 8.3.1, p.994, and Figure 18b, p.1003, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: As psuca_peak_near_half, for MKPM-SearchTree (MKPSI_queries_over_mr/V1000T<n>.csv).
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"mkpm_peak_near_half": ([0-9]+)'
+- metric: psuca_full_recovery_cells
+  threshold: == 108
+  unit: PSU-CA cells where every repetition recovers T ∩ Y and T \ Y exactly
+  source: Appendix H.2, p.1003, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Same run, full query budget. In PSUCA.csv count the cells where all 50 repetitions have
+    success = 1, len_pos_recovered = len_pos_true and len_neg_recovered = len_neg_true. The paper: "with enough
+    queries, both PSU-CA-SearchTree and MKPM-SearchTree output two sets pos = A ∩ B and neg = A \ B".'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"psuca_full_recovery_cells": ([0-9]+)'
+- metric: mkpm_full_recovery_cells
+  threshold: == 121
+  unit: MKPM cells where every repetition recovers V(T) ∩ V(Y) and V(T) \ V(Y) exactly
+  source: Appendix H.2, p.1003, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: As psuca_full_recovery_cells, on MKPSI.csv (A = V(T), B = V(Y)).
+  expected_verdict: REPRODUCED
+  notes: See resources.notes on Snake's in-place additions to T; the intersection truth is unaffected.
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"mkpm_full_recovery_cells": ([0-9]+)'
+- metric: psu_diff_recovery_cells
+  threshold: == 108
+  unit: PSU cells where every repetition of the two-query attack recovers T ∩ Y exactly
+  source: Section 1, p.984, and Section 4.1, p.988, https://petsymposium.org/popets/2026/popets-2026-0155.pdf
+  measurement_protocol: 'Same run, |Y| = 10^5. In PSU.csv count the cells where all 50 repetitions have success = 1
+    and len_pos_recovered = len_pos_true. The paper: "Using these two queries, the adversary can fully recover the
+    intersection T ∩ Y that PSU is supposed to protect."'
+  expected_verdict: REPRODUCED
+  notes: ''
+  measure:
+    file: amber-mkpid/metrics.json
+    regex: '"psu_diff_recovery_cells": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = e1db13b9097be58298989367b491761db662793a
+    git diff --quiet
+    mkdir amber-mkpid
+    python3 -m venv amber-mkpid/venv
+    echo 'faker==40.23.0 --hash=sha256:775922453e54afa42eaf60eac478fa3a969357f224d09a8022b93e3ad88f18ae' > amber-mkpid/requirements.txt
+    amber-mkpid/venv/bin/pip install --quiet --no-input --require-hashes -r amber-mkpid/requirements.txt
+    amber-mkpid/venv/bin/python -c "import sys, faker; print(sys.version.split()[0], 'faker', faker.VERSION)" > amber-mkpid/versions.log
+    export PYTHONDONTWRITEBYTECODE=1
+    PY=amber-mkpid/venv/bin/python
+    $PY gen_MKPID_data.py --silent amber-mkpid/data 2 1000 > amber-mkpid/gen.log 2>&1
+    mkdir amber-mkpid/meas
+    for i in 0 1 2 3 4 5 6 7 8 9 10 11; do
+      $PY run_artifact.py -e amber-mkpid/data -o amber-mkpid/meas --m_PSU 100000 --m_PSUCA 1000 -r 50 --omit_appendix \
+        --num_cores 12 --core_id $i --silent > amber-mkpid/core$i.log 2>&1 &
+    done
+    wait
+    $PY format_measurements.py amber-mkpid/meas > amber-mkpid/format.log 2>&1
+    python3 -I - <<'CHECK' > amber-mkpid/metrics.json
+    import ast, csv, json, math, pathlib
+    o = pathlib.Path('amber-mkpid'); M = o/'meas'; F = M/'formatted'
+    assert not any('Traceback' in (o/f'core{i}.log').read_text() for i in range(12)), 'traceback'
+    assert (M/'cores.log').read_text().count(' done, runtime: ') == 12, 'not all cores finished'
+    R = lambda f: list(csv.DictReader(open(M/f), delimiter=';'))
+    L = lambda s: ast.literal_eval(s)
+    grid = lambda m, mx: sorted((int(t * m / 10), r / 10) for r in range(11) for t in range(5, 16) if int(t * m / 10) * r / 10 <= m or not mx)
+    def cells(f, m, mx):
+        rows = R(f); key = sorted((int(r['len_T']), float(r['max_V_match_fraction'])) for r in rows)
+        assert key == grid(m, mx), f'{f} grid'
+        for r in rows:
+            assert int(r['len_V']) == m and all(len(L(r[k])) == 50 for k in r if r[k].startswith('[')), f'{f} reps'
+        return rows
+    psu, ca, mk = cells('PSU.csv', 100000, 1), cells('PSUCA.csv', 1000, 1), cells('MKPSI.csv', 1000, 0)
+    for f in ('Baseline.csv', 'Snake.csv', 'RecordEnumeration.csv'): cells(f, 1000, 0)
+    assert all(r['priority_function'] == 'positive' and int(r['query_budget']) >= int(r['len_T']) + (r['attack_name'] == 'PSUCA') for r in ca + mk), 'budget'
+    q = lambda r: L(r['num_queries'])
+    full = lambda r: L(r['success']) == [1] * 50 and L(r['len_pos_recovered']) == [int(r['len_pos_true'])] * 50 and \
+        (r['attack_name'] == 'PSU' or L(r['len_neg_recovered']) == [int(r['len_neg_true'])] * 50)
+    end = lambda rows, k: sum(set(q(r)) == {k} for r in rows if float(r['max_V_match_fraction']) in (0.0, 1.0))
+    def grow(a):
+        n = 0
+        for r in ('0.1', '0.2', '0.3', '0.4', '0.5'):
+            x = list(csv.DictReader(open(F/f'{a}_queries_over_n/V1000MR{r}.csv'), delimiter=';'))
+            assert [int(y['len_T']) for y in x] == list(range(500, 1600, 100)), f'{a} series {r}'
+            v = [float(y[f'queries{r}_positive']) for y in x]; assert all(map(math.isfinite, v)), 'nan'
+            n += sum(b > c for c, b in zip(v, v[1:]))
+        return n
+    def peak(a):
+        n = 0
+        for t in range(500, 1600, 100):
+            v = {float(x['max_V_match_fraction']): float(x['num_queries_positive']) for x in csv.DictReader(open(F/f'{a}_queries_over_mr/V1000T{t}.csv'), delimiter=';')}
+            assert len(v) >= 7 and all(map(math.isfinite, v.values())), f'{a} n={t}'; n += max(v, key=v.get) in (0.4, 0.5, 0.6)
+        return n
+    print(json.dumps({'psuca_endpoint_three_queries': end(ca, 3), 'mkpm_endpoint_one_query': end(mk, 1),
+        'psuca_queries_grow_with_n': grow('PSUCA'), 'mkpm_queries_grow_with_n': grow('MKPSI'),
+        'psuca_peak_near_half': peak('PSUCA'), 'mkpm_peak_near_half': peak('MKPSI'),
+        'psuca_full_recovery_cells': sum(map(full, ca)), 'mkpm_full_recovery_cells': sum(map(full, mk)),
+        'psu_diff_recovery_cells': sum(map(full, psu))}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-mkpid/versions.log
+  - amber-mkpid/gen.log
+  - amber-mkpid/core0.log
+  - amber-mkpid/core1.log
+  - amber-mkpid/core2.log
+  - amber-mkpid/core3.log
+  - amber-mkpid/core4.log
+  - amber-mkpid/core5.log
+  - amber-mkpid/core6.log
+  - amber-mkpid/core7.log
+  - amber-mkpid/core8.log
+  - amber-mkpid/core9.log
+  - amber-mkpid/core10.log
+  - amber-mkpid/core11.log
+  - amber-mkpid/format.log
+  - amber-mkpid/meas/cores.log
+  - amber-mkpid/meas/PSU.csv
+  - amber-mkpid/meas/PSUCA.csv
+  - amber-mkpid/meas/MKPSI.csv
+  - amber-mkpid/meas/Baseline.csv
+  - amber-mkpid/meas/Snake.csv
+  - amber-mkpid/meas/RecordEnumeration.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.1.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.2.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.3.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.4.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.5.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.1.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.2.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.3.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.4.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.5.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T500.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T600.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T700.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T800.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T900.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1000.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1100.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1200.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1300.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1400.csv
+  - amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1500.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T500.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T600.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T700.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T800.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T900.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1000.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1100.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1200.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1300.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1400.csv
+  - amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1500.csv
+  - amber-mkpid/metrics.json
+baseline:
+  captured_on: '2026-11-19'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64,
+    Linux 7.0.0-43-generic; Python 3.12.3; Faker 40.23.0 in a local venv
+  outputs:
+  - path: amber-mkpid/versions.log
+    sha256: c7ebc8ee79c58e1badee6a326996a45f1661904d679600ff448a8ae9b3dc6bd3
+  - path: amber-mkpid/gen.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-mkpid/core0.log
+    sha256: b920c72ccd7cd6ba4d8df99c053651bc61b6abb62c196244c009295d6789b871
+  - path: amber-mkpid/core1.log
+    sha256: d2db9c4132d7f33f1c4b7c44d9b10718d31f03314f4627f8a54a83970a43b088
+  - path: amber-mkpid/core2.log
+    sha256: 2524c881df520ecfe2e6a0e11e0ff7bf9e4119e3da53d4e05196d5de792e6759
+  - path: amber-mkpid/core3.log
+    sha256: e90bd5a9788cf52a2e545c314ae34e73e3cdba13acb1e460bdc9f5dd290bbb33
+  - path: amber-mkpid/core4.log
+    sha256: 78a25759e59c209a2388961fac4057675dbd13cca14f6c26f77185adcdb41190
+  - path: amber-mkpid/core5.log
+    sha256: 1b6c9377e743218205363a65f13b384ef2592dde76236b942f2ae116a846280c
+  - path: amber-mkpid/core6.log
+    sha256: ae825142f8c244e1a2ff90a3059a3f6609b199553b34e42d28a8b894cb2db66b
+  - path: amber-mkpid/core7.log
+    sha256: cf5eb35815601ec06047a4f5c8f6dc254698739b05cc32446f9031d75527a14c
+  - path: amber-mkpid/core8.log
+    sha256: 8c21c36f0d48bcab9994a6bd02643b9792cea8fee59c04d0bbd3042275be104f
+  - path: amber-mkpid/core9.log
+    sha256: 57c65f16a540edf7d5a4952557f3d205114293ce6b4f29d0ae4d4e2d96e08cab
+  - path: amber-mkpid/core10.log
+    sha256: 995057be1c3fef9f94373cbb794bf081bdb7d01a6e59c0c19c1aedcf8849ec46
+  - path: amber-mkpid/core11.log
+    sha256: fa89408063eedabdb322c179dc0760b7e20ad770a6d5a9af824ec32dc4c19655
+  - path: amber-mkpid/format.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-mkpid/meas/cores.log
+    sha256: 309cf9aa0c574eeee5ccaca601408f0aa91acb47e7479e44f64a6a789aec8c39
+  - path: amber-mkpid/meas/PSU.csv
+    sha256: d745348b5e6f5a176073308d95541ce11e8e2f03573ef1fba7bd8afb9df61c75
+  - path: amber-mkpid/meas/PSUCA.csv
+    sha256: 7a43fda39f534de57311d284a66cb6c0dae57306378ffb33e419f4c4393e045d
+  - path: amber-mkpid/meas/MKPSI.csv
+    sha256: 9079c99423c56c2143bac5cdac9d5551ac4ccddbe5b529f0c3810d1b904d1bf9
+  - path: amber-mkpid/meas/Baseline.csv
+    sha256: 7057e96dcba293b3d79fd5154e4296e041492297e16c8e3156db9043e3279def
+  - path: amber-mkpid/meas/Snake.csv
+    sha256: a3e8d20bd0f15d39ccb941dd682adfde52d6c49950103a0a6a459046fa57d0f3
+  - path: amber-mkpid/meas/RecordEnumeration.csv
+    sha256: 6fba56def3368a42a7a0891e2003d04c4768bf7c4524d6eb8e0b678dfb9d35ea
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.1.csv
+    sha256: bb1ba3a979f44ed6dad794674215d5c6be9057b1441fc8057b885f1c8387e612
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.2.csv
+    sha256: fc46512832ec4ab816098c0bfb0e13d1899ce54498b567fca16ace6138b266fe
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.3.csv
+    sha256: 1c3b3ad5add9c3865a80300930aca82657824ab96ca3df552bec2bf25eba1164
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.4.csv
+    sha256: d7ea987c4ca9077e2bb588e9ec8baf8bcaa0a91b9c140f40cd6057825f4523d2
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_n/V1000MR0.5.csv
+    sha256: 0d2b10b4185c2ecaf612eaabc20cce788bfefbf6f95568c9a7a46853617e143c
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.1.csv
+    sha256: 3f27f57495acd75e71c26db8d067252aa24e0844bac3ad1e4aa0e7f5f741e61a
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.2.csv
+    sha256: a5c871c8a5e09616a5cadf6bea66e27efbe596915023257a821fe1c6335d2c71
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.3.csv
+    sha256: 7a02a0e25a995d1564fd87a3bc7efd2f04d159b16a51d5e9557e26bd28ea493d
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.4.csv
+    sha256: 5e3eba41948f3ebdf10832e106cee8b8adf5fb964afe4e93811bd3eb106cb884
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_n/V1000MR0.5.csv
+    sha256: 0828c3dc6413a1cd790c8583e6547f67110b9b7831f7b90830ab07dd9cf47dea
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T500.csv
+    sha256: 3fd7c300495d0346141e38eea5e1afa9966a267d067dab5fb08fe07e95173dbf
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T600.csv
+    sha256: 2848f7d99dba9ecb8733a30482d5b5fe2c07ea208deb78950fe27e5d9c204987
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T700.csv
+    sha256: bc816c877002ac5cd3e42831954c01c0fc47d28a0819db04d46c95fabd794f79
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T800.csv
+    sha256: 3aa2d180c68d08730451cde2f1c325396dd25d17056d8701064829d1319c1cfd
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T900.csv
+    sha256: 5d0783556e5a92925909d6fdcd1547eb1156549261bafd935eb496b7e8c07c33
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1000.csv
+    sha256: b31977dd7f014b89cea7593f9346d0be0e6ab894a29466d269ec21305c418ded
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1100.csv
+    sha256: cf9518bca0543e78b5023953e9a1275766f07f88037919ed5c10fac96b4ab84e
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1200.csv
+    sha256: a51ec9464d33a91859ec648ed1afb1337fc71f4814043d9cccb565b727e7e184
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1300.csv
+    sha256: 848c89f526fab881b1f50a379984a53bdeea3cc2ce7852fcba5ef2fb96a913ad
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1400.csv
+    sha256: 9584ff481d46dea3af3bb59ea58817bd7d11b4c21bbc00a58a38eac9e364c641
+  - path: amber-mkpid/meas/formatted/PSUCA_queries_over_mr/V1000T1500.csv
+    sha256: a09fa8f46e6a070be1e230b7676ecee6e5162dc3656be0339457aaf998d4232a
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T500.csv
+    sha256: e267e0d3831cabb28bb0d50e55cfb95b921ad419c3feee055aa34b1cbed96ebc
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T600.csv
+    sha256: 3a8361a6280eb041267262a94869cf63177ef66cbdf471795033626227d952ac
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T700.csv
+    sha256: 62181ae5690b8ff7e6d2c0096404fa8dc7f13347351b1cd9ed01faf2ae521e66
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T800.csv
+    sha256: 5be12e6131459be379ab8d937b3774e0b069e8e4b3bdd736427c0dda28e70ba5
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T900.csv
+    sha256: fcddeda28556500b0b7923e5a4732f5c9bba35ee396b3a02638a1b8da11c19ac
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1000.csv
+    sha256: 6a2841ab0dcf9ac7696f4b20cb28d004eaf99cb7c1dbcf1e6c8b1046be277c8a
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1100.csv
+    sha256: 417653cb9638da2a78f16c7e763ad4be83f43eac755a4715fe88d7018aefb7d6
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1200.csv
+    sha256: 92c907227f6a77c92d1802f160c663b3fd0188daf475977209dca6503206c5a5
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1300.csv
+    sha256: f8ec441523745469861c36d5a2890fc07158dc5c3774ec3374d4678f1cb52e32
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1400.csv
+    sha256: 61c991ae800cc2b4ab5a5345c9edc39e024d9a72efa42fa0619f282f5b5bfd18
+  - path: amber-mkpid/meas/formatted/MKPSI_queries_over_mr/V1000T1500.csv
+    sha256: dd618bb1cf91df407f78763261c81935a535fe35d46dbd63bb8fef61652a65fd
+  - path: amber-mkpid/metrics.json
+    sha256: 35cd215950a4fbb4a1cb6201b675f3eb24297d1bcffea2e02713890972995c67
+  metrics:
+    psuca_endpoint_three_queries: 17
+    mkpm_endpoint_one_query: 22
+    psuca_queries_grow_with_n: 50
+    mkpm_queries_grow_with_n: 49
+    psuca_peak_near_half: 11
+    mkpm_peak_near_half: 11
+    psuca_full_recovery_cells: 108
+    mkpm_full_recovery_cells: 121
+    psu_diff_recovery_cells: 108
+  bit_for_bit_expected: false
