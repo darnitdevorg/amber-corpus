@@ -1,0 +1,192 @@
+# Verified subset: artifact appendix "Main Result 2" only, calculate_boost.py, the Geo-Shuffle privacy boost
+# behind Figure 3 (Section 4.2). Main Results 1, 3 and 4 (exp1/exp2, corrupted_shuffler.py, plot_conj.py),
+# Figure 2 and the exact curve values are excluded; see resources.notes.
+id: pets2025-metric-shuffle
+title: Enhancing Metric Privacy With a Shuffler
+venue:
+  name: PETS
+  year: 2025
+paper:
+  url: https://petsymposium.org/popets/2025/popets-2025-0081.pdf
+  doi: 10.56553/popets-2025-0081
+artifact:
+  url: https://github.com/andathan/metric_privacy_shuffle_model/tree/metric_shuffle_code_2
+  clone: git clone https://github.com/andathan/metric_privacy_shuffle_model.git && cd metric_privacy_shuffle_model
+    && git checkout 1883bb35aef8c1d548f5dd92bfb2da14ea0bf0c8 (the AEC tag metric_shuffle_code_2), then run
+    run.command in the checkout root.
+  ref_type: commit
+  ref: 1883bb35aef8c1d548f5dd92bfb2da14ea0bf0c8
+  license: AGPL-3.0
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 20
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is README.md in the repository. "Hardware Requirements: No special hardware
+    is required." "python3 is required with the following commonly used libraries: pandas, numpy,
+    scipy, matplotlib, mpmath." Estimated time on a Mac M1: "Less than 10 minutes ... calculate_boost.py".
+    "The experiment scripts take about 35MB of space." The AEC row (issue 2025.2) awards available,
+    functional and reproduced and pins the tag metric_shuffle_code_2:
+    https://secartifacts.github.io/pets2025/results.
+
+    Tested: appendix "Main Result 2: Geo-Shuffle amplifies the privacy of Geo-Local (Figure 3)". The
+    unmodified calculate_boost.py computes Theorem 4.1's epsilon (d = 1, delta = 0.001) for
+    eps_geo = 0.1, 0.2, 0.3, 0.4, 0.8 at 30 user counts (1-9, 10-45 step 5, 50-90 step 10, 100-450
+    step 50) and plots them. It writes only a PDF, so run.command runs it with runpy and then writes
+    the script's own result lists (n_list, geo_shuffle_e1..e5) to boost.csv. One plotting-only
+    adaptation: the script turns on text.usetex, which needs a TeX installation, so matplotlib.rc is
+    made a no-op before the script runs and labels use mathtext. The computation is not touched.
+    It is deterministic: the script does no sampling and mpmath runs at 500 digits.
+
+    Figure 3 has no printed numbers. The claims are the three properties Section 4.2 states in words,
+    checked on all 150 computed points. One difference between paper and code: Theorem 4.1 writes
+    t = 2 eps_geo / sqrt(n) and calculate_boost.py uses t = eps_geo / sqrt(n). t only sets the point
+    where the pmf ratio is evaluated. The entry measures the artifact as shipped. With the paper's t
+    the bound is undefined for n <= 4 (t >= eps_geo), and for n >= 5 the same properties hold.
+
+    Runs on 2026-11-19, two fresh clones, 2 GiB memory cap, no swap. First run: exit 0, 6 min 2 s wall
+    including the venv, 140 MiB peak RSS. The literal run.command parsed from this file: exit 0,
+    6 min 11 s, 140 MiB, 408 MB workspace (mostly the venv). Same three metrics; every output except
+    the PDF (which carries a creation date) was byte-identical between the runs. An independent
+    validator that does not import the artifact re-derived Theorem 4.1 with a closed-form SGDL pmf
+    (Gauss hypergeometric, 60 digits) instead of the script's truncated sum: 150/150 points agree to
+    1.3e-13 relative, and n = 1 equals eps_geo analytically. The checker rejected 23 incomplete or
+    invalid fixtures, and three value changes with an intact shape replayed as NOT_REPRODUCED. A wrong
+    commit, an edited script or an edited bundled dataset stops the command before
+    amber-metricshuffle/ is created.
+
+    Excluded: Main Result 1 (exp1/exp2 MAE orderings, 1-3 h each), Main Result 3
+    (corrupted_shuffler.py, 2-3 h), Main Result 4 (plot_conj.py, 5-6 h), Figure 2, the exact curve
+    values and any distance d other than 1. This entry makes no claim about any of these.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: single_user_no_boost
+  threshold: == 5
+  unit: curves (of 5)
+  source: 'Section 4.2, p.658: "For only one user there is no privacy boost, because essentially both mechanisms
+    are the same."; Figure 3'
+  measurement_protocol: For each of the 5 eps_geo curves, take calculate_boost.py's epsilon at n = 1 and round it
+    half-up to 1 decimal, the precision the paper prints eps_geo with. Count the curves where that equals
+    eps_geo. All 30 rows of boost.csv must be present and finite first.
+  expected_verdict: REPRODUCED
+  notes: With one user Geo-Shuffle is Geo-Local, so epsilon must equal eps_geo. Measured values are 0.1, 0.2,
+    0.3000000000000004, 0.4 and 0.8000000000000002.
+  measure:
+    file: amber-metricshuffle/metrics.json
+    regex: '"single_user_no_boost": ([0-9]+)'
+- metric: multi_user_boost_points
+  threshold: == 145
+  unit: (eps_geo, n) points (of 145)
+  source: 'Section 4.2, p.658: "The crucial observation that has to be made is that eps < eps_geo." and "But even
+    for a few users eps is remarkable smaller."; Figure 3'
+  measurement_protocol: Count the (eps_geo, n) points with n >= 2 where calculate_boost.py's epsilon is strictly
+    below eps_geo. 5 curves x 29 user counts = 145.
+  expected_verdict: REPRODUCED
+  notes: The shuffler gives a real boost at every computed point with more than one user.
+  measure:
+    file: amber-metricshuffle/metrics.json
+    regex: '"multi_user_boost_points": ([0-9]+)'
+- metric: decreasing_steps
+  threshold: == 145
+  unit: consecutive grid steps (of 145)
+  source: 'Section 4.2, p.658: "As more users use Geo-Shuffle, eps further decreases" and "As the number of users
+    increases, the shuffling effect is amplified"; Figure 3'
+  measurement_protocol: For each curve, count consecutive pairs of user counts on the script's grid where epsilon
+    at the larger n is strictly smaller. 5 curves x 29 steps = 145.
+  expected_verdict: REPRODUCED
+  notes: Strict decrease along the whole grid, n = 1 to 450.
+  measure:
+    file: amber-metricshuffle/metrics.json
+    regex: '"decreasing_steps": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 1883bb35aef8c1d548f5dd92bfb2da14ea0bf0c8
+    git diff --quiet HEAD
+    mkdir amber-metricshuffle
+    python3 -m venv amber-metricshuffle/venv
+    cat > amber-metricshuffle/requirements.txt <<'REQ'
+    contourpy==1.4.0 --hash=sha256:875f42444c9cf48d56f724f2637e60d0f73b3b12c9041e1484580a233edf9591
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.68.0 --hash=sha256:3edce69ecdefa73ab1041901ca22eefed6ebb93a77bc77e889d940479f25bf7d
+    kiwisolver==1.5.1 --hash=sha256:34633ecf50d16187ab8e5528b7a2530f2feb4e23f300db4672538b51cfc5cd38
+    matplotlib==3.10.7 --hash=sha256:d5f256d49fea31f40f166a5e3131235a5d2f4b7f44520b1cf0baf1ce568ccff0
+    mpmath==1.3.0 --hash=sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c
+    numpy==2.3.5 --hash=sha256:0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28
+    packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    pandas==2.3.3 --hash=sha256:b3d11d2fda7eb164ef27ffc14b4fcab16a80e1ce67e9f57e19ec0afaf715ba89
+    pillow==13.0.0 --hash=sha256:42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
+    pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+    python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+    pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+    scipy==1.16.3 --hash=sha256:72d1717fd3b5e6ec747327ce9bda32d5463f472c9dce9f54499e81fbd50245a1
+    tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+    REQ
+    amber-metricshuffle/venv/bin/pip install --quiet --no-input --require-hashes -r amber-metricshuffle/requirements.txt
+    amber-metricshuffle/venv/bin/pip freeze > amber-metricshuffle/versions.log
+    cd amber-metricshuffle
+    MPLBACKEND=Agg venv/bin/python - <<'DRIVER' > run.log 2> run.stderr.log
+    import csv, runpy, matplotlib
+    matplotlib.rc = lambda *a, **k: None  # plotting only: the script enables usetex, no TeX here
+    g = runpy.run_path('../calculate_boost.py', run_name='__main__')
+    with open('boost.csv', 'w', newline='') as f:
+        w = csv.writer(f); w.writerow(['n', '0.1', '0.2', '0.3', '0.4', '0.8'])
+        for row in zip(g['n_list'], *[g['geo_shuffle_e%d' % i] for i in range(1, 6)]):
+            w.writerow([row[0]] + [repr(float(x)) for x in row[1:]])
+    print('calculate_boost.py done, %d user counts' % len(g['n_list']))
+    DRIVER
+    cd ..
+    python3 -I - <<'CHECK' > amber-metricshuffle/metrics.json
+    import csv, json, math, pathlib
+    out = pathlib.Path('amber-metricshuffle')
+    assert (out/'calculate_boost.pdf').read_bytes()[:4] == b'%PDF', 'figure missing'
+    assert (out/'run.log').read_text().splitlines()[-1] == 'calculate_boost.py done, 30 user counts', 'driver did not finish'
+    assert 'Traceback' not in (out/'run.stderr.log').read_text(), 'error in stderr'
+    rows = list(csv.reader(open(out/'boost.csv')))
+    eg = [0.1, 0.2, 0.3, 0.4, 0.8]
+    assert rows[0] == ['n', '0.1', '0.2', '0.3', '0.4', '0.8'], 'bad header'
+    grid = list(range(1, 10)) + list(range(10, 50, 5)) + list(range(50, 100, 10)) + list(range(100, 500, 50))
+    assert [int(r[0]) for r in rows[1:]] == grid and all(len(r) == 6 for r in rows[1:]), 'incomplete grid'
+    E = [[float(r[j + 1]) for r in rows[1:]] for j in range(5)]
+    assert all(math.isfinite(x) and x > 0 for c in E for x in c), 'non-finite or non-positive epsilon'
+    r1 = lambda x: math.floor(x * 10 + 0.5) / 10
+    print(json.dumps({
+        'single_user_no_boost': sum(r1(c[0]) == e for c, e in zip(E, eg)),
+        'multi_user_boost_points': sum(x < e for c, e in zip(E, eg) for x in c[1:]),
+        'decreasing_steps': sum(b < a for c in E for a, b in zip(c, c[1:])),
+    }, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-metricshuffle/versions.log
+  - amber-metricshuffle/run.log
+  - amber-metricshuffle/run.stderr.log
+  - amber-metricshuffle/boost.csv
+  - amber-metricshuffle/calculate_boost.pdf
+  - amber-metricshuffle/metrics.json
+baseline:
+  captured_on: '2026-11-19'
+  machine: AMD Ryzen 5 6600H (12 threads), 14 GiB RAM, Ubuntu 24.04.4 LTS, Linux 7.0.0, Python 3.12.3
+  outputs:
+  - path: amber-metricshuffle/versions.log
+    sha256: 9e5ac6fa11811425ac627a665373ff8ad6ffb71e8c2e17b8cc8ade9707c646f0
+  - path: amber-metricshuffle/run.log
+    sha256: 963b62bb47cfbd3d970e23fed5a7a6f451d01fcb03cc2585424a5530bfcd862b
+  - path: amber-metricshuffle/run.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-metricshuffle/boost.csv
+    sha256: 8e764d0096898aff6c35579500bde33bbf012431ef3997f4f591affb709ef3ef
+  - path: amber-metricshuffle/metrics.json
+    sha256: 90248de7a0d288908911aa4eeea1669acd3e4a064fba8ba78b9f0b6782aeaf2f
+  metrics:
+    single_user_no_boost: 5
+    multi_user_boost_points: 145
+    decreasing_steps: 145
+  bit_for_bit_expected: false
