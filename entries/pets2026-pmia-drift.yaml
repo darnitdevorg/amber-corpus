@@ -1,0 +1,169 @@
+# Verified subset: artifact appendix Experiment 8 only (fig_nn_drift.py), Table 3 of the paper: membership inference on
+# summary statistics under real temporal drift vs three surrogate drift models. Experiments 1-7 (Figures 1-7, Table 2),
+# the Figure 14 k-sweep values, Fitbit and the exact Table 3 numbers are excluded; see resources.notes.
+id: pets2026-pmia-drift
+title: Revisiting Assumptions for Membership Inference on Summary Statistics
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0134.pdf
+  doi: 10.56553/popets-2026-0134
+artifact:
+  url: https://github.com/privacy-UoB/pmia-summary-stats/tree/5ee676dbe7e6c6a3585e60bea4727fb4a2944063
+  clone: git clone https://github.com/privacy-UoB/pmia-summary-stats.git && cd pmia-summary-stats && git checkout
+    5ee676dbe7e6c6a3585e60bea4727fb4a2944063 (the AEC commit, also upstream HEAD), then run run.command in the
+    checkout root.
+  ref_type: commit
+  ref: 5ee676dbe7e6c6a3585e60bea4727fb4a2944063
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 3
+  disk_gb: 1
+  runtime_minutes: 45
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository. "Can run on a laptop (no special hardware
+    requirements)." Software: "The only prerequisite is uv ... uv provisions the correct Python interpreter and every
+    dependency from uv.lock". "Datasets required (all bundled under Datasets/ - nothing to download)". Experiment 8:
+    "Time: 5 human-minutes + ~5 compute-minutes (2000 iterations, parallelised across CPU cores)", reference machine
+    a MacBook Air (M1, 8 GB). "Storage: negligible." The AEC row (pets2026 results) awards available, functional and
+    reproduced and pins commit 5ee676d.
+
+    Tested: appendix Experiment 8 / Main Result 8, which produces Table 3 ("AUC and TPR @ 1% FPR under four drift
+    models on the longitudinal miRNA dataset", GEO GSE68951, 26 lung-cancer patients, 1146 miRNAs). fig_nn_drift.py
+    runs unmodified. Each of its 2000 iterations splits the patients into 18 non-members and a pool, scores every
+    patient's second-timepoint sample against the first-timepoint statistics with the L1 and LLR tests (real drift),
+    and repeats this with three surrogate drifts: independent Gaussian, leave-one-out linear prediction, and the
+    nearest neighbour's drift. It writes results/fig_nn_drift.csv (the 4 x 4 table) and an appendix CSV.
+
+    The patient split uses sklearn ShuffleSplit with numpy's global RNG, which the script never seeds (only the
+    surrogate noise has per-iteration seeds). Every Table 3 value is therefore a Monte-Carlo mean that changes a
+    little from run to run, so the exact printed numbers are not claims. The claims are the paper's stated
+    conclusions about the table, with thresholds the paper itself gives (its 0.6 AUC failure line) or strict
+    orderings. run.command sets OPENBLAS_NUM_THREADS=1 and PYTHON_CPU_COUNT=9 (Python 3.13: 8 workers): without
+    them every worker starts one BLAS thread per core, and on a 12-thread laptop the first try reached only
+    950/2000 iterations in 60 minutes. Neither touches the computation.
+
+    Runs on 2026-11-19, two fresh clones, 2.5 GiB memory cap, no swap. First complete run: exit 0, 16 min 24 s wall
+    including uv sync. The literal run.command parsed from this file: exit 0, 16 min 9 s, 1231 MiB peak for the whole
+    worker pool, 418 MB workspace (mostly the venv), empty stderr. Both gave the same three metrics. The table values
+    moved between runs as expected (real-drift AUC L1: paper 0.571, runs 0.566 and 0.587). An independent validator
+    that does not import the artifact parsed the GEO matrix itself and re-implemented the split, both tests, AUC,
+    TPR @ 1% FPR and the three surrogates. Over 300 of its own splits it gave the same three metrics, with real-drift
+    AUC 0.567 (LLR) and 0.572 (L1), standard error 0.007. The checker rejected 26 incomplete or invalid fixtures, and
+    three value changes with an intact shape replayed as NOT_REPRODUCED. A wrong commit, an edited script, an edited
+    dataset or a stale results/ directory stops the command before amber-pmia/ is created.
+
+    Excluded: Experiments 1-7 (Figures 1-7 and Table 2, whose
+    thresholds come from an unseeded sweep), the Figure 14 NN k-sweep values, the Fitbit results, and Table 3's
+    exact values. This entry makes no claim about any of these.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: real_drift_auc_failed
+  threshold: == 2
+  unit: AUC values (of 2)
+  source: 'Section 5.3.2, p.549: "both attacks collapse to near-random levels after the first timepoint: the LLR
+    falls to AUC 0.557 and the L1 test to 0.571 (Table 3)"; Section 5.3.1, p.549: "We use 0.6 as the AUC threshold
+    for failed performance"; Table 3, p.551'
+  measurement_protocol: Take the Real drift row of results/fig_nn_drift.csv (mean over 2000 iterations of the AUC
+    of each test, pool members as positives, second-timepoint samples scored against first-timepoint statistics).
+    Count the AUC LLR and AUC L1 values strictly below 0.6. The full 4 x 4 table must be present and in [0, 1]
+    first.
+  expected_verdict: REPRODUCED
+  notes: Paper 0.557 and 0.571; the two runs gave 0.551 / 0.566 and 0.561 / 0.587.
+  measure:
+    file: amber-pmia/metrics.json
+    regex: '"real_drift_auc_failed": ([0-9]+)'
+- metric: surrogate_auc_above_real
+  threshold: == 6
+  unit: (surrogate, test) AUC comparisons (of 6)
+  source: 'Section 5.3.2, p.549: "none of these surrogates reproduces the collapse observed under real drift";
+    p.550: "only each person''s own temporal evolution degrades the attack to near-random levels; the tested
+    surrogate models fail to reproduce the collapse"; Table 3, p.551'
+  measurement_protocol: For the Independent Gaussian, LOO conditional mean and NN (k=1) rows and for both AUC LLR and
+    AUC L1, count where the surrogate's mean AUC is strictly above the Real drift row's. 3 x 2 = 6.
+  expected_verdict: REPRODUCED
+  notes: The closest pair is AUC L1, LOO conditional mean vs real drift (paper 0.588 vs 0.571, runs 0.589 vs 0.566 and
+    0.611 vs 0.587).
+  measure:
+    file: amber-pmia/metrics.json
+    regex: '"surrogate_auc_above_real": ([0-9]+)'
+- metric: surrogate_tpr_above_real
+  threshold: == 6
+  unit: (surrogate, test) TPR comparisons (of 6)
+  source: 'Section 5.3.2, p.550: "TPR at 1% FPR tells the same story: only real drift collapses TPR to near the 1%
+    floor, while every surrogate model preserves a substantial identification signal."; Table 3, p.551'
+  measurement_protocol: Same as surrogate_auc_above_real for TPR @ 1% FPR (the script interpolates the ROC curve at
+    FPR 0.01), for TPR LLR and TPR L1. 3 x 2 = 6.
+  expected_verdict: REPRODUCED
+  notes: Real drift TPR is 0.079 / 0.059 in the paper, 0.081 / 0.056 and 0.064 / 0.064 in the two
+    runs.
+  measure:
+    file: amber-pmia/metrics.json
+    regex: '"surrogate_tpr_above_real": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 5ee676dbe7e6c6a3585e60bea4727fb4a2944063
+    git diff --quiet HEAD
+    test ! -e results
+    mkdir amber-pmia
+    UV_PYTHON=3.13 UV_PROJECT_ENVIRONMENT=amber-pmia/venv uv sync --locked --no-dev --quiet
+    amber-pmia/venv/bin/python -c 'import sys, numpy, scipy, sklearn, pandas; print(sys.version.split()[0], numpy.__version__, scipy.__version__, sklearn.__version__, pandas.__version__)' > amber-pmia/versions.log
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHON_CPU_COUNT=9 amber-pmia/venv/bin/python fig_nn_drift.py > amber-pmia/run.log 2> amber-pmia/run.stderr.log
+    python3 -I - <<'CHECK' > amber-pmia/metrics.json
+    import csv, json, math, pathlib
+    log = pathlib.Path('amber-pmia/run.log').read_text().splitlines()
+    assert '  2000/2000' in log and 'Saved fig_nn_drift.csv and fig_nn_drift_appendix.csv' in log, 'run did not finish'
+    assert 'Traceback' not in pathlib.Path('amber-pmia/run.stderr.log').read_text(), 'error in stderr'
+    rows = list(csv.reader(open('results/fig_nn_drift.csv')))
+    assert rows[0] == ['model', 'llr', 'l1', 'llr_tpr', 'l1_tpr'], 'bad header'
+    models = ['Real drift', 'Independent Gaussian', 'LOO conditional mean', 'NN (k=1)']
+    assert [r[0] for r in rows[1:]] == models and all(len(r) == 5 for r in rows[1:]), 'incomplete table'
+    T = {r[0]: [float(x) for x in r[1:]] for r in rows[1:]}
+    assert all(math.isfinite(x) and 0 <= x <= 1 for v in T.values() for x in v), 'value outside [0,1]'
+    app = list(csv.reader(open('results/fig_nn_drift_appendix.csv')))
+    assert [float(r[0]) for r in app[1:]] == [0, 1, 2, 5, 10, 20, 50], 'appendix k-sweep incomplete'
+    real = T['Real drift']
+    print(json.dumps({
+        'real_drift_auc_failed': sum(x < 0.6 for x in real[:2]),
+        'surrogate_auc_above_real': sum(T[m][j] > real[j] for m in models[1:] for j in (0, 1)),
+        'surrogate_tpr_above_real': sum(T[m][j] > real[j] for m in models[1:] for j in (2, 3)),
+    }, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-pmia/versions.log
+  - amber-pmia/run.log
+  - amber-pmia/run.stderr.log
+  - results/fig_nn_drift.csv
+  - results/fig_nn_drift_appendix.csv
+  - amber-pmia/metrics.json
+baseline:
+  captured_on: '2026-11-19'
+  machine: AMD Ryzen 5 6600H (12 threads), 14 GiB RAM, Ubuntu 24.04.4 LTS, Linux 7.0.0, Python 3.13.13 (uv)
+  outputs:
+  - path: amber-pmia/versions.log
+    sha256: 996781c33cd24b182aa73fff92df2fd96782a565fab38c8b06147927362b00a9
+  - path: amber-pmia/run.log
+    sha256: c0aade8e055e292d72c2aa9552c635792ea13ef191e101a708d7a6d26f38b373
+  - path: amber-pmia/run.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: results/fig_nn_drift.csv
+    sha256: 89d291a5116bf9f92f8e332fbd10c7b9cc1203ee552dc364e117af0491f7831d
+  - path: results/fig_nn_drift_appendix.csv
+    sha256: 796ff195fcd86754176ebc5237a7d6b440ab8430f9f46669dd467f4f903fc440
+  - path: amber-pmia/metrics.json
+    sha256: 2ed4710e7a0277385abf3845d495c2d3c0308352c39bdd1736d32f5db5610dab
+  metrics:
+    real_drift_auc_failed: 2
+    surrogate_auc_above_real: 6
+    surrogate_tpr_above_real: 6
+  bit_for_bit_expected: false
