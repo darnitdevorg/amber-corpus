@@ -1,0 +1,279 @@
+# Verified subset: README steps 2 and 4 (Sphinx and Aimless Onions onion sizes), paper Sec. 9.6 and Figure 6: Aimless
+# Onions sizes grow linearly with authorities and path length, payload adds 1:1 to both formats, every Aimless onion
+# is larger than Sphinx, and the break-even points are 105 / 69 / 27 onions. All timing benchmarks, the depth sweep
+# and the consensus-size measurements are excluded; see resources.notes.
+id: pets2025-aimless-onions-size
+title: 'Aimless Onions: Mixing without Topology Information'
+venue:
+  name: PETS
+  year: 2025
+paper:
+  url: https://petsymposium.org/popets/2025/popets-2025-0131.pdf
+  doi: 10.56553/popets-2025-0131
+artifact:
+  url: https://github.com/kit-ps/aimless-onions/tree/b6774e5ff14b9c6f2ed1dbd834ef6969bcfbd24b
+  clone: git clone https://github.com/kit-ps/aimless-onions.git && cd aimless-onions && git checkout
+    b6774e5ff14b9c6f2ed1dbd834ef6969bcfbd24b, then run run.command in the checkout root.
+  ref_type: commit
+  ref: b6774e5ff14b9c6f2ed1dbd834ef6969bcfbd24b
+  license: MIT (sphinx-benchmarks/ is Nym's Sphinx code, Apache-2.0)
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 3
+  runtime_minutes: 10
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-EVALUATION.md in the repository: "Our artifact has no special hardware
+    requirements. We tested on a standard x64 CPU with 4 GiB RAM and ~5 GiB of storage needed"; it requires "Rust
+    (nightly)"; the whole artifact takes "Around 13 hours". Main Result 4: "Aimless saves bandwidth if fewer than 105
+    onions per hour are sent. This is detailed in Section 9.6 and Figure 6." The README lists step 2, "(~2 min) Run
+    the Sphinx benchmarks: ( cd sphinx-benchmarks && ./run.sh )", and step 4, "(~2 min) Generate Aimless Onions sizes:
+    ( cd aimless-onions && cargo run --bin=onion_sizes --release >onion_sizes.csv )". Benchmark.ipynb reads the two
+    CSVs and computes the Figure 6 break-even points. The AEC row (PoPETs 2025) awards available, functional and
+    reproduced and pins this commit: https://secartifacts.github.io/pets2025/results. The appendix's tag pets-2025
+    (678e953) differs from the pin only in README.md and ARTIFACT-EVALUATION.md.
+
+    Tested: both commands, unmodified, over their full built-in grids. Aimless Onions: path length 1-5 x 1-9
+    authorities x payload 1, 512, 1024, 2048 and 4069 B (225 rows). Sphinx: run.sh rebuilds with
+    SPHINX_MAX_PATH_LENGTH=1..5 x payload 512, 1024, 2048 and 4069 B (20 rows). run.sh also runs criterion timing
+    benchmarks; their output stays in run.log and is not judged. Break-even points use the authors' own breakeven()
+    (Benchmark.ipynb): consensus size / (Aimless size - Sphinx size), with the notebook's hard-coded consensus sizes
+    632, 415 and 246 KiB, which are the paper's Tor, Tor-diff and Nym values. The notebook picks one arbitrary shared
+    payload; the checker requires the same result for every shared payload. Sizes do not depend on the random keys,
+    so the output is deterministic.
+
+    Excluded: every timing result (Tables 2 and 3, Figures 4 and 5, the ~12 h hierarchy-depth sweep, the "~450 times
+    slower" claim), the allocation accuracy (Figure 3), the live Tor/Nym consensus and diff size measurements (taken
+    as the paper's constants, not re-measured), the double-choose probability and the percentage savings. This
+    entry makes no claim about any of these.
+
+    Native, no Docker. The authors' Dockerfile uses rust:1.87-bookworm with a floating nightly; the README lists
+    "cargo 1.88.0-nightly (0e93c5bf6 2025-04-05)". rustup installs nightly-2025-04-06 (rustc 1.88.0-nightly
+    2025-04-05) into amber-aimless/rustup. aimless-onions builds with --locked from the artifact's Cargo.lock (286
+    crates.io checksums plus the git dependency hohibe at e3189454dd22ccd724b8caba6e49f3fae963292e on codeberg.org).
+    sphinx-benchmarks ships no Cargo.lock, so the command runs `cargo generate-lockfile` and keeps the result as
+    amber-aimless/sphinx-Cargo.lock (122 checksummed crates on 2026-11-20, e.g. curve25519-dalek 3.2.1, rand 0.7.3,
+    lioness 0.1.2, aes 0.7.5). A later resolution may pick newer patch releases; the judged Sphinx sizes come from
+    Sphinx's own constants. The checker is stdlib Python 3. The command refuses a different commit or any edit to
+    tracked files (git diff --quiet).
+
+    First capture on 2026-11-20 in a fresh clone: exit 0, 6 min 23 s wall including toolchain and crate downloads,
+    840296 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled, 2.2 GB workspace. All nine values
+    match the paper. Sizes are Aimless 32 + 52L + 172a + 172aL + payload and Sphinx 65 + 60L + payload bytes, so the
+    Aimless per-hop increase is 52 + 172a B against Sphinx's 60 B. The break-even values are 105.49 (Tor), 69.27
+    (Tor diff) and 27.34 (Nym) onions. The notebook's saved output from the authors' run (105.76 / 69.45 / 27.41)
+    implies an overhead 16 B smaller at both path lengths; the artifact has one import commit, so the source of
+    that difference is not visible. The paper's integers, which are what this entry judges, are the same either way.
+
+    An independent validator re-derived the results another way. It parsed the CSVs by hand and fitted an exact
+    integer model from four points, which predicts all 225 Aimless rows and all 20 Sphinx rows. It computed the
+    break-even points as exact fractions from that model. It also executed the notebook's own cells (read_ao_sizes,
+    read_sphinx_sizes, breakeven) verbatim on the output and got the same three values, and it read the seven claim
+    sentences and the 632 / 415 / 246 KiB constants from the PDF text. All 20 checks passed. Three more runs of each
+    generator gave byte-identical CSVs. The checker rejected or scored NOT_REPRODUCED all 21 incomplete or invalid
+    fixtures and accepted only the genuine output. The fixtures cover missing or empty files, a header-only file, a
+    renamed header, an extra column, dropped, duplicated or extra rows, a missing path length, half the grid, a
+    non-integer or NaN cell, altered sizes (one cell +1 B, one authority/path block, Sphinx per-hop above Aimless's,
+    all Sphinx sizes, a payload slope of 2), a missing stderr log, and a panic or cargo error on stderr.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-20: exit 0, 5 min 44 s
+    wall, 809680 KiB peak RSS, 2.2 GB workspace (checkout, toolchain, crates, builds, captures). Same nine metrics;
+    validator (20/20), all 21 fixtures and a replay of every measure block re-confirmed. A wrong commit (the pin's
+    parent) and edits to onion_sizes.rs, format.rs or sphinx-benchmarks/run.sh each stopped the command before
+    amber-aimless/ was created. Baseline hashes below are from this fresh run. versions.log, sphinx-Cargo.lock, both
+    CSVs and metrics.json were byte-identical to the first capture; run.log and run.stderr.log differ only in
+    criterion's timings and outlier counts and cargo's build times.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, rustup, a C linker (cc), OpenSSL development headers and
+    pkg-config (native-tls), Python 3, and network access to static.rust-lang.org, crates.io and codeberg.org. The
+    experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: ao_authority_linear_series
+  threshold: == 25
+  unit: series
+  source: 'Paper Sec. 9.6 (p.303): "an increasing number of authorities increases the Aimless Onions size linearly,
+    while not affecting the size of Sphinx onions."'
+  measurement_protocol: Run onion_sizes unmodified. Its CSV must have exactly the header
+    path_length,authorities,payload_size,onion_size and each of the 225 grid rows once, all integers. For each of the
+    25 (path length, payload) series, count those whose size over authorities 1-9 rises by one constant positive
+    step. Exact integers, no tolerance.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"ao_authority_linear_series": ([0-9]+)'
+- metric: ao_path_linear_series
+  threshold: == 45
+  unit: series
+  source: 'Paper Sec. 9.6 (p.303): "the size of both Sphinx and Aimless Onions onions increases linearly with the path
+    length."'
+  measurement_protocol: As ao_authority_linear_series, over the 45 (authorities, payload) series and path length 1-5.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"ao_path_linear_series": ([0-9]+)'
+- metric: sphinx_path_linear_series
+  threshold: == 4
+  unit: series
+  source: Paper Sec. 9.6 (p.303), as ao_path_linear_series.
+  measurement_protocol: Run sphinx-benchmarks/run.sh unmodified. Its CSV must have exactly the header
+    path_length,payload_size,onion_size and each of the 20 grid rows once, all integers. Count the 4 payload series
+    whose size over path length 1-5 rises by one constant positive step.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"sphinx_path_linear_series": ([0-9]+)'
+- metric: per_hop_larger_series
+  threshold: == 36
+  unit: series
+  source: 'Paper Sec. 9.6 (p.303): "However, the per-hop increase is larger with Aimless Onions than with Sphinx."'
+  measurement_protocol: For every authority count 1-9 and every payload both tools share (512, 1024, 2048, 4069 B),
+    count the series where both are linear in path length and the Aimless per-hop step exceeds Sphinx's.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"per_hop_larger_series": ([0-9]+)'
+- metric: payload_slope_one_series
+  threshold: == 50
+  unit: series
+  source: 'Paper Sec. 9.6 (p.303): "both Sphinx and Aimless Onions scale linearly with the payload size with the same
+    factor of 1."'
+  measurement_protocol: Count the 45 Aimless (path length, authorities) series and the 5 Sphinx path-length series
+    where onion size minus payload size is the same for every payload.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"payload_slope_one_series": ([0-9]+)'
+- metric: ao_larger_cells
+  threshold: == 180
+  unit: grid cells
+  source: 'Paper Sec. 9.6 (p.303): "individually, Sphinx onions are always smaller than Aimless Onions".'
+  measurement_protocol: Count the (path length, authorities, shared payload) cells, 5 x 9 x 4, where the Aimless size
+    exceeds the Sphinx size at the same path length and payload.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"ao_larger_cells": ([0-9]+)'
+- metric: breakeven_tor_onions
+  threshold: == 105
+  unit: onions
+  source: 'Paper Sec. 9.6 (p.303) and Figure 6 (p.304): "For Tor-like parameters with 9 authorities and a path length of 3, we
+    see that clients sending less than 105 onions per hour benefit from Aimless Onions."'
+  measurement_protocol: The notebook's breakeven(9, 3, 632 * 1024) = consensus size / (Aimless size - Sphinx size),
+    floored. It must be the same for every shared payload.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"breakeven_tor_onions": ([0-9]+)'
+- metric: breakeven_tor_diff_onions
+  threshold: == 69
+  unit: onions
+  source: 'Paper Sec. 9.6 (p.303): "When using consensus diffs, this number drops to 69 onions per hour."'
+  measurement_protocol: breakeven(9, 3, 415 * 1024), floored, as breakeven_tor_onions.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"breakeven_tor_diff_onions": ([0-9]+)'
+- metric: breakeven_nym_onions
+  threshold: == 27
+  unit: onions
+  source: 'Paper Sec. 9.6 (p.303): "For Nym, the break-even point is at 27 onions, as Nym is a smaller network with
+    less topology data, and uses a path length of 5."'
+  measurement_protocol: breakeven(9, 5, 246 * 1024), floored, as breakeven_tor_onions.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-aimless/metrics.json
+    regex: '"breakeven_nym_onions": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = b6774e5ff14b9c6f2ed1dbd834ef6969bcfbd24b
+    git diff --quiet HEAD --
+    mkdir amber-aimless
+    export RUSTUP_HOME="$PWD/amber-aimless/rustup" CARGO_HOME="$PWD/amber-aimless/cargo" RUSTUP_TOOLCHAIN=nightly-2025-04-06
+    export PATH="$CARGO_HOME/bin:$PATH"
+    rustup toolchain install nightly-2025-04-06 --profile minimal --no-self-update 2> amber-aimless/setup.log
+    { rustc -V; cargo -V; python3 -V; } > amber-aimless/versions.log
+    (cd sphinx-benchmarks && cargo generate-lockfile 2>> ../amber-aimless/setup.log && cp Cargo.lock ../amber-aimless/sphinx-Cargo.lock)
+    (cd sphinx-benchmarks && ./run.sh) > amber-aimless/run.log 2> amber-aimless/run.stderr.log
+    (cd aimless-onions && cargo run --locked --bin=onion_sizes --release > onion_sizes.csv) 2>> amber-aimless/run.stderr.log
+    cp sphinx-benchmarks/sphinx_onion_sizes.csv aimless-onions/onion_sizes.csv amber-aimless/
+    python3 -I - amber-aimless <<'PYTHON' > amber-aimless/metrics.json
+    import csv, json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    assert not re.search(r'panicked|^error', (root/'run.stderr.log').read_text(), re.M), 'run reports an error'
+    L, A, P_AO, P_SX = range(1, 6), range(1, 10), [1, 512, 1024, 2048, 4069], [512, 1024, 2048, 4069]
+    def load(name, header, keys):
+        rows = [r for r in csv.reader(open(root/name)) if r]
+        assert rows[0] == header, name + ' header'
+        d = {}
+        for r in rows[1:]:
+            v = [int(c) for c in r]
+            assert len(v) == len(header) and tuple(v[:-1]) not in d, name + ' row'
+            d[tuple(v[:-1])] = v[-1]
+        assert sorted(d) == sorted(keys), name + ' grid incomplete'
+        return d
+    ao = load('onion_sizes.csv', ['path_length', 'authorities', 'payload_size', 'onion_size'], [(l, a, p) for l in L for a in A for p in P_AO])
+    sx = load('sphinx_onion_sizes.csv', ['path_length', 'payload_size', 'onion_size'], [(l, p) for l in L for p in P_SX])
+    steps = lambda xs: {y - x for x, y in zip(xs, xs[1:])}
+    linear = lambda xs: len(steps(xs)) == 1 and min(steps(xs)) > 0
+    sx_hop = {p: [sx[l, p] for l in L] for p in P_SX}
+    def breakeven(a, l, kib):  # Benchmark.ipynb breakeven(), floored; must not depend on the payload
+        v = {math.floor(kib * 1024 / (ao[l, a, p] - sx[l, p])) for p in P_SX}
+        assert len(v) == 1, 'break-even depends on payload'
+        return v.pop()
+    print(json.dumps({
+        'ao_authority_linear_series': sum(linear([ao[l, a, p] for a in A]) for l in L for p in P_AO),
+        'ao_path_linear_series': sum(linear([ao[l, a, p] for l in L]) for a in A for p in P_AO),
+        'sphinx_path_linear_series': sum(linear(sx_hop[p]) for p in P_SX),
+        'per_hop_larger_series': sum(linear([ao[l, a, p] for l in L]) and linear(sx_hop[p]) and steps([ao[l, a, p] for l in L]).pop() > steps(sx_hop[p]).pop() for a in A for p in P_SX),
+        'payload_slope_one_series': sum(len({ao[l, a, p] - p for p in P_AO}) == 1 for l in L for a in A) + sum(len({sx[l, p] - p for p in P_SX}) == 1 for l in L),
+        'ao_larger_cells': sum(ao[l, a, p] > sx[l, p] for l in L for a in A for p in P_SX),
+        'breakeven_tor_onions': breakeven(9, 3, 632), 'breakeven_tor_diff_onions': breakeven(9, 3, 415), 'breakeven_nym_onions': breakeven(9, 5, 246),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-aimless/versions.log
+  - amber-aimless/sphinx-Cargo.lock
+  - amber-aimless/run.log
+  - amber-aimless/run.stderr.log
+  - amber-aimless/onion_sizes.csv
+  - amber-aimless/sphinx_onion_sizes.csv
+  - amber-aimless/metrics.json
+baseline:
+  captured_on: '2026-11-20'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic;
+    rustc 1.88.0-nightly (5e17a2a91 2025-04-05), Python 3.12.3
+  outputs:
+  - path: amber-aimless/versions.log
+    sha256: b729361a1635c53c7d54aee53a06fc9c41714a92dfa3295dc3d4b8937ba984d1
+  - path: amber-aimless/sphinx-Cargo.lock
+    sha256: 532ea806523fdd6b8d25db2445270c94ce255ade6f70be17e76a5acebb083b1e
+  - path: amber-aimless/run.log
+    sha256: 77b0b1290d91c75ebcc2d11004f3a7c94a0d6cf41b60f8ef3067720176f5621d
+  - path: amber-aimless/run.stderr.log
+    sha256: 5751ef01ce5ee8012ae3dc04e7b60a2b5084a667e0c245fd2a0bd12698b962c7
+  - path: amber-aimless/onion_sizes.csv
+    sha256: b73c862272b283adcbd4b036dcba453fd4f38236ed373a2e7418d5b5e580e890
+  - path: amber-aimless/sphinx_onion_sizes.csv
+    sha256: 2bb57204ac632092b04ab1699f9e147e79ab8f57730c2a809f3ca52a064458c5
+  - path: amber-aimless/metrics.json
+    sha256: b24fab3a23a52cbe4df7502108c55522f348fef0f0874fda45960b38f42acae2
+  metrics:
+    ao_authority_linear_series: 25
+    ao_path_linear_series: 45
+    sphinx_path_linear_series: 4
+    per_hop_larger_series: 36
+    payload_slope_one_series: 50
+    ao_larger_cells: 180
+    breakeven_tor_onions: 105
+    breakeven_tor_diff_onions: 69
+    breakeven_nym_onions: 27
+  bit_for_bit_expected: false
