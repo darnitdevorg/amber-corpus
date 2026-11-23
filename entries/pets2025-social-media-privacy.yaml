@@ -1,0 +1,388 @@
+# Verified subset: the whole artifact.ipynb run on the bundled survey data. Judged: the sample size, Table 3
+# (demographic counts), Table 4 (113 of 114 cells), the Sec. 4.1-4.3 awareness / preference / discoverability rates,
+# the Sec. 4.4 correlations, the Table 6 and Table 7 OLS rows, and Table 5 (OS counts). Two paper cells that already
+# disagree with the authors' own shipped output, the figures and the Appendix B.5 models are excluded; see resources.notes.
+id: pets2025-social-media-privacy
+title: 'Navigating Social Media Privacy: Awareness, Preferences, and Discoverability'
+venue:
+  name: PETS
+  year: 2025
+paper:
+  url: https://petsymposium.org/popets/2025/popets-2025-0148.pdf
+  doi: 10.56553/popets-2025-0148
+artifact:
+  url: https://github.com/STEELISI/Social-Media-Privacy-Awareness-Preferences-Discoverability/tree/81bf39637d8877b23ab6a881c9941e1013c5a651
+  clone: |
+    git clone https://github.com/STEELISI/Social-Media-Privacy-Awareness-Preferences-Discoverability.git artifact,
+    then `git -C artifact checkout 81bf39637d8877b23ab6a881c9941e1013c5a651` and run run.command from inside artifact/.
+  ref_type: commit
+  ref: 81bf39637d8877b23ab6a881c9941e1013c5a651
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    Artifact README at the pinned commit:
+    - "No special hardware requirements (can run on a local laptop)."
+    - "The survey data (stored in raw) is around 700KB and running the Python notebook (artifact.ipynb) should
+      complete within a few minutes."
+    - "We run the artifact using Python 3.8.11."
+    - "We reproduce ALL results presented in the paper."
+    Badges: https://secartifacts.github.io/pets2025/results ("available, functional, reproduced"). The pin is the
+    secartifacts commit. The only later commit, 55b3037, edits one README line.
+
+    Tested: all 36 code cells of artifact.ipynb, unmodified and in order, in one Python namespace, on the six bundled
+    CSVs (541 screened responses). As in Jupyter, a cell's trailing bare expression is displayed: DataFrames via
+    to_string(), so wide tables do not wrap, and None is not printed. The notebook's savefig calls are commented out
+    upstream, so no figure files are written. Plots go to the Agg backend.
+
+    What each claim compares (paper value vs the notebook's printed output):
+    - Table 3: counts only. The paper's rows "Non-binary" = Non-binary + gender "Prefer not to say" and
+      "<=High school" = less than high school + high school; only with these merges do the gender rows sum to n. The
+      integer Table 3 percentages round half-even and are not judged.
+    - Table 4: the notebook's "k/n (pp.pp %)" string, compared with the paper's two-decimal cell.
+    - Sec. 4.1-4.3 rates: the notebook prints a two-decimal fraction, e.g. "75 (0.62%)". The paper's integer
+      percentage equals that printed fraction x 100. Facebook "never seen multiple" is 75/120 = 0.625, printed 0.62,
+      and the paper says 62% (half-up would give 63).
+    - Correlations: r rounded half-up to 3 dp. p-values as the paper states them (< 0.001, < 0.0001, = 0.038; per
+      platform, p <= 0.015 on every platform except TikTok).
+    - Tables 6 and 7: SE, t and the 95% CI bounds must equal statsmodels' printed 3-dp values. beta matches when the
+      printed 4-dp coef lies within 0.0005 of the paper's 3-dp value. The paper rounded the printed 4-dp value with
+      float rounding: 0.1605 -> 0.161 and 0.2905 -> 0.290, while the full-precision values are 0.160476 and 0.290476.
+      Half-up on the 4-dp print would misjudge the second. The os row of Table 6 reads "iOS (vs. Android)" while the
+      notebook's reference level is iOS, so the printed Android coefficient, t and CI are negated.
+    These comparison rules, every claim and every threshold were frozen before the first run, from the paper and the
+    authors' shipped notebook outputs.
+
+    Excluded before the first run (paper text vs the authors' own shipped output):
+    - Table 4, X / message / "more private": the paper prints 11.67%. The shipped output and the rerun both give
+      0/60. The raw answers to that question are 46 "satisfied" and 14 "more EXPOSED".
+    - Table 6, age / A_TIME, t: the paper prints 2.000. The output gives 2.004 (beta 10.4996 / SE 5.240). That row's
+      beta, SE and CI are judged.
+    Not judged:
+    - the p-value column of Tables 6 and 7 (statsmodels prints 3 dp, so "<0.0001" cannot be read; t carries it)
+    - the significance stars
+    - Figures 1-3 and 5-8
+    - the Appendix B.5 interaction models (not in the notebook)
+    - the manual UI-path validation and the 664 -> 541 screening (the CSVs are already screened)
+
+    Native, no Docker or Jupyter. run.command builds a Python 3.11 venv with pip --require-hashes at the authors'
+    requirements.txt versions for every package the notebook imports, plus their pinned dependencies (17 wheels;
+    the Jupyter/IPython stack is not needed). The authors used Python 3.8.11; numpy 1.24.4, pandas 2.0.3, scipy
+    1.10.1 and statsmodels 0.14.1 have no Python 3.12 wheels, hence 3.11. Prerequisites: Linux x86_64, git,
+    python3.11 with venv, network access to PyPI. The analysis itself is offline and has no randomness. run.log
+    is not byte-stable, because statsmodels prints the current date and time in every summary.
+
+    First run on 2026-11-23, in a fresh clone under a 2 GiB memory cap with swap off: exit 0 in 23 s wall, 176 MiB
+    peak RSS, empty stderr. All nine values equalled their frozen thresholds. Compared with the authors' shipped
+    outputs, 12 of 14 stream-output cells are identical (Date/Time lines aside). The other two differ only in
+    floating-point noise: the 16th significant digit of the correlations, and one unjudged intercept, 0.2312 vs
+    0.2313.
+
+    Independent validator (30/30 checks):
+    - It reads the raw CSVs with the csv module.
+    - It takes question numbers from the README's published tables and finds the demographic columns by their
+      answer values.
+    - It computes Pearson r by hand, and OLS by numpy normal equations with scipy t quantiles (equal to statsmodels
+      to 1e-12).
+    - It re-extracts every paper number from the PDF and agrees with the checker on all nine values.
+    - It confirms that the checker's embedded paper values equal the PDF, that the two excluded cells come straight
+      from the raw data (0.00% and t = 2.0036), and that the 0.290 cell is 0.290476 at full precision.
+
+    The literal run.command, parsed from this YAML, passed again from a second fresh clone with no pip cache: exit 0
+    in 30 s wall, 176 MiB peak RSS, about 464 MB on disk with the venv. metrics.json, versions.log and run.stderr.log
+    were byte-identical to the first run, and run.log was identical apart from the Date/Time lines. Checker
+    tests: 21 incomplete or invalid inputs were rejected (missing or empty or truncated logs, a missing marker,
+    Traceback or Error on stderr, a dropped platform, table row, regression block or correlation, a shifted or
+    blanked or non-numeric Table 4 cell, inconsistent counts, out-of-order cells). 11 value alterations with intact
+    structure were written to metrics.json and judged NOT_REPRODUCED. A wrong commit, an edited notebook and an
+    edited CSV each stop the command before amber-socialmedia/ is created.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: n_participants
+  threshold: == 541
+  unit: participants
+  source: Paper Sec. 3.4 ("kept 541 participants' responses for data analysis") and Table 3 (n=541)
+  measurement_protocol: 'Code cell 14 prints "#rows: 541" for the combined analysis frame. The checker requires it to
+    equal the sum of the per-platform row counts that code cell 0 prints for all six platforms (paper: 120 / 61 / 60 /
+    120 / 120 / 60).'
+  expected_verdict: REPRODUCED
+  notes: The bundled CSVs are the paper's full screened sample.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"n_participants": ([0-9]+)'
+- metric: table3_counts_matched
+  threshold: == 182
+  unit: Table 3 count cells (of 182)
+  source: Paper Table 3, "Demographics of participant sample (n=541)"
+  measurement_protocol: 'Integer counts of the 26 Table 3 rows x (6 platforms + Total), compared with df_demographic
+    (code cell 3), using the paper''s two merged rows (see resources.notes).'
+  expected_verdict: REPRODUCED
+  notes: Age, gender, education, tech background and region per platform.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"table3_counts_matched": ([0-9]+)'
+- metric: table4_cells_matched
+  threshold: == 113
+  unit: Table 4 cells (of 113 judged)
+  source: Paper Table 4 (fraction who have never seen / prefer more private / find hard to locate, per setting and platform)
+  measurement_protocol: 'Every non-dash Table 4 cell except X / message / more private, as a two-decimal percentage
+    string, compared with the "k/n (pp.pp %)" cells of df_main (code cell 8). The checker also requires the same
+    cell layout as the paper''s dashes.'
+  expected_verdict: REPRODUCED
+  notes: The core RQ1-RQ3 per-setting results. One cell is excluded (resources.notes).
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"table4_cells_matched": ([0-9]+)'
+- metric: headline_rates_matched
+  threshold: == 6
+  unit: headline percentages (of 6)
+  source: Paper Abstract and Secs. 4.1-4.3 (80% / 58% never seen at least one / multiple settings, 92% / 83% prefer
+    more private defaults, 79% / 50% find settings hard to locate)
+  measurement_protocol: The TOTAL lines of code cells 9-11, as printed two-decimal fractions x 100, compared with the
+    paper's integer percentages.
+  expected_verdict: REPRODUCED
+  notes: The paper's main findings for RQ1-RQ3.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"headline_rates_matched": ([0-9]+)'
+- metric: platform_rates_matched
+  threshold: == 29
+  unit: per-platform percentages stated in the text (of 29)
+  source: Paper Secs. 4.1-4.3 (e.g. Instagram 93% / 66% never seen; Facebook 93% / 91% prefer more private; TikTok 55%
+    / 23% hard to locate)
+  measurement_protocol: 'The per-platform "at least one" / "multiple" lines of code cells 9-11, under the same rule as
+    headline_rates_matched. Facebook "never seen multiple" (75/120 = 0.625, printed 0.62, paper 62%) is included.'
+  expected_verdict: REPRODUCED
+  notes: The Figure 1-3 breakdown values stated in the text.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"platform_rates_matched": ([0-9]+)'
+- metric: correlation_values_matched
+  threshold: == 10
+  unit: correlation statements (of 10)
+  source: Paper Sec. 4.4 (r 0.162, p < 0.001; r -0.328, p < 0.0001; r 0.089, p = 0.038; P_SEEN vs P_HARD significant on
+    every platform except TikTok, -0.512 <= r <= -0.235, p <= 0.015)
+  measurement_protocol: 'Pearson results printed by code cell 16. There are six pooled values (three r at 3 dp, three
+    p statements) and four per-platform ones: the set of platforms with p < 0.05 is exactly the five other than
+    TikTok; the min and max r of those five; their max p at 3 dp.'
+  expected_verdict: REPRODUCED
+  notes: RQ4.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"correlation_values_matched": ([0-9]+)'
+- metric: table6_values_matched
+  threshold: == 54
+  unit: Table 6 values (11 rows x beta, SE, t, CI low, CI high, less one excluded t)
+  source: Paper Table 6 and Sec. 4.5 (e.g. age P_SEEN beta -0.101; gender P_PRIVATE -0.079; usage frequency P_HARD
+    0.069; #platforms P_SEEN 0.029)
+  measurement_protocol: 'Single OLS summaries printed by code cells 20-23, one per dependent variable (P_SEEN,
+    P_PRIVATE, P_HARD, A_TIME) and independent variable. Rules as in resources.notes, including the sign flip of the
+    os row.'
+  expected_verdict: REPRODUCED
+  notes: RQ5 demographic and usage differences.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"table6_values_matched": ([0-9]+)'
+- metric: table7_values_matched
+  threshold: == 175
+  unit: Table 7 values (35 rows x 5)
+  source: Paper Table 7 and Sec. 4.6 (e.g. TikTok users find 9-32% fewer settings hard to locate, 0.089 <= |beta| <=
+    0.316; Facebook users spend 35-39 s longer)
+  measurement_protocol: 'Platform OLS summaries printed by code cells 24-27. Each "(REF vs.) IV" row is read from the
+    REF platform''s summary, IV coefficient. Row blocks are P_SEEN 9, P_PRIVATE 8, P_HARD 12, A_TIME 6.'
+  expected_verdict: REPRODUCED
+  notes: RQ5 platform-specific differences.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"table7_values_matched": ([0-9]+)'
+- metric: table5_counts_matched
+  threshold: == 21
+  unit: Table 5 count cells (of 21)
+  source: Paper Table 5 (mobile OS used for locating settings) and Sec. 4.5 ("62% of participants use Android and 37% use iOS")
+  measurement_protocol: Android / iOS / Others counts x (6 platforms + Total) from df_os (code cell 35).
+  expected_verdict: REPRODUCED
+  notes: The OS split behind the os row of Table 6.
+  measure:
+    file: amber-socialmedia/metrics.json
+    regex: '"table5_counts_matched": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 81bf39637d8877b23ab6a881c9941e1013c5a651
+    git diff --quiet HEAD -- artifact.ipynb raw requirements.txt
+    mkdir amber-socialmedia
+    python3.11 -m venv amber-socialmedia/venv
+    cat > amber-socialmedia/requirements.txt <<'REQ'
+    contourpy==1.1.1 --hash=sha256:b04c2f0adaf255bf756cf08ebef1be132d3c7a06fe6f9877d55640c5e60c72c5
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    fonttools==4.57.0 --hash=sha256:39acf68abdfc74e19de7485f8f7396fa4d2418efea239b7061d6ed6a2510c746
+    kiwisolver==1.4.7 --hash=sha256:18077b53dc3bb490e330669a99920c5e6a496889ae8c63b58fbc57c3d7f33a18
+    matplotlib==3.7.5 --hash=sha256:3d028555421912307845e59e3de328260b26d055c5dac9b182cc9783854e98fb
+    numpy==1.24.4 --hash=sha256:7215847ce88a85ce39baf9e89070cb860c98fdddacbaa6c0da3ffb31b3350bd5
+    packaging==25.0 --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484
+    pandas==2.0.3 --hash=sha256:d9cd88488cceb7635aebb84809d087468eb33551097d600c6dad13602029c2df
+    patsy==1.0.1 --hash=sha256:751fb38f9e97e62312e921a1954b81e1bb2bcda4f5eeabaf94db251ee791509c
+    pillow==10.4.0 --hash=sha256:5e84b6cc6a4a3d76c153a6b19270b3526a5a8ed6b09501d3af891daa2a9de7d6
+    pyparsing==3.1.4 --hash=sha256:a6a7ee4235a3f944aa1fa2249307708f893fe5717dc603503c6c7969c070fb7c
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    scipy==1.10.1 --hash=sha256:15a35c4242ec5f292c3dd364a7c71a61be87a3d4ddcc693372813c0b73c9af1d
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    statsmodels==0.14.1 --hash=sha256:b0f727fe697f6406d5f677b67211abe5a55101896abdfacdb3f38410405f6ad8
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    REQ
+    amber-socialmedia/venv/bin/pip install --quiet --no-input --only-binary=:all: --require-hashes -r amber-socialmedia/requirements.txt
+    amber-socialmedia/venv/bin/python -c "import sys, numpy, pandas, scipy, statsmodels, matplotlib; print('python', sys.version.split()[0][:4], 'numpy', numpy.__version__, 'pandas', pandas.__version__, 'scipy', scipy.__version__, 'statsmodels', statsmodels.__version__, 'matplotlib', matplotlib.__version__)" > amber-socialmedia/versions.log
+    grep -Fx 'python 3.11 numpy 1.24.4 pandas 2.0.3 scipy 1.10.1 statsmodels 0.14.1 matplotlib 3.7.5' amber-socialmedia/versions.log
+    MPLBACKEND=Agg MPLCONFIGDIR=amber-socialmedia/mpl amber-socialmedia/venv/bin/python - > amber-socialmedia/run.log 2> amber-socialmedia/run.stderr.log <<'RUN'
+    import ast, json, pandas as pd
+    code = [''.join(c['source']) for c in json.load(open('artifact.ipynb'))['cells'] if c['cell_type'] == 'code']
+    ns = {'__name__': '__main__'}
+    for i, src in enumerate(code):  # every code cell, verbatim and in order; a trailing bare expression is printed, as Jupyter shows it
+        tree = ast.parse(src)
+        last = tree.body.pop() if tree.body and isinstance(tree.body[-1], ast.Expr) else None
+        exec(compile(tree, 'artifact.ipynb code cell %d' % i, 'exec'), ns)
+        if last is not None:
+            v = eval(compile(ast.Expression(last.value), 'artifact.ipynb code cell %d' % i, 'eval'), ns)
+            if v is not None: print(v.to_string() if isinstance(v, pd.DataFrame) else v)
+        print('AMBER-CELL-END', i)
+    print('AMBER-RUN-COMPLETE', len(code))
+    RUN
+    python3 -I - <<'CHECK' > amber-socialmedia/metrics.json
+    import json, re
+    from decimal import Decimal as D
+    log, err = open('amber-socialmedia/run.log').read(), open('amber-socialmedia/run.stderr.log').read()
+    assert log.endswith('AMBER-RUN-COMPLETE 36\n') and not re.search(r'Traceback|Error', err), 'incomplete run'
+    out = re.split(r'^AMBER-CELL-END \d+\n', log, flags=re.M)
+    PL = ['Facebook', 'Instagram', 'Twitter (X)', 'LinkedIn', 'TikTok', 'Snapchat']
+    AB = dict(zip(['FB', 'IG', 'X', 'LI', 'TT', 'SC'], PL))
+    # Paper values, parsed from the PDF text: Tables 3 (counts), 4, 6, 7, 5; 'x' = excluded paper/artifact mismatch, '-' = no cell
+    T3 = ('13 7 7 13 10 6 56 39 17 20 37 38 16 167 9 6 3 10 12 8 48 32 19 23 41 42 22 179 19 11 6 13 10 7 66 7 1 1 6 7 1 23 1 0 0 '
+          '0 1 0 2 54 32 41 61 47 29 264 64 28 19 57 71 31 270 2 1 0 2 2 0 7 33 16 12 20 36 16 133 6 2 6 12 9 6 41 55 29 30 65 50 '
+          '22 251 18 10 11 19 19 14 91 2 1 0 1 4 0 8 5 3 1 3 2 1 15 1 0 0 0 0 1 2 33 19 20 42 38 20 172 87 42 40 78 82 40 369 0 0 '
+          '2 2 3 2 9 13 8 8 30 16 6 81 25 19 18 38 39 20 159 8 1 1 7 4 2 23 69 30 30 26 47 29 231 5 3 1 11 5 0 25 0 0 0 6 6 1 13')
+    T4 = ('2.50 9.84 40.00 16.67 12.50 10.00 18.33 55.74 30.00 11.67 42.50 31.67 31.67 6.56 65.00 55.00 15.00 20.00 30.00 16.39 '
+          '28.33 32.50 20.00 18.33 50.83 57.38 x 25.00 10.00 50.00 36.67 8.20 15.00 25.00 16.67 6.67 40.83 54.10 35.00 66.67 '
+          '45.83 36.67 80.00 63.93 73.33 70.00 61.67 68.33 73.33 77.05 35.00 58.33 33.33 38.33 22.50 42.62 - 39.17 32.50 35.00 '
+          '60.83 59.02 - 46.67 52.50 51.67 31.67 63.93 - 28.33 38.33 23.33 55.83 - 46.67 45.83 22.50 25.00 68.33 - 70.00 40.00 '
+          '70.00 63.33 43.33 - 43.33 58.33 26.67 55.00 15.83 - - 46.67 24.17 - 70.00 - - 43.33 60.83 - 43.33 - - 15.00 20.00 - - '
+          '81.97 70.00 - 42.50 - - 67.21 60.00 - 71.67 - - 65.57 50.00 - 26.67 - 13.33 - - 33.33 - - 80.83 - - 36.67 - - 36.67 - '
+          '- 55.00 - - 57.50 - - 38.33 - - 70.83 - - 38.33 - - 48.33 - - 75.00 - -')
+    T6 = ('-0.101 0.024 -4.232 -0.147 -0.054 0.052 0.018 2.840 0.016 0.088 10.500 5.240 x 0.206 20.794 -0.079 0.024 -3.291 -0.126 '
+          '-0.032 -0.068 0.026 -2.631 -0.118 -0.017 0.069 0.022 3.091 0.025 0.113 0.056 0.026 2.163 0.005 0.107 -0.090 0.026 '
+          '-3.487 -0.14 -0.039 -15.830 5.413 -2.925 -26.462 -5.197 0.029 0.009 3.196 0.011 0.047 -0.033 0.009 -3.676 -0.051 '
+          '-0.015')
+    T7 = ('FB>IG -0.112 0.043 -2.595 -0.197 -0.027 FB>X -0.142 0.043 -3.277 -0.227 -0.057 FB>LI -0.101 0.035 -2.854 -0.171 -0.031 '
+          'IG>TT 0.124 0.043 2.878 0.039 0.209 IG>SC 0.160 0.050 3.205 0.062 0.258 X>TT 0.154 0.043 3.558 0.069 0.239 X>SC 0.190 '
+          '0.050 3.795 0.092 0.288 LI>TT 0.113 0.035 3.199 0.044 0.183 LI>SC 0.149 0.043 3.435 0.064 0.234 FB>X -0.158 0.042 '
+          '-3.732 -0.242 -0.075 FB>LI -0.235 0.035 -6.796 -0.303 -0.167 FB>TT -0.098 0.035 -2.818 -0.166 -0.030 FB>SC -0.095 '
+          '0.042 -2.239 -0.178 -0.012 IG>X -0.140 0.049 -2.867 -0.236 -0.044 LI>IG 0.217 0.042 5.142 0.134 0.300 LI>TT 0.138 '
+          '0.035 3.978 0.070 0.206 LI>SC 0.140 0.042 3.310 0.057 0.224 FB>SC 0.071 0.030 2.397 0.013 0.129 IG>FB -0.227 0.029 '
+          '-7.700 -0.285 -0.169 IG>LI -0.211 0.029 -7.170 -0.269 -0.153 IG>SC -0.156 0.034 -4.575 -0.223 -0.089 X>FB -0.201 0.030 '
+          '-6.783 -0.259 -0.143 X>LI -0.185 0.030 -6.255 -0.244 -0.127 X>SC -0.130 0.034 -3.798 -0.197 -0.063 TT>FB 0.089 0.024 '
+          '3.695 0.042 0.137 TT>IG 0.316 0.029 10.734 0.259 0.374 TT>X 0.290 0.030 9.800 0.232 0.349 TT>LI 0.105 0.024 4.341 '
+          '0.058 0.153 TT>SC 0.161 0.030 5.414 0.102 0.219 FB>IG -19.356 9.340 -2.072 -37.704 -1.009 FB>X -19.665 9.391 -2.094 '
+          '-38.113 -1.216 FB>TT -34.606 7.668 -4.513 -49.669 -19.543 FB>SC -38.701 9.391 -4.121 -57.150 -20.253 LI>TT -33.036 '
+          '7.668 -4.308 -48.099 -17.973 LI>SC -37.131 9.391 -3.954 -55.579 -18.683')
+    T5 = '80 39 1 34 27 0 40 19 1 76 43 1 74 46 0 33 27 0 337 201 3'
+    rows = re.findall(r'^(.+)\n#rows: (\d+)$', out[0], re.M)
+    assert [r[0] for r in rows] == PL and len(out) == 37, 'platforms / cells'
+    n = int(re.fullmatch(r'#rows: (\d+)\n', out[14])[1]); assert n == sum(int(r[1]) for r in rows), 'participants'
+    def table(txt, k):  # to_string() rows: index, label, k (N, %) pairs
+        return [(m[1], [int(v) for v in m[2].split()[::2]]) for m in re.finditer(r'^\d+ +(.+?) +((?:\d+ +[\d.]+ *){%d})$' % k, txt, re.M)]
+    sec, demo = None, {}
+    for lab, v in table(out[3], 7):
+        sec = lab if lab in ('Age', 'Gender', 'Education', 'Tech_background', 'Region') else sec
+        demo[sec + ':' + lab] = v
+    assert len(demo) == 33, 'Table 3 rows'
+    T3ROWS = ('Age:18-24 years|Age:25-34 years|Age:35-44 years|Age:45-54 years|Age:55-64 years|Age:65-74 years|Age:75 years and older|Gender:Male|Gender:Female|'
+              'Gender:Non-binary+Gender:Prefer not to say|Education:Less than high school+Education:High school degree or equivalent|Education:Associate degree|'
+              'Education:Bachelor’s degree|Education:Master’s degree|Education:Doctoral degree|Education:Professional degree|Education:Prefer not to say|'
+              'Tech_background:Yes|Tech_background:No|Region:Asia|Region:Africa|Region:North America|Region:South America|Region:Europe|Region:Australia|Region:Others')
+    got3 = [sum(demo[s][j] for s in r.split('+')) for r in T3ROWS.split('|') for j in range(7)]
+    t4 = out[8].splitlines(); ends = [t4[0].index(p) + len(p) for p in PL]; got4, feats = [], []
+    for line in t4[1:]:
+        cells = {m.end(): m[1] for m in re.finditer(r'\d+/\d+ \(([\d.]+) %\)', line)}
+        assert set(cells) <= set(ends), 'Table 4 columns'
+        if cells: got4 += [cells.get(e, '-') for e in ends]
+        else: feats.append(line.split()[1])
+    assert feats == ['audience', 'message', 'ads', 'activity_status', 'account_suggestion', 'connection_view', 'video', 'profile', 'search'] and len(got4) == 162, 'Table 4 rows'
+    assert [g == '-' for g in got4] == [p == '-' for p in T4.split()], 'Table 4 cell layout'
+    rate = [[round(float(f) * 100) for f in re.findall(r': \d+ \(([\d.]+)%\)', out[c])] for c in (9, 10, 11)]
+    assert [len(r) for r in rate] == [14, 14, 14], 'CCDF blocks'
+    plat = [str(r[2 * i + k]) for r in rate for k in (0, 1) for i in range(6)]  # seen1, seenM, priv1, privM, hard1, hardM x 6 platforms
+    PLAT = '84 93 - 90 - - 62 66 - 72 - - 93 95 92 93 93 88 91 87 80 77 86 75 80 90 88 89 55 82 55 79 - 60 23 38'
+    cor = re.findall(r'^(.+) \(N=\d+\): (\w+) vs (\w+)\nPearson correlation: (\S+), P-value: (\S+)$', out[16], re.M)
+    assert [c[0] for c in cor] == ['TOTAL'] * 3 + PL, 'correlations'
+    r3 = lambda x: D(x).quantize(D('0.001'), 'ROUND_HALF_UP')
+    (ra, pa), (rb, pb), (rc, pc) = [(c[3], float(c[4])) for c in cor[:3]]
+    sig = [c for c in cor[3:] if float(c[4]) < 0.05]
+    corr = [r3(ra) == D('0.162'), pa < 0.001, r3(rb) == D('-0.328'), pb < 0.0001, r3(rc) == D('0.089'), r3(cor[2][4]) == D('0.038'),
+            [c[0] for c in sig] == [p for p in PL if p != 'TikTok'], min(r3(c[3]) for c in sig) == D('-0.512'),
+            max(r3(c[3]) for c in sig) == D('-0.235'), r3(max(D(c[4]) for c in sig)) == D('0.015')]
+    def summaries(c, key):  # OLS summary blocks: key -> {term: (coef, se, t, p, lo, hi)}
+        res = {}
+        for blk in re.split(r'^=> ', out[c], flags=re.M)[1:]:
+            rows = re.findall(r'^(\S+(?: \(X\))?) +(-?[\d.]+) +([\d.]+) +(-?[\d.]+) +([\d.]+) +(-?[\d.]+) +(-?[\d.]+)$', blk, re.M)
+            res[re.search(key, blk.split('\n', 1)[0])[1]] = {r[0]: [D(x) for x in r[1:]] for r in rows}
+        return res
+    DV = dict(zip(['P_SEEN', 'P_PRIVATE', 'P_HARD', 'A_TIME'], range(4)))
+    assert [re.match(r'(?:Demographic and usage|Platform) IVs vs (\w+) ', out[c])[1] for c in range(20, 28)] == list(DV) * 2, 'regression cells'
+    demo_ols = [summaries(20 + k, r'IV=(\w+)') for k in range(4)]; plat_ols = [summaries(24 + k, r'REF platform: (.+)$') for k in range(4)]
+    assert all(len(s) == 9 for s in demo_ols) and all(sorted(s) == sorted(PL) for s in plat_ols), 'regression blocks'
+    def agree(paper, got, flip=False):  # beta: printed 4-dp coef within 0.0005 of the paper's 3 dp; SE, t, CI: printed 3 dp equal
+        c, se, t, _, lo, hi = got
+        if flip: c, t, lo, hi = -c, -t, -hi, -lo
+        return sum(p != 'x' and (abs(g - D(p)) <= D('0.0005') if k == 0 else g == D(p)) for k, (p, g) in enumerate(zip(paper, [c, se, t, lo, hi])))
+    T6ROWS = ('P_SEEN age >=45|P_HARD age >=45|A_TIME age >=45|P_PRIVATE gender Male|P_PRIVATE tech_background Yes|P_HARD use_freq <Weekly|'
+              'P_SEEN post_freq >=Monthly|P_PRIVATE post_freq >=Monthly|A_TIME os Android|P_SEEN n_other_platforms n_other_platforms_x|P_PRIVATE n_other_platforms n_other_platforms_x')
+    p6 = T6.split()
+    m6 = sum(agree(p6[5 * i:5 * i + 5], demo_ols[DV[d]][iv][term], iv == 'os') for i, (d, iv, term) in enumerate(r.split() for r in T6ROWS.split('|')))
+    p7 = T7.split(); dv7 = ['P_SEEN'] * 9 + ['P_PRIVATE'] * 8 + ['P_HARD'] * 12 + ['A_TIME'] * 6
+    m7 = sum(agree(p7[6 * i + 1:6 * i + 6], plat_ols[DV[dv7[i]]][AB[p7[6 * i].split('>')[0]]][AB[p7[6 * i].split('>')[1]]]) for i in range(35))
+    os_rows = dict(table(out[35], 7)); got5 = [os_rows[o][j] for j in range(7) for o in ('Android', 'iOS', 'Others')]
+    print(json.dumps({'n_participants': n, 'table3_counts_matched': sum(g == int(p) for g, p in zip(got3, T3.split())),
+                      'table4_cells_matched': sum(g == p for g, p in zip(got4, T4.split()) if p not in '-x'),
+                      'headline_rates_matched': sum(r[12 + k] == v for r, k, v in zip([rate[0], rate[0], rate[1], rate[1], rate[2], rate[2]], [0, 1] * 3, [80, 58, 92, 83, 79, 50])),
+                      'platform_rates_matched': sum(g == p for g, p in zip(plat, PLAT.split()) if p != '-'), 'correlation_values_matched': sum(corr),
+                      'table6_values_matched': m6, 'table7_values_matched': m7, 'table5_counts_matched': sum(g == int(p) for g, p in zip(got5, T5.split()))}, sort_keys=True))
+    CHECK
+  outputs:
+  - amber-socialmedia/versions.log
+  - amber-socialmedia/run.log
+  - amber-socialmedia/run.stderr.log
+  - amber-socialmedia/metrics.json
+baseline:
+  captured_on: '2026-11-23'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 LTS x86_64, Linux
+    7.0.0-43-generic; Python 3.11.15; numpy 1.24.4, pandas 2.0.3, scipy 1.10.1, statsmodels 0.14.1 in a local venv
+  outputs:
+  - path: amber-socialmedia/versions.log
+    sha256: 796c54187910853b7e240bb93c6d7e08b9726e21fddd6c6321faaa3ce55a1c08
+  - path: amber-socialmedia/run.log
+    sha256: b7c098502111ee30ba891cf8762ebb084173766335444f169a95a5cab76d15d7
+  - path: amber-socialmedia/run.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-socialmedia/metrics.json
+    sha256: a8c4257522217d0997f37be7fd265cb20548750716afdee562d4e5b96e465915
+  metrics:
+    n_participants: 541
+    table3_counts_matched: 182
+    table4_cells_matched: 113
+    headline_rates_matched: 6
+    platform_rates_matched: 29
+    correlation_values_matched: 10
+    table6_values_matched: 54
+    table7_values_matched: 175
+    table5_counts_matched: 21
+  bit_for_bit_expected: false
