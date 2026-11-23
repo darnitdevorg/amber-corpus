@@ -1,0 +1,365 @@
+# Verified subset: the artifact's seven analysis scripts rerun on the shipped processed dataset (6,051 apps), judged
+# against the numbers printed in paper Sections 4.1-4.3 and Appendix Table 5. RQ4 rankings, Appendix E correlations
+# and the optional scraping / LLM pipelines are excluded; see resources.notes.
+id: pets2026-disclosure-divergence
+title: 'Disclosure Divergence: Measuring Privacy Policy and Data Safety Misalignment at Scale'
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0117.pdf
+  doi: 10.56553/popets-2026-0117
+artifact:
+  url: https://github.com/Eshita66/Artifacts_PPD_DSL/tree/994fea3a623584bdcc72ac0c8dd1abe20d4451cd
+  clone: git clone https://github.com/Eshita66/Artifacts_PPD_DSL.git && cd Artifacts_PPD_DSL && git checkout
+    994fea3a623584bdcc72ac0c8dd1abe20d4451cd, then run run.command in the checkout root.
+  ref_type: commit
+  ref: 994fea3a623584bdcc72ac0c8dd1abe20d4451cd
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 1
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT_APPENDIX.md in the repository. Minimum hardware: "Standard desktop or laptop
+    computer", "8 GB RAM", "10 GB available disk space"; the GPU it recommends is only for the LLM pipeline ("The
+    analysis scripts used to reproduce the paper's figures, tables, and quantitative results do not require this
+    hardware configuration"). Runtimes: "RQ1 reproduction 1-3 minutes", RQ2, RQ3, RQ4 and the appendix analyses
+    "< 1 minute" each, "Full reproduction 5–8 minutes". "The datasets required to reproduce all figures, tables, and
+    quantitative findings reported in the paper are already included in the artifact. Running these pipelines is
+    optional and is not required for reproducing the published results." The AEC row (issue 2026.4) awards
+    available, functional and reproduced and pins this commit: https://secartifacts.github.io/pets2026/results.
+
+    Tested: the seven analysis scripts in scripts/, unmodified, in the appendix order: reproduce_prevalence.py (RQ1
+    rates, Figures 2 and 4-6), reproduce_kappaScore.py (Cohen's kappa, Figure 3), generate_cosine_similarity_dataset.py
+    (regenerates the TF-IDF cosine dataset from the shipped label and policy JSON), reproduce_cosine_ecdf.py
+    (Figure 7), reproduce_srs_distribution.py (RQ3 tiers, Figure 8), reproduce_category_risk_and_popularity.py (RQ4
+    and Appendix E; run for coverage, not judged) and reproduce_alpha_sensitivity.py (Appendix Table 5). Input is the
+    shipped processed dataset: 6,051 apps x 2 operations x 14 Data Safety categories = 169,428 policy/label cells.
+    The analysis is deterministic (no sampling, no model download). The checker reads only result CSVs written after
+    a start stamp, so a script that silently fails cannot fall back to the authors' shipped copies.
+
+    Excluded: the Section 4.2 sentence "The median cosine similarity for collection is approximately 0.55". The
+    authors' own shipped results/cosine_ecdf_console_output.txt reads 0.4788 for that median, so the paper text and
+    the artifact disagree before any rerun; only the collection-above-sharing ordering is judged. The Section 4.1
+    "kappa scores average around 31% for collection and 16% for sharing" refers to the per-category plot in Figure 3
+    and could mean the overall or the mean category kappa, so only the RQ1 key finding (both below a third, sharing
+    lower) is judged. RQ4 category rankings and the Appendix E popularity correlations are qualitative. The
+    DataSafetyScrapping and LLM_Privacify pipelines need network access, Selenium and a local LLM and are optional
+    per the appendix. This entry makes no claim about any of these.
+
+    One printed cell is carried, not judged: collection / Financial info total misalignment. The paper prints 43.9%;
+    the artifact gives 2661 / 6051 = 43.976%, and the authors' shipped output prints the same 0.439762. In all five
+    Section 4.2 cells where half-up rounding and truncation differ (51.6, 41.1, 55.1, 49.6, 41.5) the paper rounds;
+    43.9 is the only truncated value. The claims were frozen before the first run with this cell inside a 19-cell
+    count; it scored 18. Splitting the cell out as rq2_financial_collected_pct (comparable: false) was decided after
+    that run, with this evidence. No other threshold changed.
+
+    Native, no Docker. A venv installs hash-pinned wheels for the analysis subset of requirements.txt: pandas 2.2.2,
+    numpy 1.26.4, matplotlib 3.9.2 and XlsxWriter 3.2.9 at the pinned versions, plus scikit-learn 1.5.2, scipy
+    1.14.1, openpyxl 3.1.5 and their dependencies. The scraping and LangChain/OpenAI packages are not installed
+    (nothing in scripts/ imports them). The appendix used Python 3.11 on Windows 11; this run used Python 3.12.3 on
+    Linux. The command refuses a different commit or any edit to tracked files (git diff --quiet).
+
+    First capture on 2026-11-22 in a fresh clone: exit 0, 1 min 57 s wall including the wheel downloads, 227380 KiB
+    peak RSS (GNU time), under a 2 GiB memory cap with swap disabled, 535 MB workspace (checkout plus venv). Every
+    result CSV the scripts rewrote, and the regenerated cosine dataset, was byte-identical to the authors' shipped
+    copies; only the console logs (Windows path separators, pandas display width) and the xlsx containers differ.
+
+    An independent validator re-derived every value another way. With openpyxl only (no pandas, no scikit-learn),
+    it read the wide PPD_DS_by_operation sheet instead of the long Verdicts sheet the scripts use. It derived DSL-only
+    (policy yes, label no) and PPD-only (label yes, policy no) from the raw bits, and confirmed the Verdicts sheet
+    holds the same 169,428 cells and labels. It computed Cohen's kappa by hand (equal to scikit-learn's to 1e-12), and
+    recomputed SRS-O-w for every alpha from the weights parsed out of paper Table 3. Those equal the shipped
+    precomputed scores for all 6,051 apps; the two workbooks differ only in the letter case of 13 app names. It took
+    cosine medians with the csv and statistics modules. All paper numbers came from the PDF text, not typed in. It
+    also confirmed that Financial info (collection) is the only Section 4.2 cell the paper truncates. All 24 checks
+    passed, and its values equal the checker's. The checker rejected or failed 24 incomplete or invalid fixtures and
+    accepted only the genuine output. The fixtures cover missing, empty or header-only CSVs, CSVs older than the
+    start stamp, a traceback or error on stderr, dropped, duplicated or renamed rows, a changed header, altered
+    rates in each judged table, 84,713 cells, 6,050 apps, a missing alpha row, swapped kappa or cosine values and a
+    non-numeric rate.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-23: exit 0, 1 min 50 s
+    wall, 234196 KiB peak RSS, 535 MB workspace. Same metrics, validator 24/24, and a replay of every measure block
+    gives REPRODUCED for the seven judged claims. A wrong commit, an edit to a script and an edit to a data file each
+    stopped the command before amber-disclosure/ was created. Baseline hashes below are from this fresh run. All
+    outputs were byte-identical to the first capture except reproduce_cosine_ecdf.log, which prints the absolute
+    path of the saved figure.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, Python 3.12 with venv, and network access to PyPI. The
+    experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: n_apps
+  threshold: == 6051
+  unit: apps
+  source: 'Paper abstract and Section 4.3 (p.222): "across all 6,051 apps"; Table 1 "Apps with privacy policy 6,051".'
+  measurement_protocol: The app count reported by every judged output must be the same single value. That covers
+    N_apps in app_level_prevalence_by_operation.csv for both operations, n in cosine_ecdf_summary.csv for both
+    scopes, n_apps for SRS-O-weighted in srs_tier_summary.csv, and Low + Medium + High apps for each alpha row of
+    alpha_sensitivity_summary.csv. A disagreement records -1. N_cells must also be 84,714 (6,051 x 14) per operation.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"n_apps": (-?[0-9]+)'
+- metric: rq1_rates_matched
+  threshold: == 12
+  unit: rates
+  source: 'Paper Section 4.1 (p.219): agreement "66.9% for data collection disclosure and 68.9% for data sharing";
+    misalignment "33.1% for data collection and 31.1% for data sharing"; "For collection, 23.7% of disclosures are
+    misaligned only in DSL versus 9.5% only in PPD; for sharing, the corresponding rates are 26.0% (DSL only) versus
+    5.0% (PPD only)"; "Over 90.0% of apps contain at least one inconsistency in DSL-reported data collection, and
+    92.6% in DSL-reported data sharing"; "64.8% of apps show at least one collection inconsistency, and only 35.4%
+    for sharing".'
+  measurement_protocol: agree_rate, misalign_rate, under_rate (DSL only) and over_rate (PPD only) from
+    cell_level_prevalence_by_operation.csv, and under_rate_app and over_rate_app from
+    app_level_prevalence_by_operation.csv, for collected and shared, as a percent rounded half-up to one decimal.
+    Count the rates equal to the paper's.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"rq1_rates_matched": ([0-9]+)'
+- metric: kappa_ordering
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 4.1 (p.219) and RQ1 Key Findings: kappa indicates "only weak agreement for collection and
+    even weaker agreement for sharing"; "chance-corrected consistencies are substantially lower (less than a third)".'
+  measurement_protocol: 1 if the overall Cohen's kappa in overall_kappa.csv satisfies sharing < collection < 1/3,
+    else 0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"kappa_ordering": ([01])'
+- metric: rq2_rates_matched
+  threshold: == 18
+  unit: rates
+  source: 'Paper Section 4.2 (pp.219-220). Total misalignment, collection: Photos and videos 51.6, Location 51.1, App
+    activity 49.0, App info and performance 44.0, Messages 41.1; sharing: Personal info 72.0, Device or other IDs
+    55.1, Location 49.6, App info and performance 46.9, App activity 41.5, Financial info 41.4. Misalignment in DSL:
+    Personal info (shared) 69.6, Location 44.6 (collection) / 42.6 (sharing), Device or other IDs (shared) 48.8,
+    Photos and videos (collected) 41.0. Misalignment in PPD: App activity (collected) 39.9, App info and performance
+    (collected) 29.0 (%).'
+  measurement_protocol: misalign_rate, under_rate (DSL only) or over_rate (PPD only) of the named
+    (operation, category) row of category_level_prevalence.csv, as a percent rounded half-up to one decimal. Count
+    the cells equal to the paper's. The collection / Financial info total is carried separately as
+    rq2_financial_collected_pct.
+  expected_verdict: REPRODUCED
+  notes: Frozen before the first run as a 19-cell count including collection / Financial info; that cell is split
+    out after the run (see resources.notes).
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"rq2_rates_matched": ([0-9]+)'
+- metric: rq2_financial_collected_pct
+  threshold: == 43.9
+  unit: percent
+  source: 'Paper Section 4.2 (p.219): "For collection, the worst categories are ... Financial info (43.9%)".'
+  measurement_protocol: misalign_rate of (collected, Financial info) in category_level_prevalence.csv, as a percent
+    rounded half-up to one decimal.
+  expected_verdict: REPRODUCED
+  notes: Recorded, not judged. 2661 / 6051 = 43.976%, which the paper's half-up convention elsewhere gives as 44.0;
+    the authors' shipped output has the same value.
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"rq2_financial_collected_pct": ([0-9.]+)'
+    comparable: false
+    reason: The paper truncates this one cell (43.976% printed as 43.9) while rounding half-up in every other cell;
+      the artifact and the authors' shipped output both give 43.976%.
+- metric: cosine_ordering
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 4.2 and Figure 7 (pp.220-221): "developers appear substantially more consistent in
+    describing data collection practices than data sharing practices"; the sharing distribution "is heavily
+    concentrated near the lower bound".'
+  measurement_protocol: 1 if the median cosine similarity of the collected scope exceeds that of the shared scope
+    in cosine_ecdf_summary.csv, which reproduce_cosine_ecdf.py computes from the dataset just regenerated by
+    generate_cosine_similarity_dataset.py, else 0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"cosine_ordering": ([01])'
+- metric: rq3_tier_pct_matched
+  threshold: == 3
+  unit: tiers
+  source: 'Paper Section 4.3 (p.222): under SRS-O-w, "49.61% of apps in the low-risk tier and 49.10% in the
+    medium-risk tier, while only 1.29% fall in the high-risk tier".'
+  measurement_protocol: low_percent, medium_percent and high_percent of the SRS-O-weighted row of
+    srs_tier_summary.csv (tiers < 0.30, 0.30-0.70, >= 0.70), as a percent rounded half-up to two decimals. Count the
+    tiers equal to the paper's.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"rq3_tier_pct_matched": ([0-9]+)'
+- metric: table5_cells_matched
+  threshold: == 16
+  unit: table cells
+  source: 'Paper Appendix Table 5 (p.231), alpha = 0.4 / 0.5 / 0.6 / 0.7 x Low / Medium / High / Same Tier (%):
+    46.84 51.96 1.21 90.56; 49.96 48.83 1.21 96.00; 49.61 49.10 1.29 100.00; 51.02 47.61 1.37 96.20.'
+  measurement_protocol: Low (%), Medium (%), High (%) and Same tier as baseline (%) of each alpha row of
+    alpha_sensitivity_summary.csv, at two decimals (half-up). Count the cells equal to Table 5; all four alpha rows
+    must be present.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-disclosure/metrics.json
+    regex: '"table5_cells_matched": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 994fea3a623584bdcc72ac0c8dd1abe20d4451cd
+    git diff --quiet HEAD --
+    mkdir amber-disclosure
+    python3 -m venv amber-disclosure/venv
+    cat > amber-disclosure/requirements.txt <<'REQ'
+    cloudpickle==3.1.3 --hash=sha256:1654f4f18e416447210a63c5c25a135d65a292156aa5fa519dfa4baf7726dddb
+    contourpy==1.3.3 --hash=sha256:4d00e655fcef08aba35ec9610536bfe90267d7ab5ba944f7032549c55a146da1
+    cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+    et-xmlfile==2.0.0 --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa
+    fonttools==4.68.0 --hash=sha256:3edce69ecdefa73ab1041901ca22eefed6ebb93a77bc77e889d940479f25bf7d
+    joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+    kiwisolver==1.5.1 --hash=sha256:34633ecf50d16187ab8e5528b7a2530f2feb4e23f300db4672538b51cfc5cd38
+    matplotlib==3.9.2 --hash=sha256:f6ee45bc4245533111ced13f1f2cace1e7f89d1c793390392a80c139d6cf0e6c
+    numpy==1.26.4 --hash=sha256:675d61ffbfa78604709862923189bad94014bef562cc35cf61d3a07bba02a7ed
+    openpyxl==3.1.5 --hash=sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2
+    packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    pandas==2.2.2 --hash=sha256:eee3a87076c0756de40b05c5e9a6069c035ba43e8dd71c379e68cab2c20f16ad
+    pillow==13.0.0 --hash=sha256:42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
+    pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+    python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
+    pytz==2026.6 --hash=sha256:7fed3fee8fd6bd4a2b7b75a8d56021d0624127bf69bd5691f115db929ac570b3
+    scikit-learn==1.5.2 --hash=sha256:394397841449853c2290a32050382edaec3da89e35b3e03d6cc966aebc6a8ae6
+    scipy==1.14.1 --hash=sha256:8f9ea80f2e65bdaa0b7627fb00cbeb2daf163caa015e59b7516395fe3bd1e066
+    threadpoolctl==3.8.0 --hash=sha256:f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da
+    tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
+    xlsxwriter==3.2.9 --hash=sha256:9a5db42bc5dff014806c58a20b9eae7322a134abb6fce3c92c181bfb275ec5b3
+    REQ
+    amber-disclosure/venv/bin/pip install --quiet --no-input --only-binary :all: --require-hashes -r amber-disclosure/requirements.txt
+    export PATH="$PWD/amber-disclosure/venv/bin:$PATH" MPLBACKEND=Agg
+    python3 -c "import sys, numpy, pandas, sklearn, matplotlib, openpyxl; print(sys.version.split()[0], *(m.__name__ + '==' + m.__version__ for m in (numpy, pandas, sklearn, matplotlib, openpyxl)))" > amber-disclosure/versions.log
+    touch amber-disclosure/start
+    cd scripts
+    for s in reproduce_prevalence reproduce_kappaScore generate_cosine_similarity_dataset reproduce_cosine_ecdf reproduce_srs_distribution reproduce_category_risk_and_popularity reproduce_alpha_sensitivity; do
+      python3 $s.py > ../amber-disclosure/$s.log 2>> ../amber-disclosure/run.stderr.log
+    done
+    cd ..
+    cp results/*.csv amber-disclosure/
+    python3 -I - amber-disclosure <<'PYTHON' > amber-disclosure/metrics.json
+    import csv, json, pathlib, re, sys
+    from decimal import Decimal, ROUND_HALF_UP
+    root = pathlib.Path(sys.argv[1]); res = pathlib.Path('results')
+    assert not re.search(r'Traceback|Error', (root/'run.stderr.log').read_text()), 'a script failed'
+    def rows(name):
+        f = res/name
+        assert f.stat().st_mtime >= (root/'start').stat().st_mtime, name + ' not regenerated'
+        return list(csv.DictReader(open(f)))
+    pct = lambda x, q='0.1': str((Decimal(x) * 100).quantize(Decimal(q), ROUND_HALF_UP))
+    cell = {r['Operation']: r for r in rows('cell_level_prevalence_by_operation.csv')}
+    app = {r['Operation']: r for r in rows('app_level_prevalence_by_operation.csv')}
+    cat = {(r['Operation'], r['Category']): r for r in rows('category_level_prevalence.csv')}
+    kap = {r['Operation']: float(r['Kappa']) for r in rows('overall_kappa.csv')}
+    cos = {r['section_scope']: r for r in rows('cosine_ecdf_summary.csv')}
+    srs = {r['score']: r for r in rows('srs_tier_summary.csv')}
+    alpha = rows('alpha_sensitivity_summary.csv')
+    ops = ['collected', 'shared']
+    assert sorted(cell) == sorted(app) == sorted(cos) == ops and len(cat) == 28 and len(alpha) == 4, 'missing rows'
+    assert all(int(cell[o]['N_cells']) == 84714 for o in ops), 'cell count'
+    n = {int(app[o]['N_apps']) for o in ops} | {int(cos[o]['n']) for o in ops} | {int(srs['SRS-O-weighted']['n_apps'])}
+    n |= {sum(int(a[k]) for k in ('Low apps', 'Medium apps', 'High apps')) for a in alpha}
+    RQ1 = [(cell, 'agree_rate', '66.9', '68.9'), (cell, 'misalign_rate', '33.1', '31.1'), (cell, 'under_rate', '23.7', '26.0'),
+           (cell, 'over_rate', '9.5', '5.0'), (app, 'under_rate_app', '90.0', '92.6'), (app, 'over_rate_app', '64.8', '35.4')]
+    RQ2 = {'misalign_rate': [('collected', 'Photos and videos', '51.6'), ('collected', 'Location', '51.1'), ('collected', 'App activity', '49.0'),
+                             ('collected', 'App info and performance', '44.0'), ('collected', 'Messages', '41.1'),
+                             ('shared', 'Personal info', '72.0'), ('shared', 'Device or other IDs', '55.1'), ('shared', 'Location', '49.6'),
+                             ('shared', 'App info and performance', '46.9'), ('shared', 'App activity', '41.5'), ('shared', 'Financial info', '41.4')],
+           'under_rate': [('shared', 'Personal info', '69.6'), ('collected', 'Location', '44.6'), ('shared', 'Location', '42.6'),
+                          ('shared', 'Device or other IDs', '48.8'), ('collected', 'Photos and videos', '41.0')],
+           'over_rate': [('collected', 'App activity', '39.9'), ('collected', 'App info and performance', '29.0')]}
+    TABLE5 = {'0.4': ['46.84', '51.96', '1.21', '90.56'], '0.5': ['49.96', '48.83', '1.21', '96.00'],
+              '0.6': ['49.61', '49.10', '1.29', '100.00'], '0.7': ['51.02', '47.61', '1.37', '96.20']}
+    t5 = lambda a: [str(Decimal(a[k]).quantize(Decimal('0.01'), ROUND_HALF_UP)) for k in ('Low (%)', 'Medium (%)', 'High (%)', 'Same tier as baseline (%)')]
+    w = srs['SRS-O-weighted']
+    print(json.dumps({
+        'n_apps': n.pop() if len(n) == 1 else -1,
+        'rq1_rates_matched': sum(pct(t[o][col]) == v for t, col, *vs in RQ1 for o, v in zip(ops, vs)),
+        'kappa_ordering': int(kap['sharing'] < kap['collection'] < 1 / 3),
+        'rq2_financial_collected_pct': float(pct(cat[('collected', 'Financial info')]['misalign_rate'])),
+        'rq2_rates_matched': sum(pct(cat[(o, c)][col]) == v for col, items in RQ2.items() for o, c, v in items),
+        'cosine_ordering': int(float(cos['collected']['median']) > float(cos['shared']['median'])),
+        'rq3_tier_pct_matched': sum(pct(w[k], '0.01') == v for k, v in zip(('low_percent', 'medium_percent', 'high_percent'), ('49.61', '49.10', '1.29'))),
+        'table5_cells_matched': sum(x == y for a in alpha for x, y in zip(t5(a), TABLE5.get(str(float(a['Alpha (sharing weight)'])), []))),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-disclosure/versions.log
+  - amber-disclosure/reproduce_prevalence.log
+  - amber-disclosure/reproduce_kappaScore.log
+  - amber-disclosure/generate_cosine_similarity_dataset.log
+  - amber-disclosure/reproduce_cosine_ecdf.log
+  - amber-disclosure/reproduce_srs_distribution.log
+  - amber-disclosure/reproduce_category_risk_and_popularity.log
+  - amber-disclosure/reproduce_alpha_sensitivity.log
+  - amber-disclosure/run.stderr.log
+  - amber-disclosure/cell_level_prevalence_by_operation.csv
+  - amber-disclosure/app_level_prevalence_by_operation.csv
+  - amber-disclosure/category_level_prevalence.csv
+  - amber-disclosure/overall_kappa.csv
+  - amber-disclosure/cosine_ecdf_summary.csv
+  - amber-disclosure/srs_tier_summary.csv
+  - amber-disclosure/alpha_sensitivity_summary.csv
+  - amber-disclosure/metrics.json
+baseline:
+  captured_on: '2026-11-23'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic;
+    Python 3.12.3 numpy 1.26.4 pandas 2.2.2 scikit-learn 1.5.2 matplotlib 3.9.2 openpyxl 3.1.5
+  outputs:
+  - path: amber-disclosure/versions.log
+    sha256: 95f68bbed012fcf3be9d380e87d001da877d4b8058fe6c0da9cf0f55543c3b9e
+  - path: amber-disclosure/reproduce_prevalence.log
+    sha256: b362bd8d1b79887eb84067cb427d41b88238aaedd124c3da8340fdbdbdc32bd6
+  - path: amber-disclosure/reproduce_kappaScore.log
+    sha256: 0295e6b112b3a4d42fe300def99ef21b7428ada670bf8f3bffe8c7c580c4279a
+  - path: amber-disclosure/generate_cosine_similarity_dataset.log
+    sha256: 5d93562dafa747ffc391660095fe657d2179055aec7cfe220525e7bd3d69bf97
+  - path: amber-disclosure/reproduce_cosine_ecdf.log
+    sha256: 0aeb13d7b99e4717c8bd155a4beb66b461a4f8fa88bb15fbbc320b7995fcbb7a
+  - path: amber-disclosure/reproduce_srs_distribution.log
+    sha256: e349f838e31652b3add42a1a9e38bf80e8bdaec8b2309a6d4730df5ac97a50bd
+  - path: amber-disclosure/reproduce_category_risk_and_popularity.log
+    sha256: f861af7c6dc0e05a769c8c65b3b90810ba6ba6e7311e1fe02a7e07793347b1cf
+  - path: amber-disclosure/reproduce_alpha_sensitivity.log
+    sha256: dfcf481f2a93ed30445cba83779ea218e249231cf113b19b4307204d01b268d6
+  - path: amber-disclosure/run.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-disclosure/cell_level_prevalence_by_operation.csv
+    sha256: fdb28562efd6c5df5940c9aca6028c4b82045826ec76bb8e44986eae5b1bd8b8
+  - path: amber-disclosure/app_level_prevalence_by_operation.csv
+    sha256: 9b5fe57c5cc16a91f6e0e9d369b9abaad762322a5e5a6206a942791c8bb39427
+  - path: amber-disclosure/category_level_prevalence.csv
+    sha256: 249939814a301ebd276d672efc0d59bcfff5e1bfe845797e5600e6d6100e3946
+  - path: amber-disclosure/overall_kappa.csv
+    sha256: 0cc197289b9321a88a5f435d68facd78cb98ac294fabcf5e11402fcc5a11a713
+  - path: amber-disclosure/cosine_ecdf_summary.csv
+    sha256: 48e06db3fc349e9761f9727bdd2054a432e63f2012f08f5e3c5a698ebc137df6
+  - path: amber-disclosure/srs_tier_summary.csv
+    sha256: 9dec9f388d8dddfc180596be773ffadd2cd9314d70c501e7e4e5159d7247efef
+  - path: amber-disclosure/alpha_sensitivity_summary.csv
+    sha256: 0e00cebdd79596217a84a735baa6ea7915f3650edaf2e3e0e4c6d166eb4d3749
+  - path: amber-disclosure/metrics.json
+    sha256: 8bde19aba1d19013a9b03aeb1869d74359a59e30ab62f05c6bdd2fca43dfaf3d
+  metrics:
+    n_apps: 6051
+    rq1_rates_matched: 12
+    kappa_ordering: 1
+    rq2_rates_matched: 18
+    rq2_financial_collected_pct: 44.0
+    cosine_ordering: 1
+    rq3_tier_pct_matched: 3
+    table5_cells_matched: 16
+  bit_for_bit_expected: false
