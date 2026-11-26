@@ -1,0 +1,218 @@
+# Verified subset: artifact Experiment 3 (Scylla and Sphinx packet sizes), paper Sec. 7.4 and Figure 11: Scylla's
+# header is 39 B larger than Sphinx's and both grow by 60 B per hop. Experiments 1 (Nym testbed in Shadow), 2 (timing
+# benchmarks) and 4 (ACK latency simulation) are excluded; see resources.notes.
+id: pets2026-scylla-header-size
+title: Breaking and (Partially) Fixing Onion Routing with Fragmentation
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0120.pdf
+  doi: 10.56553/popets-2026-0120
+artifact:
+  url: https://github.com/kit-ps/fragging/tree/f615a16005f5fed9b573cc8a08f2f2fb4d2eaf39
+  clone: git clone https://github.com/kit-ps/fragging.git && cd fragging && git checkout
+    f615a16005f5fed9b573cc8a08f2f2fb4d2eaf39, then run run.command in the checkout root.
+  ref_type: commit
+  ref: f615a16005f5fed9b573cc8a08f2f2fb4d2eaf39
+  license: MIT (sphinx-benchmarks/ is Nym's Sphinx code, Apache-2.0)
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 1
+  disk_gb: 2
+  runtime_minutes: 5
+  docker: false
+  network_required: true
+  notes: |
+    The artifact appendix is ARTIFACT-APPENDIX.md in the repository: "Can run on a laptop (No special hardware
+    requirements)"; the authors used an "AMD Ryzen 5 5625U (6x 3.4 GHz)" with "16 GiB of RAM" and "Rust
+    1.97.0-nightly". Experiment 3, "Scylla & Sphinx packet sizes", takes "5 human-minutes & 5 compute-minutes": it runs
+    `cargo run --release --example=onion_sizes >onion_sizes.csv` in scylla/ and `./gen-onion-sizes.sh` in
+    sphinx-benchmarks/, which "contain the packet sizes" that Benchmarks.ipynb plots as Figure 11. Main Result 3 of
+    the appendix: "for both Scylla and Sphinx, there is a linear increase in the size of the header". The AEC row
+    (issue 2026.4) awards available, functional and reproduced and pins this commit:
+    https://secartifacts.github.io/pets2026/results.
+
+    Tested: both commands, unmodified, over their full built-in grids. Scylla: path length 1-5 x payload 128, 256,
+    512 and 1024 B x 1, 2, 5 and 10 fragments (80 rows). Sphinx: maximum path length 1-5 (gen-onion-sizes.sh rebuilds
+    with SPHINX_MAX_PATH_LENGTH=1..5) x payload 512, 1024, 2048 and 4096 B (20 rows). Header sizes use the authors'
+    own Figure 11 code (Benchmarks.ipynb, plot_path_length_vs_onion_size): Scylla onion_size - 128 + 64 at 1 fragment
+    and 128 B payload, Sphinx onion_size - 512 at 512 B payload. Sizes follow from the formats' constants, not from
+    the random node keys, so the output is deterministic.
+
+    Excluded: Experiment 1 (the Fragging attack on a Nym testbed in the Shadow simulator, 24 compute-hours, Figure 2),
+    Experiment 2 (criterion timing benchmarks, Figures 5-10, hardware dependent) and Experiment 4 (ACK latency
+    simulation, 4 compute-hours, Figures 12-13). The Sec. 7 time figures and multi-fragment scaling are not judged.
+    This entry makes no claim about any of these.
+
+    Native, no Docker. The authors' Dockerfile uses `FROM rust` (latest stable) plus Shadow and TeX, neither needed
+    here. rustup installs stable Rust 1.93.0 into amber-scylla/rustup; the code uses no nightly features and Scylla's
+    edition 2024 needs 1.85 or later. Scylla builds with --locked from the artifact's Cargo.lock (127 packages, 125
+    crates.io checksums). sphinx-benchmarks ships no Cargo.lock, so the command runs `cargo generate-lockfile` and
+    keeps the result as amber-scylla/sphinx-Cargo.lock (128 checksummed crates on 2026-11-20, e.g. curve25519-dalek
+    3.2.1, rand 0.7.3, lioness 0.1.2, aes 0.7.5). A later resolution may pick newer patch releases. The judged sizes
+    come from Sphinx's own constants and do not depend on them. The checker is stdlib Python 3. The command refuses a
+    different commit or any edit to tracked files (git diff --quiet).
+
+    First capture on 2026-11-20 in a fresh clone: exit 0, 1 min 9 s wall including toolchain and crate downloads,
+    503164 KiB peak RSS (GNU time), under a 3 GiB memory cap with swap disabled, 972 MB workspace. All four values
+    match the paper. Scylla headers are 164, 224, 284, 344 and 404 B and Sphinx headers 125, 185, 245, 305 and 365 B
+    for path lengths 1-5.
+
+    An independent validator re-derived every size another way. It evaluated the constants parsed from
+    scylla/src/lib.rs (alpha 32, KAPPA 16, 60 bytes per hop, header_length = 60(L-1) + 1 + 51) and from
+    sphinx-benchmarks/src (header 32 + 16 + 60L, payload overhead 17). It predicted all 80 Scylla rows (k fragments
+    of equal size) and all 20 Sphinx rows exactly, read with pandas instead of csv. That gives the closed forms
+    Scylla 60L + 104 and Sphinx 60L + 65. It also read the 39 B and 60 B sentences and the 32 + 16 + 8 + 3 + 1
+    breakdown from the PDF text. All 25 checks passed, and its values equal the checker's. Three more runs of both
+    generators gave byte-identical CSVs. The checker rejected or scored NOT_REPRODUCED all 26 incomplete or invalid
+    fixtures and accepted only the genuine output. The fixtures cover missing or empty files, header-only files, a
+    renamed or swapped header, dropped, duplicated or extra rows, an extra column, a non-integer or NaN cell, a
+    missing path length, altered sizes (one header, all Sphinx sizes, one payload column, a 61 B per-hop step), and a
+    panic or cargo error on stderr.
+
+    The literal run.command, parsed from this file, passed in a second fresh clone on 2026-11-20: exit 0, 57 s wall,
+    520296 KiB peak RSS, 972 MB workspace (checkout, toolchain, crates, builds, captures). Same four metrics.
+    Validator (25/25), all 26 fixtures and a replay of every measure block re-confirmed. A wrong commit (the pin's
+    parent) and edits to scylla/examples/onion_sizes.rs, sphinx-benchmarks/src/constants.rs or gen-onion-sizes.sh
+    each stopped the command before amber-scylla/ was created. Baseline hashes below are from this fresh run.
+    versions.log, sphinx-Cargo.lock, both CSVs and metrics.json were byte-identical to the first capture.
+    run.stderr.log differs only in cargo's "Finished ... in 0.0Xs" time and the order of crate downloads.
+
+    Prerequisites: Linux x86_64, POSIX shell, git, rustup, a C linker (cc), Python 3 and network access to
+    static.rust-lang.org and crates.io. The size generation itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: overhead_39_matches
+  threshold: == 5
+  unit: path lengths
+  source: 'Paper Sec. 7.4 (p.282): "From our results in Figure 11 we can see that Scylla adds a small 39 B overhead
+    compared to Sphinx"; Figure 11 (p.283), "Header size depending on the maximum path length", path lengths 1-5.'
+  measurement_protocol: Run both size generators unmodified. onion_sizes.csv must have exactly the header
+    path_length,fragment_count,payload_size,onion_size and the 80 integer rows of the built-in grid, each once;
+    sphinx_onion_sizes.csv exactly path_length,payload_size,onion_size and its 20 rows; no panic or error on stderr.
+    Header sizes as in the authors' Figure 11 code, Scylla onion_size - 128 + 64 (1 fragment, 128 B payload) and
+    Sphinx onion_size - 512 (512 B payload). Count path lengths L = 1..5 where Scylla(L) - Sphinx(L) is exactly 39.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-scylla/metrics.json
+    regex: '"overhead_39_matches": ([0-9]+)'
+- metric: scylla_per_hop_60_steps
+  threshold: == 4
+  unit: path-length steps
+  source: 'Paper Sec. 7.4 (p.282): "The per-hop increase is 60 B, the same as in Sphinx. This corresponds to the size
+    of an address (32 B), a MAC (16 B), a mixing delay (8 B), a version identifier (3 B) and a flag byte."'
+  measurement_protocol: Scylla header sizes as overhead_39_matches. Count steps L -> L+1 (L = 1..4) where the header
+    grows by exactly 60 B.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-scylla/metrics.json
+    regex: '"scylla_per_hop_60_steps": ([0-9]+)'
+- metric: sphinx_per_hop_60_steps
+  threshold: == 4
+  unit: path-length steps
+  source: Paper Sec. 7.4 (p.282), as scylla_per_hop_60_steps ("the same as in Sphinx").
+  measurement_protocol: Sphinx header sizes as overhead_39_matches. Count steps L -> L+1 (L = 1..4) where the header
+    grows by exactly 60 B.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-scylla/metrics.json
+    regex: '"sphinx_per_hop_60_steps": ([0-9]+)'
+- metric: payload_independent_rows
+  threshold: == 40
+  unit: rows
+  source: 'Paper Sec. 7.4 (p.282): "Since the payload in both Sphinx and Scylla does not introduce any overhead, we
+    only focus on the header size."'
+  measurement_protocol: For every path length and payload size, the header computed with that row's payload (Scylla
+    onion_size - payload + 64 at 1 fragment, Sphinx onion_size - payload) equals the Figure 11 header for that path
+    length. Count matching rows, 5 x 4 for each format.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-scylla/metrics.json
+    regex: '"payload_independent_rows": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = f615a16005f5fed9b573cc8a08f2f2fb4d2eaf39
+    git diff --quiet HEAD --
+    mkdir amber-scylla
+    export RUSTUP_HOME="$PWD/amber-scylla/rustup" CARGO_HOME="$PWD/amber-scylla/cargo" RUSTUP_TOOLCHAIN=1.93.0
+    rustup toolchain install 1.93.0 --profile minimal --no-self-update 2> amber-scylla/setup.log
+    { rustc -V; cargo -V; } > amber-scylla/versions.log
+    (cd scylla && cargo build --release --locked --example=onion_sizes 2> ../amber-scylla/build.log \
+      && cargo run --release --locked --example=onion_sizes > ../amber-scylla/onion_sizes.csv 2> ../amber-scylla/run.stderr.log)
+    (cd sphinx-benchmarks && cargo generate-lockfile 2>> ../amber-scylla/build.log \
+      && ./gen-onion-sizes.sh 2>> ../amber-scylla/run.stderr.log && cp sphinx_onion_sizes.csv Cargo.lock ../amber-scylla/)
+    mv amber-scylla/Cargo.lock amber-scylla/sphinx-Cargo.lock
+    python3 -I - amber-scylla <<'PYTHON' > amber-scylla/metrics.json
+    import csv, json, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    assert not re.search(r'panicked|^error', (root/'run.stderr.log').read_text(), re.M), 'run reports an error'
+    def table(name, header, keys):
+        rows = list(csv.reader(open(root/name)))
+        assert rows and rows[0] == header, name + ' header'
+        data = {tuple(int(c) for c in r[:-1]): int(r[-1]) for r in rows[1:]}
+        assert len(data) == len(rows) - 1 == len(keys) and set(data) == set(keys), name + ' rows'
+        return data
+    L = range(1, 6)
+    sc = table('onion_sizes.csv', ['path_length', 'fragment_count', 'payload_size', 'onion_size'],
+               [(l, f, p) for l in L for f in (1, 2, 5, 10) for p in (128, 256, 512, 1024)])
+    sp = table('sphinx_onion_sizes.csv', ['path_length', 'payload_size', 'onion_size'], [(l, p) for l in L for p in (512, 1024, 2048, 4096)])
+    scy = {l: sc[l, 1, 128] - 128 + 64 for l in L}   # Benchmarks.ipynb cell 30 (Figure 11)
+    sph = {l: sp[l, 512] - 512 for l in L}
+    print(json.dumps({
+        'overhead_39_matches': sum(scy[l] - sph[l] == 39 for l in L),
+        'scylla_per_hop_60_steps': sum(scy[l + 1] - scy[l] == 60 for l in L[:-1]),
+        'sphinx_per_hop_60_steps': sum(sph[l + 1] - sph[l] == 60 for l in L[:-1]),
+        'payload_independent_rows': sum(sc[l, 1, p] - p + 64 == scy[l] for l in L for p in (128, 256, 512, 1024))
+                                  + sum(sp[l, p] - p == sph[l] for l in L for p in (512, 1024, 2048, 4096)),
+        'scylla_header_bytes': [scy[l] for l in L], 'sphinx_header_bytes': [sph[l] for l in L],
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-scylla/versions.log
+  - amber-scylla/sphinx-Cargo.lock
+  - amber-scylla/onion_sizes.csv
+  - amber-scylla/sphinx_onion_sizes.csv
+  - amber-scylla/run.stderr.log
+  - amber-scylla/metrics.json
+baseline:
+  captured_on: '2026-11-20'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic; rustc
+    1.93.0, Python 3.12.3
+  outputs:
+  - path: amber-scylla/versions.log
+    sha256: 58deb95de11f23ddb1e2e9b0314334d79c60c67cea111256b3a562c43f6b554c
+  - path: amber-scylla/sphinx-Cargo.lock
+    sha256: 71259963b78e6668b9318be97439adc01490e96c205faa936ee7b83a1e6164b1
+  - path: amber-scylla/onion_sizes.csv
+    sha256: b7fef1d1cdb31b376512760bd4d4493a07ca3025e32894fd9bd3aa1101cdee15
+  - path: amber-scylla/sphinx_onion_sizes.csv
+    sha256: 392cdc7bcf7095f4ede3bedb1c8ada8179743d2cc3619853ceac9524f1b24407
+  - path: amber-scylla/run.stderr.log
+    sha256: 54124dd26cfbb55e94725cd6bfe831d3a3756facdb2d3c0be3207940f8b15332
+  - path: amber-scylla/metrics.json
+    sha256: 53d992eb55e11e047507343ffd0335c9aa2611a5844c19c5d5258d1d0b94fb9d
+  metrics:
+    overhead_39_matches: 5
+    scylla_per_hop_60_steps: 4
+    sphinx_per_hop_60_steps: 4
+    payload_independent_rows: 40
+    scylla_header_bytes:
+    - 164
+    - 224
+    - 284
+    - 344
+    - 404
+    sphinx_header_bytes:
+    - 125
+    - 185
+    - 245
+    - 305
+    - 365
+  bit_for_bit_expected: false
