@@ -1,0 +1,288 @@
+# Verified subset: the Stroke Prediction case study of Section 7.2.1 (Figure 6 data and Table 2), sklearn
+# classifiers only, judged on five relations the paper states. Figures 4 and 7-15, the Bank Attrition and MNIST
+# (torch) case studies, PAC LDP and the average/worst-case analysis are not tested; see resources.notes.
+id: pets2026-qcu-ldp-utility
+title: Quantifying Classifier Utility under Local Differential Privacy
+venue:
+  name: PETS
+  year: 2026
+paper:
+  url: https://petsymposium.org/popets/2026/popets-2026-0103.pdf
+  doi: 10.56553/popets-2026-0103
+artifact:
+  url: https://github.com/ZhengYeah/QCU-LDP/tree/4acd03ee0db439884bab3df789fbd9ced64e7529
+  clone: git clone https://github.com/ZhengYeah/QCU-LDP.git && cd QCU-LDP && git checkout
+    4acd03ee0db439884bab3df789fbd9ced64e7529, then run run.command in the checkout root.
+  ref_type: commit
+  ref: 4acd03ee0db439884bab3df789fbd9ced64e7529
+  license: MIT
+badges:
+- available
+- functional
+- reproduced
+resources:
+  cpu_only: true
+  ram_gb: 0.5
+  disk_gb: 0.5
+  runtime_minutes: 2
+  docker: false
+  network_required: true
+  notes: |
+    Appendix (ARTIFACT-APPENDIX.md at the pinned commit): "Standard hardware with a typical CPU and 16GB of
+    memory should be sufficient"; "Approximately 5 mins for setup and 2.5 hours for running all experiments";
+    "Approximately 2GB, including the codebase, dependencies, and datasets"; figure_6.py "(≈2 minutes)",
+    table_2.py "(≈5 seconds)". The AEC row (PoPETs 2026) awards available, functional and reproduced and pins
+    this commit: https://secartifacts.github.io/pets2026/results. The figures above are for this subset only:
+    no torch, about 45 s and under 170 MiB.
+
+    Tested: three of the authors' scripts, unmodified. experiments/stroke_pred/lr_empirical_theo.py and
+    rf_empirical_theo.py write lr_accuracy.csv and rf_accuracy.csv, the Figure 6a/6b data (the README names
+    the first as "the first experiment (Figure 6a in the paper)"). Each row is one ε in 1..8 and holds the
+    theoretical utility ρ(ε, θ⋄) and the empirical utility ρ̂(ε) for six mechanisms, at the §7.2.1 record
+    (Age 79, BMI 24). reproduction/table_2.py prints the Table 2 timings. The two data scripts read
+    classifiers/*.pkl from the working directory and write their CSV there, so the command runs them from
+    amber-qcu/ with copies of the two committed pickles; no tracked file is written. reproduction/figure_6.py
+    computes the same series, multiplies ρ(ε, θ⋄) by (1 − τ) = 0.99 and only plots, so the data scripts are used.
+
+    The claims are five relations from §7.2.1 and Table 2 (p.731), judged on PM, Exponential and Laplace, the
+    three mechanisms in Figure 6. The robustness-rectangle search and the mechanism sampling are both unseeded
+    (np.random / random), so no output is bit-reproducible and no single cell is claimed. Not judged, decided
+    before the first run: the empirical half of "Both utilities increase with ε" (PM ε 7→8 rises by about 0.006,
+    within the sampling noise of 3000-6000 draws); "the Exponential mechanism outperforms the Laplace mechanism"
+    (false at ε ≥ 6 for LR even in the authors' committed lr_accuracy.csv); "less than 0.1%" in the Table 2
+    text (0.94 / 861.36 = 0.109% from the paper's own numbers); the §4.1.3 values 0.46 / 0.86 / 0.63 (the
+    paper's closed forms give 0.451 for Laplace and 0.624 for k-RR, and figure_4.py only plots); "closely
+    matches", which has no number; and absolute milliseconds. The timing claims are ratios taken on one machine
+    in one process.
+
+    Excluded: Figures 4 and 7-15, the Bank Attrition and MNIST case studies (Figure 8 and 15 need torch), PAC
+    LDP, average/worst-case utility, and Appendix C. This entry makes no claim about any of these.
+
+    Reading note: the pinned src/ uses sensitivity 0.5 for the Exponential mechanism in both the sampler and the
+    CDF (the code comment says "It should be 1"). That is exp(−ε|x − x̃|), where Definition 13 (Δd = 1) gives
+    exp(−ε|x − x̃|/2). The authors' committed CSVs were generated with the earlier sensitivity 1 (the change and
+    the CSVs share commit 4deddf2): their Exp column at ε equals this run's at ε/2. The theoretical and empirical sides use the same convention, and all five claims
+    hold under both. The independent validator checked them on the committed CSVs too.
+
+    Native, no Docker. uv creates a Python 3.13 venv (the artifact's .python-version) and installs only the
+    uv.lock pins this subset imports, hash-pinned: numpy 2.3.2, pandas 2.3.1, scikit-learn 1.6.1 (the
+    version the pickles were saved with), scipy 1.16.1, joblib 1.5.1 and their five pure-Python dependencies.
+    torch and matplotlib are not needed. The command refuses a different commit or any edit to tracked files
+    (git diff --quiet), so the scripts, src/ and the pickles are as reviewed.
+
+    Claims, thresholds and the checker's coverage rules were frozen on 2026-11-18 before any run. During
+    screening I applied the rules to the authors' committed CSVs and Table 2 (32, 42, gap 0.064, 3, 1).
+
+    First capture on 2026-11-18 in a fresh clone, under a 1 GiB memory cap with swap disabled: exit 0, 45.4 s wall
+    including the venv, 166384 KiB peak RSS (GNU time), 321 MB checkout with venv, plus the 110 MB uv-managed
+    Python 3.13. All five claims held, and stderr was empty. Five more full runs, each in a fresh clone, gave the
+    same counts (32, 42, 3, 1). gap_rf_minus_lr ranged from 0.0519 to 0.0572 (LR about 0.011, RF about 0.065).
+    Across the seven runs, wall time was 43-51 s and peak RSS was 160-163 MiB.
+
+    An independent validator re-derived the results another way, without importing the artifact's src/. It
+    recomputes every theoretical PM, Laplace and Exponential value from the paper's definitions (Definition 11
+    and §4.1.1; Definition 13 with the code's sensitivity and bin indexing), using the rectangle each run
+    printed. The largest differences from the CSV are 0.0013 (PM), 0.0030 (Laplace; the artifact's CDFs use a
+    500-point grid) and 4.7e-7 (Exp). With the paper's sensitivity 1, Exp would differ by 0.198. The validator
+    re-estimates all 48 empirical PM, Exp and Laplace cells with its own vectorised samplers and the committed
+    classifiers (n = 20000); every cell is within |z| ≤ 3.3. It re-derives the five metrics with separate code.
+    It also checks that the claims hold with figure_6.py's 0.99 factor and on the authors' committed CSVs. The
+    LR rectangle rounds to the paper's [0.63, 1] × [0, 1] in every run. The RF rectangle varies from run to run
+    and matched [0.50, 1] × [0, 0.62] in 4 of 7. The 16 checks passed on all seven runs. A timing
+    cross-check took medians over 10-25 repeats of table_2.py's own functions. Speedups were PM 25×, Exp 874×
+    and Laplace 43× (Table 2: 33×, 916×, 43×). The slowest theoretical call was faster than the fastest
+    empirical one.
+
+    The checker rejected all 26 incomplete or invalid fixtures:
+    - missing or empty CSVs and logs
+    - a Traceback, Error or InconsistentVersionWarning on stderr
+    - dropped, duplicated, extra or reordered rows
+    - a renamed or swapped header, or an extra column
+    - NaN, inf, non-numeric or out-of-range cells
+    - a missing, duplicated or truncated timing line, or a zero theoretical time
+    Five value changes with an intact shape reached metrics.json and replayed as NOT_REPRODUCED. The command
+    stopped before amber-qcu/ was created on a wrong commit, an edit to src/, to either data script or to
+    table_2.py, a replaced pickle, and an edit to a committed CSV.
+
+    The literal run.command, parsed from this file, passed in a further fresh clone from GitHub on 2026-11-18
+    with an empty uv cache: exit 0, 50.0 s wall, 165260 KiB peak RSS. All five claims held (gap_rf_minus_lr
+    0.0524). The validator (16/16), all 31 fixtures and a replay of every measure block re-confirmed the result.
+    The baseline hashes below are from this run. bit_for_bit_expected is false: the sampling and the rectangle
+    search are unseeded, and the appendix notes that "LDP mechanisms introduce randomness through sampling".
+
+    Prerequisites: Linux x86_64, POSIX shell, git, uv (it fetches Python 3.13 if absent), and network access
+    to GitHub, PyPI and the uv Python downloads for setup. The experiment itself is offline.
+role: positive
+expected_verdict: REPRODUCED
+claims:
+- metric: pm_highest_count
+  threshold: == 32
+  unit: comparisons
+  source: 'Paper Section 7.2.1 (p.731), Figure 6: "Both utilities increase with ε, with the PM mechanism
+    consistently providing the highest utility."'
+  measurement_protocol: Count, over both classifiers (lr_accuracy.csv, rf_accuracy.csv) × ε = 1..8 × {theoretical
+    (pm_theo), empirical (pm_empirical)}, the cells where PM is strictly above both Exponential and Laplace. 2 × 8 × 2
+    = 32 comparisons; all must hold. Like every claim, it is written only after both CSVs pass the coverage checks
+    (exact 13-column header, ε rows 1..8 in order, every cell finite, every utility in [0, 1]), the Table 2 log is
+    complete, and no stderr reports an error.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-qcu/metrics.json
+    regex: '"pm_highest_count": ([0-9]+)'
+- metric: theo_increasing_count
+  threshold: == 42
+  unit: steps
+  source: 'Paper Section 7.2.1 (p.731), Figure 6: "Both utilities increase with ε".'
+  measurement_protocol: Count, over both classifiers × {PM, Exponential, Laplace} × the 7 steps ε → ε+1, the steps
+    where the theoretical utility (*_theo) strictly increases. 2 × 3 × 7 = 42; all must hold. The empirical columns
+    are not judged here (sampling noise near 1.0; see resources.notes).
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-qcu/metrics.json
+    regex: '"theo_increasing_count": ([0-9]+)'
+- metric: gap_rf_minus_lr
+  threshold: '> 0'
+  unit: utility
+  source: 'Paper Section 7.2.1 (p.731), Figure 6: "The Random Forest classifier exhibits a larger gap between ρ(ε,
+    θ⋄) and ρ̂(ε) compared to the Logistic Regression classifier."'
+  measurement_protocol: For each classifier, the mean of |theoretical − empirical| over {PM, Exponential, Laplace}
+    × ε = 1..8 (24 cells). The metric is the Random Forest mean minus the Logistic Regression mean; metrics.json
+    also records both means (gap_lr, gap_rf).
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-qcu/metrics.json
+    regex: '"gap_rf_minus_lr": (-?[0-9.]+(?:e-?[0-9]+)?)'
+- metric: theoretical_faster_count
+  threshold: == 3
+  unit: mechanisms
+  source: 'Paper Section 7.2.1 (p.731), Table 2: "The theoretical approach is significantly faster, especially for
+    the Exponential mechanism." Table 2 (ms): PM 6.56 + 1.38 vs 0.24; Exponential 859.83 + 1.53 vs 0.94; Laplace
+    11.29 + 1.53 vs 0.30.'
+  measurement_protocol: Run reproduction/table_2.py unmodified (ε = 1, 2000 samples, the LR classifier). It prints
+    the theoretical, sampling and inference time per mechanism. Count the mechanisms (PM, Exponential, Laplace)
+    whose theoretical time is below sampling + inference. ANSI colour codes are stripped, and each of the nine
+    timing lines must appear exactly once. Absolute times are hardware-dependent and not claimed.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-qcu/metrics.json
+    regex: '"theoretical_faster_count": ([0-9]+)'
+- metric: exponential_largest_speedup
+  threshold: == 1
+  unit: boolean
+  source: 'Paper Section 7.2.1 (p.731), Table 2: "The theoretical approach is significantly faster, especially for
+    the Exponential mechanism."'
+  measurement_protocol: From the same table_2.py output, 1 if the Exponential mechanism has the largest ratio
+    (sampling + inference) / theoretical of the three, else 0.
+  expected_verdict: REPRODUCED
+  measure:
+    file: amber-qcu/metrics.json
+    regex: '"exponential_largest_speedup": ([0-9]+)'
+run:
+  command: |
+    set -eu
+    test "$(git rev-parse HEAD)" = 4acd03ee0db439884bab3df789fbd9ced64e7529
+    git diff --quiet HEAD --
+    mkdir amber-qcu amber-qcu/classifiers
+    cp experiments/stroke_pred/classifiers/stroke_lr.pkl experiments/stroke_pred/classifiers/stroke_rf.pkl amber-qcu/classifiers/
+    cat > amber-qcu/requirements.txt <<'REQ'
+    numpy==2.3.2 --hash=sha256:938065908d1d869c7d75d8ec45f735a034771c6ea07088867f713d1cd3bbbe4f
+    pandas==2.3.1 --hash=sha256:2ba6aff74075311fc88504b1db890187a3cd0f887a5b10f5525f8e2ef55bfdb9
+    scikit-learn==1.6.1 --hash=sha256:e8ca8cb270fee8f1f76fa9bfd5c3507d60c6438bbee5687f81042e2bb98e5a97
+    scipy==1.16.1 --hash=sha256:fedc2cbd1baed37474b1924c331b97bdff611d762c196fac1a9b71e67b813b1b
+    joblib==1.5.1 --hash=sha256:4719a31f054c7d766948dcd83e9613686b27114f190f717cec7eaa2084f8a74a
+    threadpoolctl==3.6.0 --hash=sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb
+    python-dateutil==2.9.0.post0 --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+    six==1.17.0 --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
+    pytz==2025.2 --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+    tzdata==2025.2 --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8
+    REQ
+    uv venv --quiet --python 3.13 amber-qcu/venv
+    uv pip install --quiet --python amber-qcu/venv/bin/python --only-binary :all: --require-hashes -r amber-qcu/requirements.txt
+    export PATH="$PWD/amber-qcu/venv/bin:$PATH"
+    python3 -c "import sys, numpy, pandas, scipy, sklearn, joblib; print(sys.version.split()[0], numpy.__version__, pandas.__version__, scipy.__version__, sklearn.__version__, joblib.__version__)" > amber-qcu/versions.log
+    cd amber-qcu
+    for c in lr rf; do
+      PYTHONPATH=.. python3 "../experiments/stroke_pred/${c}_empirical_theo.py" > "$c.log" 2> "$c.stderr.log"
+    done
+    python3 ../reproduction/table_2.py > table_2.log 2> table_2.stderr.log
+    cd ..
+    python3 -I - amber-qcu <<'PYTHON' > amber-qcu/metrics.json
+    import json, math, pathlib, re, sys
+    root = pathlib.Path(sys.argv[1])
+    logs = sorted(root.glob('*.stderr.log'))
+    assert [p.name for p in logs] == ['lr.stderr.log', 'rf.stderr.log', 'table_2.stderr.log'], 'missing stderr log'
+    for log in logs:
+        assert not re.search(r'Traceback|Error|InconsistentVersionWarning', log.read_text()), f'{log.name} reports an error'
+    HEAD = 'epsilon,' + ','.join(f'{m}_{k}' for m in ('pm', 'sw', 'krr', 'exp', 'laplace', 'gaussian') for k in ('theo', 'empirical'))
+    csv = {}
+    for c in ('lr', 'rf'):
+        lines = (root/f'{c}_accuracy.csv').read_text().splitlines()
+        assert lines and lines[0] == HEAD, f'{c} header'
+        rows = [[float(x) for x in line.split(',')] for line in lines[1:]]
+        assert [r[0] for r in rows] == list(range(1, 9)), f'{c} rows'
+        assert all(len(r) == 13 and all(map(math.isfinite, r)) and all(0 <= x <= 1 for x in r[1:]) for r in rows), f'{c} cells'
+        csv[c] = [dict(zip(HEAD.split(','), r)) for r in rows]
+    log = re.sub(r'\x1b\[[0-9;]*m', '', (root/'table_2.log').read_text())
+    assert len(re.findall(r'^Robust radius computation time: [0-9.]+ms$', log, re.M)) == 1, 'robust radius line'
+    t = {}
+    for m in ('pm', 'exp', 'laplace'):
+        for k in ('theoretical', 'sampling', 'inference'):
+            v = re.findall(rf'^{m} {k} time: ([0-9]+\.[0-9]+)ms$', log, re.M)
+            assert len(v) == 1, f'{m} {k} time'
+            t[m, k] = float(v[0])
+    M = ('pm', 'exp', 'laplace')
+    assert all(t[m, 'theoretical'] > 0 for m in M), 'zero theoretical time'
+    gap = {c: sum(abs(r[m + '_theo'] - r[m + '_empirical']) for r in csv[c] for m in M) / 24 for c in csv}
+    emp = {m: t[m, 'sampling'] + t[m, 'inference'] for m in M}
+    speedup = {m: emp[m] / t[m, 'theoretical'] for m in M}
+    print(json.dumps({
+        'pm_highest_count': sum(r['pm_' + k] > max(r['exp_' + k], r['laplace_' + k]) for c in csv for r in csv[c] for k in ('theo', 'empirical')),
+        'theo_increasing_count': sum(csv[c][i + 1][m + '_theo'] > csv[c][i][m + '_theo'] for c in csv for m in M for i in range(7)),
+        'gap_lr': round(gap['lr'], 6), 'gap_rf': round(gap['rf'], 6), 'gap_rf_minus_lr': round(gap['rf'] - gap['lr'], 6),
+        'theoretical_faster_count': sum(t[m, 'theoretical'] < emp[m] for m in M),
+        'exponential_largest_speedup': int(max(speedup, key=speedup.get) == 'exp'),
+    }, sort_keys=True))
+    PYTHON
+  outputs:
+  - amber-qcu/versions.log
+  - amber-qcu/lr.log
+  - amber-qcu/lr.stderr.log
+  - amber-qcu/rf.log
+  - amber-qcu/rf.stderr.log
+  - amber-qcu/table_2.log
+  - amber-qcu/table_2.stderr.log
+  - amber-qcu/lr_accuracy.csv
+  - amber-qcu/rf_accuracy.csv
+  - amber-qcu/metrics.json
+baseline:
+  captured_on: '2026-11-18'
+  machine: AMD Ryzen 5 6600H (6 cores / 12 threads), 15166 MiB RAM; Ubuntu 24.04.4 x86_64, Linux 7.0.0-43-generic;
+    Python 3.13.13 (uv), numpy 2.3.2, pandas 2.3.1, scipy 1.16.1, scikit-learn 1.6.1, joblib 1.5.1
+  outputs:
+  - path: amber-qcu/versions.log
+    sha256: c2d17ed5cf9c8b9628e2ce072e622f4c2c05e617236ed2177ee70786d95c8d15
+  - path: amber-qcu/lr.log
+    sha256: 44e9337f1b41ac50cbdb49f5b338b330eb49f2cc187ae7e2fc934b880e9510a2
+  - path: amber-qcu/lr.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-qcu/rf.log
+    sha256: c55c1e395cb37f722e4498234b99dda85ce0d6e6d99895bb816d40ec8df8bdde
+  - path: amber-qcu/rf.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-qcu/table_2.log
+    sha256: bc4590a6f66f529d056933cf8019cfb9a8949f95dafe46ec551387c949ba06b6
+  - path: amber-qcu/table_2.stderr.log
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - path: amber-qcu/lr_accuracy.csv
+    sha256: 23d5d80de4d674d688de97c6b12d4e7ee44fa79eb1866f134288c3182fe47e40
+  - path: amber-qcu/rf_accuracy.csv
+    sha256: 399bad7bccd18927f878f2ee1a85a2ec0ebc38e4030aa6aec0edf45652d8c2af
+  - path: amber-qcu/metrics.json
+    sha256: c9273ad6c2074da0ec178b7c57f39a2a520be925c985b850b3e0fc96ba499068
+  metrics:
+    pm_highest_count: 32
+    theo_increasing_count: 42
+    gap_rf_minus_lr: 0.052435
+    theoretical_faster_count: 3
+    exponential_largest_speedup: 1
+  bit_for_bit_expected: false
